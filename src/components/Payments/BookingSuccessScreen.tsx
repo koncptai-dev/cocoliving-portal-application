@@ -29,7 +29,7 @@ const BookingSuccessScreen = ({ route, navigation }) => {
 
           {/* Title */}
           <Text style={styles.title}>Payment Successful 🎉</Text>
-          <Text style={styles.subtitle}>Your booking has been confirmed</Text>
+          <Text style={styles.subtitle}>Thanku! Your Payment was successfully processed</Text>
 
           {/* Payment Details */}
           <View style={styles.card}>
@@ -49,40 +49,48 @@ const BookingSuccessScreen = ({ route, navigation }) => {
           <View style={styles.emailBox}>
             <Text style={styles.emailText}>
               Booking details have been sent to{"\n"}
-              <Text style={{ fontWeight: "700" }}>
+              <Text style={{ fontFamily:'Quicksand-Bold', }}>
                 {userPhone} | {userEmail}
               </Text>
             </Text>
           </View>
 
           {/* Buttons */}
-          <TouchableOpacity
-            style={styles.primaryBtn}
-            onPress={() => navigation.navigate("Home")}
-          >
-            <Text style={styles.primaryBtnText}>Go to Home</Text>
-          </TouchableOpacity>
+          {/* Buttons Container */}
+<View style={styles.buttonContainer}>
 
-          <TouchableOpacity
-            style={styles.secondaryBtn}
-            onPress={() => navigation.navigate("Bookings")}
-          >
-            <Text style={styles.secondaryBtnText}>View My Bookings</Text>
-            <Ionicons name="arrow-forward" size={20} color="#3C2A1E" />
-          </TouchableOpacity>
+  <TouchableOpacity
+    style={styles.secondaryBtn}
+    onPress={() => navigation.navigate("HomeTabs")}
+  >
+    <Text style={styles.secondaryBtnText}>Go to Home</Text>
+    <Ionicons name="arrow-forward" size={20} color="#3C2A1E" />
+  </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.secondaryBtn}
-            onPress={() => navigation.navigate("Amenities")}
-          >
-            <Text style={styles.secondaryBtnText}>Explore Amenities</Text>
-            <Ionicons name="arrow-forward" size={20} color="#3C2A1E" />
-          </TouchableOpacity>
+  <TouchableOpacity
+    style={styles.secondaryBtn}
+    onPress={() => navigation.navigate("MyBookings")}
+  >
+    <Text style={styles.secondaryBtnText}>View My Bookings</Text>
+    <Ionicons name="arrow-forward" size={20} color="#3C2A1E" />
+  </TouchableOpacity>
+
+  <TouchableOpacity
+    style={styles.secondaryBtn}
+    onPress={() => navigation.navigate("Amenities")}
+  >
+    <Text style={styles.secondaryBtnText}>Explore Amenities</Text>
+    <Ionicons name="arrow-forward" size={20} color="#3C2A1E" />
+  </TouchableOpacity>
+
+</View>
         </View>
 
-        <Text style={styles.helpText}>
-          Need help? <Text style={{ fontWeight: "bold" }}>Contact support</Text>
+        <TouchableOpacity onPress={()=>navigation.navigate("Support")}>
+          <Text style={styles.helpText}>
+          Need help? <Text style={{ fontFamily:'Quicksand-Bold' }}>Contact support</Text>
         </Text>
+        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );
@@ -103,12 +111,13 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#fff" },
   scrollContent: { flexGrow: 1, padding: 22 },
   content: { alignItems: "center" },
-  title: { fontSize: 24, fontWeight: "800", color: "#3C2A1E", marginTop: 20 },
-  subtitle: { fontSize: 14, color: "#7D6C54", marginBottom: 20, marginTop: 6 },
+  title: { fontSize: 24, fontFamily:'Quicksand-Bold', color: "#4f3421", marginTop: 20 },
+  subtitle: { fontSize: 14, color: "#8c8c8c",fontFamily:'Quicksand-Regular', marginBottom: 20 },
   card: {
     width: "100%",
-    backgroundColor: "#F6EFE6",
-    borderRadius: 12,
+    backgroundColor: "#FFF",
+    // borderRadius: 12,
+    elevation:6,
     padding: 15,
     marginTop: 18,
   },
@@ -119,24 +128,34 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     paddingVertical: 10,
   },
-  label: { color: "#3C2A1E", fontSize: 14 },
-  value: { fontSize: 14, fontWeight: "700", color: "#3C2A1E" },
+  label: { color: "#000000", fontSize: 14,fontFamily:'Quicksand-Regular' },
+  value: { fontSize: 14, fontFamily:'Quicksand-Bold', color: "#000000" },
   emailBox: {
     marginTop: 20,
-    backgroundColor: "#EADCC8",
+    backgroundColor: "#ede7df",
     padding: 12,
     borderRadius: 10,
     alignItems: "center",
   },
-  emailText: { fontSize: 13, color: "#5C4C3A", textAlign: "center", lineHeight: 18 },
-  primaryBtn: {
-    backgroundColor: "#3C2A1E",
-    width: "100%",
-    borderRadius: 10,
-    padding: 16,
-    marginTop: 30,
-  },
-  primaryBtnText: { textAlign: "center", color: "#fff", fontSize: 16, fontWeight: "700" },
+  emailText: { fontSize: 13, color: "#5C4C3A", textAlign: "center", lineHeight: 18,fontFamily:'Quicksand-Regular' },
+  buttonContainer: {
+  width: "100%",
+  marginTop: 25,
+  backgroundColor: "#ede7df",
+  borderRadius: 14,
+  padding: 14,
+
+  // Android
+  elevation: 6,
+
+  // iOS
+  shadowColor: "#000",
+  shadowOffset: { width: 0, height: 4 },
+  shadowOpacity: 0.1,
+  shadowRadius: 8,
+},
+
+
   secondaryBtn: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -147,6 +166,6 @@ const styles = StyleSheet.create({
     padding: 15,
     marginTop: 10,
   },
-  secondaryBtnText: { fontSize: 15, fontWeight: "600", color: "#3C2A1E" },
-  helpText: { textAlign: "center", paddingVertical: 25, color: "#7D6C54" },
+  secondaryBtnText: { fontSize: 15, fontFamily:'Quicksand-Medium', color: "#3C2A1E" },
+  helpText: { textAlign: "center", paddingVertical: 25, color: "#7D6C54",fontFamily:'Quicksand-Medium' },
 });

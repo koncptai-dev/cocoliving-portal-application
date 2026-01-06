@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -11,11 +11,15 @@ import {
 import Ionicons from "react-native-vector-icons/Ionicons";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import HeaderGradient from "../components/HeaderGradient";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import Toast from "react-native-toast-message";
+import colors from "../constants/color";
 
 const BASE_URL = "https://staging.cocoliving.in";
+
+const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7";
 
 export default function EventsScreen() {
   const { user } = useAuth();
@@ -35,6 +39,13 @@ export default function EventsScreen() {
 
   const [locations, setLocations] = useState([]);
 
+  // Refetch events every time screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      fetchEvents();
+    }, [])
+  );
+
   useEffect(() => {
     fetchEvents();
   }, []);
@@ -42,42 +53,86 @@ export default function EventsScreen() {
   const fetchEvents = async () => {
     try {
       const res = await axios.get(
-        `${BASE_URL}/api/events/allevents?page=1&limit=10`,
+        `${BASE_URL}/api/events/allevents?page=1&limit=20`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
 
-      setEvents(res.data.events || []);
-      setFilteredEvents(res.data.events || []);
+      const fetchedEvents = res.data.events || [];
+
+      setEvents(fetchedEvents);
+      setFilteredEvents(fetchedEvents);
 
       const locs = [
-        ...new Set(res.data.events.map((e) => e.location || "Unknown")),
+        ...new Set(fetchedEvents.map((e) => e.location || "Unknown")),
       ];
       setLocations(locs);
     } catch (e) {
-      console.log("Events Error:", e);
-      Alert.alert("Error", "Failed to fetch events");
+      console.log("Events Error:", e?.response?.data || e);
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: "Failed to fetch events",
+      });
     }
   };
 
-  //handle Details
-  const handleDetails = (event) => {
-  navigation.navigate("EventDetails", { event });
-};
+  const handleJoinEvent = async (event) => {
+    if (!user?.id) return;
 
-  const handleJoin = async (eventId) => {
+    const currentParticipation = event.EventParticipations?.find(
+      (p) => p.userId === user.id
+    );
+    const isCurrentlyAttending = currentParticipation?.status === "attending";
+
+    const newAttending = !isCurrentlyAttending;
+    const statusToSend = newAttending ? "attending" : "not_attending";
+    const delta = newAttending ? 1 : -1;
+
+    const updateEventsList = (prev) =>
+      prev.map((e) =>
+        e.id === event.id
+          ? {
+              ...e,
+              attendingCount: e.attendingCount + delta,
+              EventParticipations: newAttending
+                ? [
+                    ...(e.EventParticipations?.filter(
+                      (p) => p.userId !== user.id
+                    ) || []),
+                    { userId: user.id, status: "attending" },
+                  ]
+                : e.EventParticipations?.filter((p) => p.userId !== user.id) ||
+                  [],
+            }
+          : e
+      );
+
+    setEvents(updateEventsList);
+    setFilteredEvents(updateEventsList);
+
     try {
       await axios.post(
-        `${BASE_URL}/api/events/${eventId}/join`,
-        { userId: user?.id, status: "attending" },
+        `${BASE_URL}/api/events/${event.id}/join`,
+        { userId: user.id, status: statusToSend },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      Alert.alert("Success", "You have marked as attending!");
+      Toast.show({
+        type: "success",
+        text1: newAttending ? "You're In!" : "Attendance Cancelled",
+      });
+
+      fetchEvents();
     } catch (e) {
       console.log(e);
-      Alert.alert("Error", "Failed to join");
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: "Failed to update attendance",
+      });
+      fetchEvents();
     }
   };
 
@@ -87,13 +142,15 @@ export default function EventsScreen() {
   };
 
   const formatTime = (t) => {
-    if (!t || t === "00:00") return "TBD";
-    return t;
+    if (!t || t === "00:00:00") return "TBD";
+    const [hour, minute] = t.split(":");
+    const h = parseInt(hour, 10);
+    const ampm = h >= 12 ? "PM" : "AM";
+    const displayHour = h % 12 || 12;
+    return `${displayHour}:${minute} ${ampm}`;
   };
 
-  // ⭐ FILTER LOGIC
   const handleFind = () => {
-    // If no filters, show all
     if (!selectedDate && !selectedTime && !locationFilter) {
       setFilteredEvents(events);
       return;
@@ -101,7 +158,6 @@ export default function EventsScreen() {
 
     let filtered = [...events];
 
-    // DATE FILTER
     if (selectedDate) {
       filtered = filtered.filter((event) => {
         if (!event.eventDate) return false;
@@ -110,239 +166,303 @@ export default function EventsScreen() {
       });
     }
 
-    // TIME SLOT FILTER
     if (selectedTime) {
       filtered = filtered.filter((event) => {
         if (!event.eventTime) return false;
-
-        const [start, end] = selectedTime.split(" - ");
-        return event.eventTime.includes(start) || event.eventTime.includes(end);
+        const [start] = selectedTime.split(" - ");
+        const startHour = start.replace(/ [AP]M$/, "");
+        return event.eventTime.startsWith(startHour.padStart(2, "0"));
       });
     }
 
-    // LOCATION FILTER
     if (locationFilter) {
       filtered = filtered.filter(
         (event) =>
-          (event.location || "").toLowerCase() ===
-          locationFilter.toLowerCase()
+          (event.location || "").toLowerCase() === locationFilter.toLowerCase()
       );
     }
 
     setFilteredEvents(filtered);
   };
 
+  // NEW: Clear Filters Function
+  const handleClearFilters = () => {
+    setSelectedDate("");
+    setSelectedTime("");
+    setLocationFilter("");
+    setFilteredEvents(events);
+  };
+
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      <HeaderGradient
-        image={require("../../assets/images/events.jpg")}
-        title="Community Events"
-      />
+    <>
+      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+        <HeaderGradient
+          image={require("../../assets/images/events.jpg")}
+          title="Community Events"
+        />
 
-      {/* FILTERS */}
-      <View style={styles.filterContainer}>
+        {/* FILTERS */}
+        <View style={styles.filterContainer}>
+          <View style={styles.filterRow}>
+            <TouchableOpacity
+              style={styles.filterInput}
+              onPress={() => setShowDatePicker(true)}
+            >
+              <Text style={styles.filterText}>
+                {selectedDate || "Date"}
+              </Text>
+              <Ionicons name="chevron-down" size={18} color="#3C2A1E" />
+            </TouchableOpacity>
 
-        {/* ROW 1 — DATE + TIME */}
-        <View style={styles.filterRow}>
+            <TouchableOpacity
+              style={styles.filterInput}
+              onPress={() => setShowTimeSlots(!showTimeSlots)}
+            >
+              <Text style={styles.filterText}>
+                {selectedTime || "Time"}
+              </Text>
+              <Ionicons name="chevron-down" size={18} color="#3C2A1E" />
+            </TouchableOpacity>
+          </View>
 
-          {/* DATE */}
+          {showDatePicker && (
+            <DateTimePicker
+              value={new Date()}
+              mode="date"
+              display="calendar"
+              onChange={(event, date) => {
+                setShowDatePicker(false);
+                if (date) setSelectedDate(date.toDateString());
+              }}
+            />
+          )}
+
+          {showTimeSlots && (
+            <View style={styles.slotContainer}>
+              {["9 AM - 12 PM", "12 PM - 3 PM", "3 PM - 6 PM", "6 PM - 9 PM"].map(
+                (slot) => (
+                  <TouchableOpacity
+                    key={slot}
+                    style={styles.slotButton}
+                    onPress={() => {
+                      setSelectedTime(slot);
+                      setShowTimeSlots(false);
+                    }}
+                  >
+                    <Text style={styles.slotText}>{slot}</Text>
+                  </TouchableOpacity>
+                )
+              )}
+            </View>
+          )}
+
           <TouchableOpacity
-            style={styles.filterInput}
-            onPress={() => setShowDatePicker(true)}
+            style={styles.locationInput}
+            onPress={() => setShowLocationList(!showLocationList)}
           >
-            <Text style={styles.filterText}>
-              {selectedDate || "Date"}
+            <Ionicons name="location-outline" size={18} color="#3C2A1E" />
+            <Text style={[styles.filterText, { flex: 1, marginLeft: 10 }]}>
+              {locationFilter || "Location"}
             </Text>
             <Ionicons name="chevron-down" size={18} color="#3C2A1E" />
           </TouchableOpacity>
 
-          {/* TIME */}
-          <TouchableOpacity
-            style={styles.filterInput}
-            onPress={() => setShowTimeSlots(!showTimeSlots)}
-          >
-            <Text style={styles.filterText}>
-              {selectedTime || "Time"}
-            </Text>
-            <Ionicons name="chevron-down" size={18} color="#3C2A1E" />
-          </TouchableOpacity>
-
-        </View>
-
-        {/* DATE PICKER */}
-        {showDatePicker && (
-          <DateTimePicker
-            value={new Date()}
-            mode="date"
-            display="calendar"
-            onChange={(event, date) => {
-              setShowDatePicker(false);
-              if (date) setSelectedDate(date.toDateString());
-            }}
-          />
-        )}
-
-        {/* TIME SLOTS */}
-        {showTimeSlots && (
-          <View style={styles.slotContainer}>
-            {["9 AM - 12 PM", "12 PM - 3 PM", "3 PM - 6 PM", "6 PM - 9 PM"].map(
-              (slot) => (
+          {showLocationList && (
+            <View style={styles.listContainer}>
+              {locations.map((loc, i) => (
                 <TouchableOpacity
-                  key={slot}
-                  style={styles.slotButton}
+                  key={i}
+                  style={styles.listItem}
                   onPress={() => {
-                    setSelectedTime(slot);
-                    setShowTimeSlots(false);
+                    setLocationFilter(loc);
+                    setShowLocationList(false);
                   }}
                 >
-                  <Text style={styles.slotText}>{slot}</Text>
+                  <Text style={styles.listText}>{loc}</Text>
                 </TouchableOpacity>
-              )
-            )}
-          </View>
-        )}
-
-        {/* LOCATION — FULL WIDTH */}
-        <TouchableOpacity
-          style={styles.locationInput}
-          onPress={() => setShowLocationList(!showLocationList)}
-        >
-          <Ionicons name="location-outline" size={18} color="#3C2A1E" />
-          <Text style={[styles.filterText, { flex: 1, marginLeft: 10 }]}>
-            {locationFilter || "Commerce Cross Road"}
-          </Text>
-          <Ionicons name="chevron-down" size={18} color="#3C2A1E" />
-        </TouchableOpacity>
-
-        {/* LOCATION LIST */}
-        {showLocationList && (
-          <View style={styles.listContainer}>
-            {locations.map((loc, i) => (
-              <TouchableOpacity
-                key={i}
-                style={styles.listItem}
-                onPress={() => {
-                  setLocationFilter(loc);
-                  setShowLocationList(false);
-                }}
-              >
-                <Text style={styles.listText}>{loc}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        )}
-
-        {/* FIND BUTTON */}
-        <TouchableOpacity style={styles.findButtonFull} onPress={handleFind}>
-          <Text style={styles.findText}>Find</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* EVENTS LIST */}
-      {filteredEvents.length > 0 ? (
-        filteredEvents.map((event) => (
-          <View key={event.id} style={styles.card}>
-            <View style={styles.imageContainer}>
-              <Image
-                source={{
-                  uri: `https://picsum.photos/300/150?random=${event.id}`,
-                }}
-                style={styles.eventImage}
-              />
-              <TouchableOpacity
-                style={styles.detailsOverlay}
-                onPress={() => handleDetails(event)}
-              >
-                <Text style={styles.detailsText}>Details ></Text>
-              </TouchableOpacity>
+              ))}
             </View>
+          )}
 
-            <View style={styles.cardContent}>
-              <Text style={styles.cardTitle}>{event.title}</Text>
+          {/* NEW: Clear and Find buttons side by side */}
+          <View style={styles.buttonRow}>
+            <TouchableOpacity
+              style={styles.clearButton}
+              onPress={handleClearFilters}
+            >
+              <Text style={styles.clearText}>Clear</Text>
+            </TouchableOpacity>
 
-              <View style={styles.dateRow}>
-                <Ionicons name="calendar-outline" size={16} color="#3C2A1E" />
-                <Text style={styles.detailText}>
-                  {formatDate(event.eventDate)}
-                </Text>
-              </View>
+            <TouchableOpacity style={styles.findButton} onPress={handleFind}>
+              <Text style={styles.findText}>Find</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
 
-              <View style={styles.timeRow}>
-                <Ionicons name="time-outline" size={16} color="#3C2A1E" />
-                <Text style={styles.detailText}>
-                  {formatTime(event.eventTime)}
-                </Text>
-              </View>
+        {/* EVENTS LIST */}
+        {filteredEvents.length > 0 ? (
+          filteredEvents.map((event) => {
+            const participation = event.EventParticipations?.find(
+              (p) => p.userId === user?.id
+            );
+            const isAttending = participation?.status === "attending";
 
-              <View style={styles.bottomRow}>
-                <View style={styles.participants}>
-                  <Ionicons name="people-outline" size={16} color="#3C2A1E" />
-                  <Text style={styles.participantText}>
-                    {event.maxParticipants}
-                  </Text>
+            const eventDateTime = new Date(
+              `${event.eventDate}T${event.eventTime || "00:00:00"}`
+            );
+            const isPast = eventDateTime < new Date();
+
+            return (
+              <TouchableOpacity
+                key={event.id}
+                activeOpacity={0.95}
+                onPress={() => navigation.navigate("EventDetails", { event })}
+              >
+                <View style={styles.card}>
+                  <Image
+                    source={{
+                      uri: event.eventImage
+                        ? `${BASE_URL}${event.eventImage}`
+                        : FALLBACK_IMAGE,
+                    }}
+                    style={styles.eventImage}
+                    resizeMode="cover"
+                  />
+
+                  <View style={styles.cardContent}>
+                    <Text style={styles.cardTitle}>{event.title}</Text>
+
+                    {/* Location - moved right below title, fontSize 12 */}
+                    <View style={styles.locationRow}>
+                      <Ionicons
+                        name="location-outline"
+                        size={16}
+                        color={colors.nOrange}
+                      />
+                      <Text style={styles.locationText}>
+                        {event.location || "TBD"}
+                      </Text>
+                    </View>
+
+                    {/* Date */}
+                    <View style={styles.dateRow}>
+                      <Ionicons
+                        name="calendar-outline"
+                        size={16}
+                        color={colors.nOrange}
+                      />
+                      <Text style={styles.detailText}>
+                        {formatDate(event.eventDate)}
+                      </Text>
+                    </View>
+
+                    {/* Time */}
+                    <View style={styles.timeRow}>
+                      <Ionicons name="time-outline" size={16} color={colors.nOrange} />
+                      <Text style={styles.detailText}>
+                        {formatTime(event.eventTime)}
+                      </Text>
+                    </View>
+
+                    {/* Attending Count */}
+                    <View style={styles.participantsRow}>
+                      <Ionicons name="people-outline" size={16} color={colors.nOrange} />
+                      <Text style={styles.detailText}>
+                        {event.attendingCount || 0}/{event.maxParticipants} attending
+                      </Text>
+                    </View>
+
+                    {/* Join Button */}
+                    {isPast ? (
+                      <TouchableOpacity
+                        style={styles.completedButton}
+                        disabled
+                      >
+                        <Text style={styles.completedText}>Completed</Text>
+                      </TouchableOpacity>
+                    ) : (
+                      <TouchableOpacity
+                        style={[
+                          styles.joinButton,
+                          isAttending ? styles.greenButton : styles.grayButton,
+                        ]}
+                        onPress={(e) => {
+                          e.stopPropagation(); // Prevent card navigation when pressing button
+                          handleJoinEvent(event);
+                        }}
+                      >
+                        <Text
+                          style={[
+                            styles.joinText,
+                            isAttending && styles.greenText,
+                          ]}
+                        >
+                          {isAttending ? "See You There!" : "Count Me In!"}
+                        </Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
                 </View>
-                <Text style={styles.price}>Free</Text>
-              </View>
-
-              <TouchableOpacity
-                style={styles.joinButton}
-                onPress={() => handleJoin(event.id)}
-              >
-                <Text style={styles.joinText}>Count Me In!</Text>
               </TouchableOpacity>
-            </View>
-          </View>
-        ))
-      ) : (
-        <Text style={styles.noData}>No Events Found 🔎</Text>
-      )}
-    </ScrollView>
+            );
+          })
+        ) : (
+          <Text style={styles.noData}>No Events Found 🔎</Text>
+        )}
+      </ScrollView>
+
+      <Toast />
+    </>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { backgroundColor: "#F8F3EB" },
+  container: { flex: 1, backgroundColor: "#fbfbfb" },
 
   filterContainer: {
-    marginHorizontal: 15,
-    marginVertical: 20,
+    backgroundColor: "#fff",
+    margin: 12,
+    borderRadius: 14,
+    elevation: 4,
+    padding: 16,
   },
 
   filterRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    gap: 12,
     marginBottom: 12,
   },
 
   filterInput: {
-    flex: 0.48,
+    flex: 1,
     height: 45,
     backgroundColor: "#FFF",
     borderRadius: 15,
     borderWidth: 1,
-    borderColor: "#D8C6A3",
+    borderColor: "#616161",
     paddingHorizontal: 12,
-    alignItems: "center",
     flexDirection: "row",
+    alignItems: "center",
     justifyContent: "space-between",
+    fontFamily:'Quicksand-Regular'
   },
 
   locationInput: {
-    width: "100%",
     height: 45,
     backgroundColor: "#FFF",
     borderRadius: 15,
     borderWidth: 1,
-    borderColor: "#D8C6A3",
+    borderColor: "#616161",
     paddingHorizontal: 12,
-    alignItems: "center",
     flexDirection: "row",
-    marginBottom: 12,
+    alignItems: "center",
+        fontFamily:'Quicksand-Regular'
   },
 
   filterText: {
     fontSize: 14,
-    color: "#3C2A1E",
+    color: "#616161",
+   fontFamily:'Quicksand-Regular'
   },
 
   listContainer: {
@@ -350,7 +470,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
     borderColor: "#CBBBA2",
-    marginBottom: 10,
+    marginBottom: 12,
   },
 
   listItem: {
@@ -359,7 +479,7 @@ const styles = StyleSheet.create({
     borderBottomColor: "#EEE",
   },
 
-  listText: { fontSize: 14, color: "#3C2A1E" },
+  listText: { fontSize: 14, color: "#616161",    fontFamily:'Quicksand-Regular' },
 
   slotContainer: {
     backgroundColor: "#FFF",
@@ -367,101 +487,156 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#CBBBA2",
     padding: 10,
-    marginBottom: 10,
+    marginBottom: 12,
   },
 
-  slotButton: {
-    paddingVertical: 8,
-  },
+  slotButton: { paddingVertical: 8 },
 
   slotText: { fontSize: 14, color: "#3C2A1E" },
 
-  findButtonFull: {
-    width: "100%",
-    backgroundColor: "#3C2A1E",
+  // NEW: Button row for Clear + Find
+  buttonRow: {
+    flexDirection: "row",
+    gap: 12,
+    marginTop: 10,
+  },
+
+  clearButton: {
+    flex: 1,
+    backgroundColor: "#FFF",
+    borderWidth: 1,
+    borderColor: colors.nOrange,
     paddingVertical: 14,
-    borderRadius: 35,
+    borderRadius: 10,
     alignItems: "center",
-    marginTop: 5,
+  },
+
+  clearText: {
+    color: colors.nOrange,
+    fontSize: 19,
+    fontFamily: 'Quicksand-Bold',
+  },
+
+  findButton: {
+    flex: 1,
+    backgroundColor: colors.nOrange,
+    paddingVertical: 14,
+    borderRadius: 10,
+    alignItems: "center",
   },
 
   findText: {
     color: "#FFF",
-    fontSize: 16,
-    fontWeight: "600",
+    fontSize: 19,
+    fontFamily:'Quicksand-Bold'
   },
 
   card: {
-    borderRadius: 14,
-    marginHorizontal: 15,
-    marginBottom: 18,
+    borderRadius: 16,
+    marginHorizontal: 16,
+    marginBottom: 24,
     backgroundColor: "#EDE7DF",
     overflow: "hidden",
+    elevation: 6,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
   },
 
-  imageContainer: { position: "relative" },
-
-  eventImage: { width: "100%", height: 150 },
-
-  detailsOverlay: {
-    position: "absolute",
-    bottom: 1,
-    left: 1,
-    backgroundColor: "#4F3421",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
+  eventImage: {
+    width: "100%",
+    height: 240,
   },
 
-  detailsText: { color: "#FFF", fontSize: 12, fontWeight: "600" },
-
-  cardContent: { padding: 16 },
+  cardContent: { padding: 20 },
 
   cardTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#AC9478",
+    fontSize: 20,
+    fontFamily:'Quicksand-Bold',
+    color: "#444444",
     marginBottom: 8,
   },
 
-  dateRow: { flexDirection: "row", alignItems: "center", marginBottom: 4 },
-
-  timeRow: { flexDirection: "row", alignItems: "center", marginBottom: 10 },
-
-  detailText: {
-    marginLeft: 6,
-    fontSize: 14,
-    color: "#AC9478",
-  },
-
-  bottomRow: {
+  locationRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 12,
   },
 
-  participants: { flexDirection: "row", alignItems: "center" },
-
-  participantText: {
-    marginLeft: 6,
+  locationText: {
+    marginLeft: 8,
     fontSize: 12,
-    color: "#AC9478",
+    color: "#444444",
+    fontFamily:'Quicksand-Regular'
   },
 
-  price: { fontSize: 14, fontWeight: "600", color: "#3C2A1E" },
+  dateRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+
+  timeRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+
+  participantsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 20,
+  },
+
+  detailText: {
+    marginLeft: 8,
+    fontSize: 16,
+    color: "#444444",
+    fontFamily:'Quicksand-Regular'
+  },
 
   joinButton: {
-    backgroundColor: "#8C8C8C",
-    borderRadius: 8,
-    paddingVertical: 12,
+    width: "100%",
+    paddingVertical: 16,
     alignItems: "center",
   },
 
-  joinText: { color: "#000", fontSize: 16, fontWeight: "600" },
+  grayButton: {
+    backgroundColor: "#8C8C8C",
+  },
+
+  greenButton: {
+    backgroundColor: "#4CAF50",
+  },
+
+  completedButton: {
+    width: "100%",
+    backgroundColor: "#DDDDDD",
+    paddingVertical: 16,
+    borderRadius: 12,
+    alignItems: "center",
+  },
+
+  joinText: {
+    fontSize: 16,
+    fontFamily:'Quicksand-Bold',
+    color: "#000",
+  },
+
+  greenText: {
+    color: "#FFFFFF",
+  },
+
+  completedText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#777777",
+  },
 
   noData: {
     textAlign: "center",
-    marginTop: 20,
+    marginTop: 40,
     fontSize: 16,
     color: "#3C2A1E",
   },

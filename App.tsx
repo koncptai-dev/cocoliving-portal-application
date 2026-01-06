@@ -41,6 +41,19 @@ import CommunityRules from './src/components/CommunityRules';
 import TermsConditions from './src/components/TermsConditions';
 import VerificationStatusScreen from './src/components/verificationStatusScreen';
 import NoBookingProfileScreen from './src/components/NoBookingScreens/NoBookingProfileScreen';
+import BookingSuccessScreen from './src/components/Payments/BookingSuccessScreen';
+import PaymentFailedScreen from './src/components/Payments/PaymentFailedScreen';
+import BookingDetailsScreen from './src/user/BookingDetailsScreen';
+import PaymentHistoryScreen from './src/user/PaymentsScreen';
+import GatepassScreen from './src/user/GatePassScreen';
+import EditProfileScreen from './src/user/EditProfileScreen';
+import {
+  requestNotificationPermission,
+  createNotificationChannel,
+  getFcmToken,
+  listenForegroundNotifications,
+} from '././src/user/notificationservice';
+import AboutUsScreen from './src/components/AboutUsScreen';
 const Stack = createNativeStackNavigator();
 const API_BASE_URL = 'https://staging.cocoliving.in';
 
@@ -130,6 +143,14 @@ const AppNavigator = () => {
           <Stack.Screen name="MyBookings" component={MyBookings}/>
           <Stack.Screen name="FoodMenu" component={FoodMenuScreen}/>
           <Stack.Screen name="NoProfileScreen" component={NoBookingProfileScreen} />
+          <Stack.Screen name="BookingSuccessScreen" component={BookingSuccessScreen}/>
+          <Stack.Screen name="PaymentFailedScreen" component={PaymentFailedScreen}/>
+          <Stack.Screen name="BookingDetails" component={BookingDetailsScreen} />
+          <Stack.Screen name="PaymentScreen" component={PaymentHistoryScreen}/>
+          <Stack.Screen name="GatePassScreen" component={GatepassScreen}/>
+          <Stack.Screen name="EditProfileScreen" component={EditProfileScreen}/>
+          <Stack.Screen name="AboutUsScreen" component={AboutUsScreen}/>
+          
         </>
       ) : (
         <Stack.Screen name="Auth" component={AuthStack} />
@@ -144,7 +165,19 @@ const AppNavigator = () => {
 
 const App = () => {
   const [showSplash, setShowSplash] = useState(true);
+useEffect(() => {
+    // 🔔 Firebase Notification Setup
+    requestNotificationPermission();
+    createNotificationChannel();
+    getFcmToken();
 
+    const unsubscribe = listenForegroundNotifications();
+    return unsubscribe;
+  }, []);
+
+  if (showSplash) {
+    return <AnimatedSplash onFinish={() => setShowSplash(false)} />;
+  }
   return (
     <SafeAreaProvider> {/* ✅ Provider अब सबसे बाहर है – splash के time भी active रहेगा */}
       {showSplash ? (

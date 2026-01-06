@@ -22,12 +22,11 @@ const PaymentFailedScreen = ({ route, navigation }) => {
 
           {/* Title */}
           <Text style={styles.title}>Payment Failed</Text>
-          <Text style={styles.subtitle}>We couldn’t process your payment</Text>
+          <Text style={styles.subtitle}>Your payment could not be completed. Please try again.</Text>
 
           {/* Payment Details */}
           <View style={styles.card}>
             <Row label="Amount" value={`₹ ${amount?.toLocaleString()}`} />
-            <Row label="Transaction ID" value={transactionId} />
             <Row
               label="Status"
               value="FAILED"
@@ -51,18 +50,33 @@ const PaymentFailedScreen = ({ route, navigation }) => {
             <Text style={styles.primaryBtnText}>Try Again</Text>
           </TouchableOpacity>
 
+        <View style={styles.buttonContainer}>
+        
+        
           <TouchableOpacity
             style={styles.secondaryBtn}
-            onPress={() => navigation.navigate("Home")}
+            onPress={() => navigation.navigate("Support")}
           >
-            <Text style={styles.secondaryBtnText}>Go to Home</Text>
+            <Text style={styles.secondaryBtnText}>Contact Support Team</Text>
             <Ionicons name="arrow-forward" size={20} color="#3C2A1E" />
           </TouchableOpacity>
+        
+          <TouchableOpacity
+            style={styles.secondaryBtn}
+            onPress={() => navigation.navigate("ProfileScreen")}
+          >
+            <Text style={styles.secondaryBtnText}>Go to My Profile</Text>
+            <Ionicons name="arrow-forward" size={20} color="#3C2A1E" />
+          </TouchableOpacity>
+        
+        </View>
         </View>
 
-        <Text style={styles.helpText}>
-          Need help? <Text style={{ fontWeight: "bold" }}>Contact support</Text>
-        </Text>
+        <TouchableOpacity onPress={()=>navigation.navigate("Support")}>
+                 <Text style={styles.helpText}>
+                 Need help? <Text style={{ fontFamily:'Quicksand-Bold' }}>Contact support</Text>
+               </Text>
+               </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );
@@ -88,18 +102,13 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#fff" },
   scrollContent: { flexGrow: 1, padding: 22 },
   content: { alignItems: "center" },
-  title: { fontSize: 24, fontWeight: "800", color: "#3C2A1E", marginTop: 20 },
-  subtitle: {
-    fontSize: 14,
-    color: "#7D6C54",
-    marginBottom: 20,
-    marginTop: 6,
-    textAlign: "center",
-  },
+  title: { fontSize: 24, fontFamily:'Quicksand-Bold', color: "#4f3421", marginTop: 20 },
+  subtitle: { fontSize: 14, color: "#8c8c8c",fontFamily:'Quicksand-Regular', marginBottom: 20 },
   card: {
     width: "100%",
-    backgroundColor: "#F6EFE6",
-    borderRadius: 12,
+    backgroundColor: "#FFF",
+    // borderRadius: 12,
+    elevation:6,
     padding: 15,
     marginTop: 18,
   },
@@ -110,8 +119,8 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     paddingVertical: 10,
   },
-  label: { color: "#3C2A1E", fontSize: 14 },
-  value: { fontSize: 14, fontWeight: "700", color: "#3C2A1E" },
+  label: { color: "#000000", fontSize: 14,fontFamily:'Quicksand-Regular' },
+  value: { fontSize: 14, fontFamily:'Quicksand-Bold', color: "#000000" },
   reasonBox: {
     backgroundColor: "#FDEDEC",
     borderRadius: 12,
@@ -126,7 +135,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   primaryBtn: {
-    backgroundColor: "#E74C3C",
+    backgroundColor: "#f6a452",
     width: "100%",
     borderRadius: 10,
     padding: 16,
@@ -135,28 +144,35 @@ const styles = StyleSheet.create({
   primaryBtnText: {
     textAlign: "center",
     color: "#fff",
-    fontSize: 16,
-    fontWeight: "700",
+    fontSize: 20,
+   fontFamily:'Quicksand-Bold'
   },
   secondaryBtn: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    backgroundColor: "#F7F4F0",
+    // backgroundColor: "#F7F4F0",
     width: "100%",
     borderRadius: 10,
-    padding: 15,
+    padding: 5,
     marginTop: 12,
   },
-  secondaryBtnText: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: "#3C2A1E",
-  },
-  helpText: {
-    textAlign: "center",
-    paddingVertical: 25,
-    color: "#7D6C54",
-    fontSize: 14,
-  },
+   secondaryBtnText: { fontSize: 15, fontFamily:'Quicksand-Medium', color: "#3C2A1E" },
+   helpText: { textAlign: "center", paddingVertical: 25, color: "#7D6C54",fontFamily:'Quicksand-Medium' },
+    buttonContainer: {
+  width: "100%",
+  marginTop: 25,
+  backgroundColor: "#ede7df",
+  borderRadius: 14,
+  padding: 14,
+
+  // Android
+  elevation: 6,
+
+  // iOS
+  shadowColor: "#000",
+  shadowOffset: { width: 0, height: 4 },
+  shadowOpacity: 0.1,
+  shadowRadius: 8,
+},
 });

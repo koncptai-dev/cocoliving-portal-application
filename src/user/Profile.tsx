@@ -1,4 +1,4 @@
-// FINAL PROFILE SCREEN — FIXED WITH ENUM, VALIDATION, FLOATING LABELS, 35px HEIGHT
+// FINAL PROFILE SCREEN — UPDATED WITH PARENT EMAIL, VALIDATIONS, FUNCTIONAL GENDER
 
 import React, { useState, useEffect } from "react";
 import {
@@ -22,8 +22,9 @@ const BASE_URL = "https://staging.cocoliving.in";
 
 export default function Profile() {
   const { user } = useAuth();
+  const {refreshUser} = useAuth();
   const token = user?.token;
-  const navigation=useNavigation();
+  const navigation = useNavigation();
   const isStudent = user?.userType === "student";
   const isProfessional = user?.userType === "professional";
 
@@ -43,16 +44,38 @@ export default function Profile() {
     collegeName: "",
     course: "",
     parentName: "",
+    parentEmail: "",     // ← NEW: matches web
     parentMobile: "",
     companyName: "",
     position: "",
     allergies: "",
-    foodPreference: null, // ⭐ ENUM SAFE
+    foodPreference: "",  // ← string for easier handling
   });
 
   const [image, setImage] = useState(null);
   const [showDOB, setShowDOB] = useState(false);
+  const [showGender, setShowGender] = useState(false);   // ← NEW
   const [showFood, setShowFood] = useState(false);
+
+  const [errors, setErrors] = useState({
+    parentMobile: "",
+    parentEmail: "",
+  });
+
+  // 🔥 Validation functions (same logic as web)
+  // const validateParentMobile = (value: string) => {
+  //   if (value && !/^\d{10}$/.test(value)) {
+  //     return "Parent Mobile must be exactly 10 digits";
+  //   }
+  //   return "";
+  // };
+
+  const validateParentEmail = (value: string) => {
+    if (value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+      return "Invalid email format";
+    }
+    return "";
+  };
 
   // 🔥 Load User
   useEffect(() => {
@@ -79,11 +102,12 @@ export default function Profile() {
         collegeName: u.collegeName || "",
         course: u.course || "",
         parentName: u.parentName || "",
+        parentEmail: u.parentEmail || "",      // ← NEW
         parentMobile: u.parentMobile || "",
         companyName: u.companyName || "",
         position: u.position || "",
         allergies: u.allergies || "",
-        foodPreference: u.foodPreference || null, // ⭐
+        foodPreference: u.foodPreference || "",
       });
 
       if (u.profileImage) {
@@ -103,77 +127,75 @@ export default function Profile() {
 
   const update = (key, val) => setProfile({ ...profile, [key]: val });
 
-  // 🔥 Save Profile (Backend-Safe)
-const saveProfile = async () => {
-  try {
-    const fullName = `${profile.firstName} ${profile.lastName}`.trim();
+  // 🔥 Save Profile
+  const saveProfile = async () => {
+    // Validate parent fields before sending
+    // const mobileError = validateParentMobile(profile.parentMobile);
+    const emailError = validateParentEmail(profile.parentEmail);
 
-    const form = new FormData();
-
-    form.append("fullName", fullName);
-    form.append("dateOfBirth", profile.dateOfBirth || "");
-    form.append("gender", profile.gender || "");
-    form.append("phone", profile.phone || "");
-    form.append("address", profile.address || "");
-    form.append("collegeName", profile.collegeName || "");
-    form.append("course", profile.course || "");
-    form.append("parentName", profile.parentName || "");
-    form.append("parentMobile", profile.parentMobile || "");
-    form.append("companyName", profile.companyName || "");
-    form.append("position", profile.position || "");
-    form.append("allergies", profile.allergies || "");
-
-    // ✅ FOOD PREFERENCE ENUM FIX  
-    if (profile.dietary === "Jain" || profile.dietary === "Non-Jain") {
-      form.append("foodPreference", profile.dietary);
+   if (emailError) {
+      setErrors({ parentEmail: emailError });
+      Toast.show({ type: "error", text1: "Please fix error in parent email" });
+      return;
     }
 
-    // ✅ IMAGE UPLOAD FIX
-    if (image && !image.startsWith("https://")) {
-      // means this is a NEW image
-      form.append("profileImage", {
-        uri: image,
-        type: "image/jpeg",
-        name: "profile.jpg",
-      });
-    }
+    try {
+      const fullName = `${profile.firstName} ${profile.lastName}`.trim();
 
-    const res = await axios.put(
-      `${BASE_URL}/api/user/update-profile/${user.id}`,
-      form,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "multipart/form-data",
-        },
+      const form = new FormData();
+
+      form.append("fullName", fullName);
+      form.append("dateOfBirth", profile.dateOfBirth || "");
+      form.append("gender", profile.gender || "");
+      form.append("phone", profile.phone || "");
+      form.append("address", profile.address || "");
+      form.append("collegeName", profile.collegeName || "");
+      form.append("course", profile.course || "");
+      form.append("parentName", profile.parentName || "");
+      form.append("parentEmail", profile.parentEmail || "");     // ← NEW
+      form.append("parentMobile", profile.parentMobile || "");
+      form.append("companyName", profile.companyName || "");
+      form.append("position", profile.position || "");
+      form.append("allergies", profile.allergies || "");
+      form.append("foodPreference", profile.foodPreference || "");  // ← FIXED & always append
+
+      // IMAGE UPLOAD
+      if (image && !image.startsWith("https://")) {
+        form.append("profileImage", {
+          uri: image,
+          type: "image/jpeg",
+          name: "profile.jpg",
+        } as any);
       }
-    );
 
-    Toast.show({
-      type: "success",
-      text1: "Profile Updated Successfully!",
-      // position: "bottom",
-    });
+      await axios.put(
+        `${BASE_URL}/api/user/update-profile/${user.id}`,
+        form,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+      await refreshUser();
 
-  } catch (e) {
-    console.log("UPDATE ERROR:", e.response?.data);
-
-    const msg =
-      e.response?.data?.error ||
-      e.response?.data?.message ||
-      "Failed to update profile";
-
-    Toast.show({
-      type: "error",
-      text1: msg,
-      // position: "bottom",
-    });
-  }
-};
-
-
+      Toast.show({
+        type: "success",
+        text1: "Profile Updated Successfully!",
+      });
+    } catch (e: any) {
+      console.log("UPDATE ERROR:", e.response?.data);
+      const msg =
+        e.response?.data?.error ||
+        e.response?.data?.message ||
+        "Failed to update profile";
+      Toast.show({ type: "error", text1: msg });
+    }
+  };
 
   return (
+    <>
     <ScrollView style={styles.container}>
       {/* HEADER */}
       <View style={styles.header}>
@@ -189,7 +211,7 @@ const saveProfile = async () => {
           ) : (
             <View style={styles.profileCircle}>
               <Text style={styles.profileLetter}>
-                {profile.firstName?.charAt(0)}
+                {profile.firstName?.charAt(0)?.toUpperCase()}
               </Text>
             </View>
           )}
@@ -204,9 +226,7 @@ const saveProfile = async () => {
             <Text style={isStudent ? styles.tabTextActive : styles.tabTextInactive}>Student</Text>
           </View>
 
-          <View
-            style={[styles.tab, isProfessional ? styles.tabActive : styles.tabInactive]}
-          >
+          <View style={[styles.tab, isProfessional ? styles.tabActive : styles.tabInactive]}>
             <Text style={isProfessional ? styles.tabTextActive : styles.tabTextInactive}>
               Professional
             </Text>
@@ -227,17 +247,33 @@ const saveProfile = async () => {
       <View style={styles.twoCol}>
         <FloatingDropdown
           label="Date of Birth"
-          value={profile.dateOfBirth ? new Date(profile.dateOfBirth).toLocaleDateString() : ""}
+          value={profile.dateOfBirth ? new Date(profile.dateOfBirth).toLocaleDateString('en-IN') : "Select"}
           onPress={() => setShowDOB(true)}
         />
 
         <FloatingDropdown
           label="Gender"
-          value={profile.gender}
-          onPress={() => {}}
+          value={profile.gender || "Select Gender"}
+          onPress={() => setShowGender(!showGender)}
         />
       </View>
 
+      {/* Gender Options */}
+      {showGender && (
+        <View style={styles.optionList}>
+          <TouchableOpacity onPress={() => { update("gender", "Male"); setShowGender(false); }}>
+            <Text style={styles.optionItem}>Male</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => { update("gender", "Female"); setShowGender(false); }}>
+            <Text style={styles.optionItem}>Female</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => { update("gender", "Other"); setShowGender(false); }}>
+            <Text style={styles.optionItem}>Other</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* DOB Picker */}
       {showDOB && (
         <DateTimePicker
           value={profile.dateOfBirth ? new Date(profile.dateOfBirth) : new Date()}
@@ -250,15 +286,19 @@ const saveProfile = async () => {
       )}
 
       {/* EMAIL */}
-      <FloatingStaticVerified label="Email" value={profile.email} />
+      <FloatingStaticVerified
+  label="Email"
+  value={profile.email}
+  verified={user?.isEmailVerified}
+/>
 
       {/* PHONE */}
-      <FloatingPhone
-        label="Mobile Number"
-        value={profile.phone}
-        onChangeText={(v) => update("phone", v)}
-        verified={user?.isPhoneVerified}
-      />
+   <FloatingPhone
+  label="Mobile Number"
+  value={profile.phone}
+  onChangeText={(v) => update("phone", v)}
+  verified={user?.isPhoneVerified}
+/>
 
       {/* ADDRESS */}
       <FloatingInputFull label="Permanent Address" value={profile.address} onChangeText={(v) => update("address", v)} />
@@ -276,7 +316,24 @@ const saveProfile = async () => {
 
           <FloatingInputFull label="Parent Name" value={profile.parentName} onChangeText={(v) => update("parentName", v)} />
 
-          <FloatingInputFull label="Parent Mobile" value={profile.parentMobile} onChangeText={(v) => update("parentMobile", v)} />
+          <FloatingInputFull
+            label="Parent Email"
+            value={profile.parentEmail}
+            onChangeText={(v) => {
+              update("parentEmail", v);
+              setErrors(prev => ({ ...prev, parentEmail: validateParentEmail(v) }));
+            }}
+            keyboardType="email-address"
+          />
+          {errors.parentEmail && <Text style={styles.errorText}>{errors.parentEmail}</Text>}
+
+       <FloatingInputFull
+            label="Parent Mobile"
+            value={profile.parentMobile}
+            onChangeText={(v) => update("parentMobile", v)}  
+            keyboardType="phone-pad"
+          />
+          
         </>
       )}
 
@@ -296,7 +353,7 @@ const saveProfile = async () => {
 
       <FloatingDropdown
         label="Food Preference"
-        value={profile.foodPreference}
+        value={profile.foodPreference || "Select"}
         onPress={() => setShowFood(!showFood)}
       />
 
@@ -312,6 +369,8 @@ const saveProfile = async () => {
         </View>
       )}
 
+      
+
       <FloatingInputFull label="Allergies" value={profile.allergies} onChangeText={(v) => update("allergies", v)} />
 
       {/* SAVE BUTTON */}
@@ -319,51 +378,109 @@ const saveProfile = async () => {
         <Text style={styles.saveText}>Save</Text>
       </TouchableOpacity>
 
-    
+      <View style={{ height: 40 }} />
     </ScrollView>
+
+      <Toast />
+</>
+    
   );
 }
 
 /* FLOATING COMPONENTS */
-const FloatingInput = ({ label, value, onChangeText }) => (
+const FloatingInput = ({ label, value, onChangeText, keyboardType = "default" }) => (
   <View style={styles.floatWrapper}>
     <Text style={styles.smallLabel}>{label}</Text>
-    <TextInput style={styles.floatInput} value={value} onChangeText={onChangeText} />
+    <TextInput
+      style={styles.floatInput}
+      value={value}
+      onChangeText={onChangeText}
+      keyboardType={keyboardType}
+    />
   </View>
 );
 
-const FloatingInputFull = FloatingInput;
+const FloatingInputFull = ({ label, value, onChangeText, keyboardType = "default" }) => (
+  <View style={styles.floatWrapper}>
+    <Text style={styles.smallLabel}>{label}</Text>
+    <TextInput
+      style={styles.floatInput}
+      value={value}
+      onChangeText={onChangeText}
+      keyboardType={keyboardType}
+    />
+  </View>
+);
 
 const FloatingDropdown = ({ label, value, onPress }) => (
   <TouchableOpacity style={styles.floatWrapper} onPress={onPress}>
     <Text style={styles.smallLabel}>{label}</Text>
     <View style={styles.dropdownRow}>
-      <Text style={styles.dropdownText}>{value || "Select"}</Text>
+      <Text style={styles.dropdownText}>{value}</Text>
       <Ionicons name="chevron-down" size={18} color="#4C3D2A" />
     </View>
   </TouchableOpacity>
 );
 
-const FloatingStaticVerified = ({ label, value }) => (
+const FloatingStaticVerified = ({ label, value, verified }) => (
   <View style={styles.floatWrapper}>
     <Text style={styles.smallLabel}>{label}</Text>
+
     <View style={styles.dropdownRow}>
-      <Text style={[styles.floatInput, { flex: 1, color: "#666" }]}>{value}</Text>
-      <Ionicons name="checkmark-circle" size={16} color="green" />
-      <Text style={{ color: "green", fontSize: 12 }}>Verified</Text>
+      <Text style={[styles.floatInput, { flex: 1, color: "#666" }]}>
+        {value}
+      </Text>
+
+      {verified ? (
+        <>
+          <Ionicons name="checkmark-circle" size={16} color="green" />
+          <Text style={{ color: "green", fontSize: 12, marginLeft: 4 }}>
+            Verified
+          </Text>
+        </>
+      ) : (
+        <>
+          <Ionicons name="alert-circle-outline" size={16} color="#D48A00" />
+          <Text style={{ color: "#D48A00", fontSize: 12, marginLeft: 4 }}>
+            Not Verified
+          </Text>
+        </>
+      )}
     </View>
   </View>
 );
 
+
 const FloatingPhone = ({ label, value, onChangeText, verified }) => (
   <View style={styles.floatWrapper}>
     <Text style={styles.smallLabel}>{label}</Text>
+
     <View style={styles.dropdownRow}>
-      <TextInput style={[styles.floatInput, { flex: 1 }]} value={value} onChangeText={onChangeText} />
-      {!verified && (
+      <TextInput
+        style={[
+          styles.floatInput,
+          { flex: 1, color: verified ? "#666" : "#000" },
+        ]}
+        value={value}
+        onChangeText={onChangeText}
+        keyboardType="phone-pad"
+        editable={!verified}              // 🔒 KEY LINE
+        selectTextOnFocus={!verified}     // 🔒 prevents cursor
+      />
+
+      {verified ? (
+        <>
+          <Ionicons name="checkmark-circle" size={16} color="green" />
+          <Text style={{ color: "green", fontSize: 12, marginLeft: 4 }}>
+            Verified
+          </Text>
+        </>
+      ) : (
         <>
           <Ionicons name="alert-circle-outline" size={16} color="#D48A00" />
-          <Text style={{ color: "#D48A00", fontSize: 12 }}>Not Verified</Text>
+          <Text style={{ color: "#D48A00", fontSize: 12, marginLeft: 4 }}>
+            Not Verified
+          </Text>
         </>
       )}
     </View>
@@ -380,11 +497,7 @@ const styles = StyleSheet.create({
   rowTop: { flexDirection: "row", alignItems: "center", marginBottom: 25 },
 
   imageWrapper: { position: "relative" },
-  profileImg: {
-    width: 95,
-    height: 95,
-    borderRadius: 50,
-  },
+  profileImg: { width: 95, height: 95, borderRadius: 50 },
   profileCircle: {
     width: 95,
     height: 95,
@@ -482,6 +595,14 @@ const styles = StyleSheet.create({
     fontSize: 14,
     borderBottomWidth: 1,
     borderBottomColor: "#eee",
+  },
+
+  errorText: {
+    color: "red",
+    fontSize: 12,
+    marginLeft: 12,
+    marginTop: -8,
+    marginBottom: 10,
   },
 
   saveBtn: {

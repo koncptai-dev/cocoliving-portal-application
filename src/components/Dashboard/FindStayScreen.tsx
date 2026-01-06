@@ -12,7 +12,8 @@ import {
 import Ionicons from "react-native-vector-icons/Ionicons";
 import axios from "axios";
 import { useAuth } from "../../context/AuthContext";
-
+import { useFocusEffect } from "@react-navigation/native";
+import { useCallback } from "react";
 const baseURL = "https://staging.cocoliving.in";
 const PLACEHOLDERS = ["city", "room type"];
 
@@ -27,12 +28,44 @@ const FindStayScreen = ({ navigation }) => {
   const firstLetter = user?.fullName?.charAt(0)?.toUpperCase() || "U";
 
   /* ================= API ================= */
-  useEffect(() => {
-    axios
-      .get(`${baseURL}/api/property/getAll`)
-      .then((res) => setProperties(res.data?.properties || []))
-      .catch(() => setProperties([]));
-  }, []);
+ const fetchProperties = useCallback(async () => {
+  try {
+    const res = await axios.get(
+      `${baseURL}/api/property/getPropertiesForUser`,
+      {
+        headers: {
+          Authorization: `Bearer ${user?.token}`,
+        },
+      }
+    );
+
+    const data = res.data?.properties || [];
+
+    // ✅ ONLY AVAILABLE ROOMS
+    const filtered = data
+      .map((p) => ({
+        ...p,
+        rateCard: p.rateCard?.filter(
+          (r) => r.isAvailable === true && r.availableRooms > 0
+        ),
+      }))
+      .filter((p) => p.rateCard?.length > 0);
+
+    setProperties(filtered);
+  } catch (e) {
+    setProperties([]);
+  }
+}, [user?.token]);
+
+useEffect(() => {
+  fetchProperties();
+
+  const interval = setInterval(() => {
+    fetchProperties();
+  }, 10000); // every 10 sec
+
+  return () => clearInterval(interval);
+}, [fetchProperties]);
 
   /* ================= Placeholder Animation ================= */
   useEffect(() => {
@@ -170,7 +203,7 @@ const FindStayScreen = ({ navigation }) => {
                   <View style={styles.titleRow}>
                     <View style={{ flex: 1 }}>
                       <Text style={styles.roomName}>
-                        {room.roomType} Sharing Space
+                        {room.roomType} 
                       </Text>
                       <Text style={styles.address} numberOfLines={2}>
                         {property.address}

@@ -83,26 +83,41 @@ useEffect(() => {
 const fetchUserBookings = async () => {
   try {
     setLoadingRoom(true);
+
     const response = await axios.get(
-      `${baseURL}/api/book-room/getUserBookings?page=1&limit=10`,
+      `${baseURL}/api/book-room/getUserBookings?page=1&limit=30`,
       { headers: { Authorization: `Bearer ${token}` } }
     );
-    const { bookings: bookingData = [] } = response.data;
 
-    // Find active/approved booking
-    const activeBooking = bookingData.find(booking => 
-      booking.displayStatus?.toLowerCase() === 'active' || 
-      booking.displayStatus?.toLowerCase() === 'approved'
+    const bookingData = response.data.bookings || [];
+    const today = new Date();
+
+    const activeBookings = bookingData.filter((b) => {
+      const status = b.displayStatus?.toLowerCase();
+      const checkIn = new Date(b.checkInDate);
+      const checkOut = b.checkOutDate ? new Date(b.checkOutDate) : null;
+
+      return (
+        ["approved", "active"].includes(status) &&
+        checkIn <= today &&
+        (checkOut ? today <= checkOut : true)
+      );
+    });
+
+    activeBookings.sort(
+      (a, b) => new Date(a.checkInDate) - new Date(b.checkInDate)
     );
 
-    if (activeBooking && activeBooking.room?.roomNumber) {
+    const activeBooking = activeBookings[0];
+
+    if (activeBooking?.room?.roomNumber) {
       setRoomNumber(`#${activeBooking.room.roomNumber}`);
     } else {
-      setRoomNumber('No room assigned');
+      setRoomNumber("No room assigned");
     }
   } catch (error) {
-    console.error('Error fetching bookings for complaint:', error);
-    setRoomNumber('Error loading room');
+    console.error("Error fetching bookings:", error);
+    setRoomNumber("Error loading room");
   } finally {
     setLoadingRoom(false);
   }
@@ -179,7 +194,7 @@ const handleSubmit = async () => {
     );
 
     console.log("✅ SUCCESS:", response.data);
-    Toast.show({ type: "success", text1: "Ho gaya bhai!" });
+    Toast.show({ type: "success", text1: "Ticket Raised Success" });
     navigation.goBack();
 
   }catch (error: any) {
@@ -220,7 +235,10 @@ const handleSubmit = async () => {
 
   return (
     <View style={{ flex: 1, backgroundColor: '#fff' }}>
-      <HeaderGradient title="Help & Support" />
+          <HeaderGradient
+        image={require("../../../assets/images/support.png")}
+        title="Help & Support"
+      />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -237,7 +255,7 @@ const handleSubmit = async () => {
 
           {/* ROOM NUMBER */}
           <View style={styles.dropdownBox}>
-            <Text style={styles.smallLabel}>ROOM NUMBER</Text>
+            <Text style={styles.smallLabel}>Room Number</Text>
             <Text style={styles.dropdownText}>
               {loadingRoom ? 'Loading...' : roomNumber}
             </Text>
@@ -245,13 +263,13 @@ const handleSubmit = async () => {
 
           {/* DATE */}
           <View style={styles.dropdownBox}>
-            <Text style={styles.smallLabel}>DATE</Text>
+            <Text style={styles.smallLabel}>Date</Text>
             <Text style={styles.dropdownText}>{today}</Text>
           </View>
 
           {/* ISSUE */}
           <View style={styles.textBox}>
-            <Text style={styles.smallLabel}>ISSUE</Text>
+            <Text style={styles.smallLabel}>Issue</Text>
             <TextInput
               placeholder="Enter issue"
               style={styles.textInput}
@@ -262,7 +280,7 @@ const handleSubmit = async () => {
 
           {/* DESCRIPTION */}
           <View style={styles.textAreaBox}>
-            <Text style={styles.smallLabel}>DESCRIPTION</Text>
+            <Text style={styles.smallLabel}>Description</Text>
             <TextInput
               style={styles.textArea}
               multiline
@@ -274,7 +292,7 @@ const handleSubmit = async () => {
 
        {/* UPLOAD PHOTO */}
 <View style={styles.uploadBox}>
-  <Text style={styles.smallLabel}>UPLOAD PHOTO (OPTIONAL)</Text>
+  <Text style={styles.smallLabel}>Upload Photo (Optional)</Text>
 
   {/* No image */}
   {!uploadedImage && (
@@ -325,7 +343,7 @@ const handleSubmit = async () => {
             style={styles.dropdownBox}
             onPress={() => setShowUrgencyOptions(!showUrgencyOptions)}
           >
-            <Text style={styles.smallLabel}>URGENCY</Text>
+            <Text style={styles.smallLabel}>Urgency</Text>
             <Text style={styles.dropdownText}>{urgency}</Text>
             <Text style={styles.arrow}>▼</Text>
           </TouchableOpacity>
@@ -364,16 +382,16 @@ export default RaiseComplaint;
 const styles = StyleSheet.create({
   tagline: {
     textAlign: 'center',
-    fontSize: 14,
+    fontSize: 16,
     marginTop: 10,
-    fontWeight: '700',
+    fontFamily:'Quicksand-Bold'
   },
   screenTitle: {
     textAlign: 'center',
     marginTop: 15,
-    fontSize: 22,
+    fontSize: 20,
     color: colors.primary,
-    fontWeight: '700',
+   fontFamily:'Quicksand-Bold'
   },
   body: {
     padding: 20,
@@ -385,23 +403,23 @@ const styles = StyleSheet.create({
     left: 20,
     backgroundColor: '#fff',
     paddingHorizontal: 5,
-    fontSize: 10,
-    color: colors.primary,
-    fontWeight: '700',
+    fontSize: 14,
+    color: '#000000',
+    fontFamily:'Quicksand-Medium'
   },
 
   dropdownBox: {
     borderWidth: 1,
-    borderColor: colors.primary,
-    borderRadius: 20,
+    borderColor: '#616161',
+    borderRadius: 10,
     padding: 15,
     marginBottom: 18,
     position: 'relative',
   },
 
   dropdownText: {
-    fontSize: 15,
-    color: '#000',
+    fontSize: 16,
+    color: '#444444',
   },
 
   arrow: {
@@ -431,8 +449,8 @@ const styles = StyleSheet.create({
 
   textBox: {
     borderWidth: 1,
-    borderColor: colors.primary,
-    borderRadius: 20,
+      borderColor: '#616161',
+    borderRadius: 10,
     padding: 15,
     position: 'relative',
     marginBottom: 18,
@@ -440,13 +458,14 @@ const styles = StyleSheet.create({
 
   textInput: {
     fontSize: 15,
-    color: '#000',
+    color: '#444444',
+    fontFamily:'Quicksand-Medium'
   },
 
   textAreaBox: {
     borderWidth: 1,
-    borderColor: colors.primary,
-    borderRadius: 20,
+    borderColor: '#616161',
+    borderRadius: 10,
     padding: 15,
     marginBottom: 18,
   },
@@ -454,18 +473,23 @@ const styles = StyleSheet.create({
   textArea: {
     height: 100,
     textAlignVertical: 'top',
-    fontSize: 14,
+    fontSize: 16,
+    fontFamily:'Quicksand-Medium'
+
   },
   uploadText: {
-    fontSize: 15,
-    color: '#444',
+    fontSize: 16,
+    color: '#4f3421',
     marginTop: 12,
+    fontFamily:'Quicksand-Bold',
+    textAlign:'center'
   },
 
   uploadSub: {
-    fontSize: 11,
-    color: '#777',
+    fontSize: 16,
+    color: '#8c8c8c',
     marginTop: 5,
+   fontFamily:'Quicksand-Regular'
   },
 
   orLineContainer: {
@@ -477,16 +501,17 @@ const styles = StyleSheet.create({
   line: {
     flex: 1,
     height: 1,
-    backgroundColor: '#ccc',
+    backgroundColor: '#616161',
   },
 
   orText: {
     marginHorizontal: 10,
-    color: '#666',
+    color: '#616161',
+    fontFamily:'Quicksand-SemiBold'
   },
 
   cameraBtn: {
-    backgroundColor: colors.primary,
+    backgroundColor: colors.nOrange,
     paddingVertical: 10,
     paddingHorizontal: 25,
     borderRadius: 30,
@@ -494,26 +519,26 @@ const styles = StyleSheet.create({
 
   cameraText: {
     color: '#fff',
-    fontWeight: '700',
+    fontFamily:'Quicksand-Bold'
   },
 
   submitBtn: {
-    backgroundColor: colors.primary,
+    backgroundColor: colors.nOrange,
     paddingVertical: 18,
-    borderRadius: 30,
+    borderRadius: 10,
     marginTop: 10,
   },
 
   submitText: {
     textAlign: 'center',
     color: '#fff',
-    fontSize: 18,
-    fontWeight: '700',
+    fontSize: 20,
+    fontFamily:'Quicksand-Bold'
   },
   uploadBox: {
   borderWidth: 1,
-  borderColor: colors.primary,
-  borderRadius: 20,
+     borderColor: '#616161',
+    borderRadius: 10,
   padding: 15,
   marginBottom: 18,
   position: 'relative',

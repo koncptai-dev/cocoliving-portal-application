@@ -2,7 +2,6 @@ import React from "react";
 import { View, TouchableOpacity, Image, StyleSheet, Platform } from "react-native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import Ionicons from "react-native-vector-icons/Ionicons";
-import { useAuth } from "../context/AuthContext";
 
 // Screens
 import BrowsePropertiesScreen from "../user/BrowsePropertiesScreen";
@@ -15,53 +14,55 @@ import SupportScreen from "../user/Support";
 const Tab = createBottomTabNavigator();
 
 export default function BottomTabs({ hasBooking }) {
-  const { user } = useAuth(); // not used for booking anymore
-
   console.log("HAS BOOKING ---> ", hasBooking);
 
   return (
- <Tab.Navigator
-  initialRouteName="Center"  
-  screenOptions={{
-    headerShown: false,
-    tabBarShowLabel: true,
-    tabBarActiveTintColor: "#4B3426",
-    tabBarInactiveTintColor: "#AFAFAF",
-    tabBarStyle: {
-      height: 65,
-      backgroundColor: "#fff",
-      borderTopWidth: 0,
-      elevation: 15,
-      shadowColor: "#000",
-      shadowOpacity: 0.1,
-      shadowRadius: 8,
-    },
-  }}
->
-
-      {/* 🛏 ROOMS */}
+    <Tab.Navigator
+      initialRouteName="Center"
+      screenOptions={{
+        headerShown: false,
+        tabBarShowLabel: true,
+        tabBarActiveTintColor: "#4B3426",
+        tabBarInactiveTintColor: "#AFAFAF",
+        tabBarStyle: {
+          height: 65,
+          backgroundColor: "#fff",
+          borderTopWidth: 0,
+          elevation: 15,
+          shadowColor: "#000",
+          shadowOpacity: 0.1,
+          shadowRadius: 8,
+          // marginBottom:10,
+        },
+      }}
+    >
+      {/* ALWAYS: Rooms on the left */}
       <Tab.Screen
         name="Rooms"
         component={BrowsePropertiesScreen}
         options={{
+          tabBarLabel: "Rooms",
           tabBarIcon: ({ color }) => (
             <Ionicons name="bed-outline" size={23} color={color} />
           ),
         }}
       />
 
-      {/* ⭐ EVENTS */}
-      <Tab.Screen
-        name="Events"
-        component={EventsScreen}
-        options={{
-          tabBarIcon: ({ color }) => (
-            <Ionicons name="star-outline" size={23} color={color} />
-          ),
-        }}
-      />
+      {/* BOOKED USER: Events next */}
+      {hasBooking && (
+        <Tab.Screen
+          name="Events"
+          component={EventsScreen}
+          options={{
+            tabBarLabel: "Events",
+            tabBarIcon: ({ color }) => (
+              <Ionicons name="star-outline" size={23} color={color} />
+            ),
+          }}
+        />
+      )}
 
-      {/* 🎯 CENTER DASHBOARD (Floating Button) */}
+      {/* CENTER: Always in the middle */}
       <Tab.Screen
         name="Center"
         component={hasBooking ? DashboardScreen : FindStayScreen}
@@ -78,22 +79,26 @@ export default function BottomTabs({ hasBooking }) {
         }}
       />
 
-      {/* 🕒 LOGS */}
-      <Tab.Screen
-        name="Logs"
-        component={AccessHistory}
-        options={{
-          tabBarIcon: ({ color }) => (
-            <Ionicons name="time-outline" size={23} color={color} />
-          ),
-        }}
-      />
+      {/* BOOKED USER: Logs next */}
+      {hasBooking && (
+        <Tab.Screen
+          name="Logs"
+          component={AccessHistory}
+          options={{
+            tabBarLabel: "Logs",
+            tabBarIcon: ({ color }) => (
+              <Ionicons name="time-outline" size={23} color={color} />
+            ),
+          }}
+        />
+      )}
 
-      {/* 🎧 SUPPORT */}
+      {/* ALWAYS: Support on the right */}
       <Tab.Screen
         name="Support"
         component={SupportScreen}
         options={{
+          tabBarLabel: "Support",
           tabBarIcon: ({ color }) => (
             <Ionicons name="headset-outline" size={23} color={color} />
           ),
@@ -111,7 +116,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#4B3426",
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: Platform.OS === "ios" ? 35 : 25,
+    marginBottom: Platform.OS === "ios" ? 35 : 45,
     elevation: 6,
     shadowColor: "#000",
     shadowOpacity: 0.25,
@@ -121,7 +126,6 @@ const styles = StyleSheet.create({
   centerIcon: {
     width: 40,
     height: 40,
-    // tintColor: "#fff",
     resizeMode: "contain",
   },
 });

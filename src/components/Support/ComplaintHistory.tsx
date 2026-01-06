@@ -29,46 +29,45 @@ const ComplaintHistory = () => {
     "January","February","March","April","May","June",
     "July","August","September","October","November","December",
   ];
-
   const statusOptions = ["open", "closed"];
 
-  // ----------- FETCH TICKETS -----------
   const fetchTickets = async () => {
     try {
       const res = await axios.get(`${baseURL}/api/tickets/get-user-tickets`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-
       setTickets(res.data.tickets || []);
     } catch (error) {
       console.log("❌ ERROR LOADING HISTORY:", error);
     }
   };
 
-  // ----------- FETCH ACTIVE ROOM -----------
   const fetchUserBookings = async () => {
     try {
       setLoadingRoom(true);
       const response = await axios.get(
-        `${baseURL}/api/book-room/getUserBookings?page=1&limit=10`,
+        `${baseURL}/api/book-room/getUserBookings?page=1&limit=30`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      const { bookings: bookingData = [] } = response.data;
 
-      // Find active/approved booking
-      const activeBooking = bookingData.find(
-        (booking) =>
-          booking.displayStatus?.toLowerCase() === "active" ||
-          booking.displayStatus?.toLowerCase() === "approved"
-      );
+      const bookingData = response.data.bookings || [];
+      const today = new Date();
 
-      if (activeBooking && activeBooking.room?.roomNumber) {
-        setRoomNumber(activeBooking.room.roomNumber);
-      } else {
-        setRoomNumber("No room assigned");
-      }
-    } catch (error) {
-      console.error("Error fetching bookings:", error);
+      const currentBooking = bookingData.find((b) => {
+        const status = b.displayStatus?.toLowerCase();
+        const checkIn = b.checkInDate ? new Date(b.checkInDate) : null;
+        const checkOut = b.checkOutDate ? new Date(b.checkOutDate) : null;
+
+        return (
+          ["approved", "active"].includes(status) &&
+          checkIn &&
+          today >= checkIn &&
+          (checkOut ? today <= checkOut : true)
+        );
+      });
+
+      setRoomNumber(currentBooking?.room?.roomNumber || "No room assigned");
+    } catch {
       setRoomNumber("Error loading room");
     } finally {
       setLoadingRoom(false);
@@ -76,89 +75,72 @@ const ComplaintHistory = () => {
   };
 
   useEffect(() => {
-    if (!token) {
-      setLoadingRoom(false);
-      return;
-    }
-
+    if (!token) return;
     fetchUserBookings();
     fetchTickets();
   }, [token]);
 
-  // ----------- APPLY FILTERS -----------
   const filteredTickets = tickets.filter((t) => {
-    let match = true;
+    let ok = true;
 
-    if (filterStatus !== "Status") {
-      match = match && t.status === filterStatus;
-    }
-
+    if (filterStatus !== "Status") ok = ok && t.status === filterStatus;
     if (filterMonth !== "Month") {
-      const ticketMonth = new Date(t.date).getMonth();
-      match = match && ticketMonth === months.indexOf(filterMonth);
+      const m = new Date(t.date).getMonth();
+      ok = ok && m === months.indexOf(filterMonth);
     }
-
-    return match;
+    return ok;
   });
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#fff" }}>
-      <HeaderGradient title="Help & Support" />
+    <View style={styles.container}>
+      <HeaderGradient
+        image={require("../../../assets/images/support.png")}
+        title="Help & Support"
+      />
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 80 }}
-      >
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 80 }}>
         <Text style={styles.tagline}>
-          Your comfort matters.{"\n"}Tell us what's wrong, we'll fix it soon.
+          Your comfort matters.{"\n"}Tell us what’s wrong, we’ll fix it soon.
         </Text>
 
-        {/* Top Buttons */}
-        <View style={{ paddingHorizontal: 20, marginTop: 10 }}>
-          <TouchableOpacity style={styles.primaryBtn}>
-            <Text style={styles.primaryText}>Complaint History</Text>
-          </TouchableOpacity>
+        <Text style={styles.mainTitle}>Complaint History</Text>
 
-          <TouchableOpacity style={styles.secondaryBtn}>
-            <Text style={styles.secondaryText}>
-              Room No:{" "}
-              {loadingRoom
-                ? "Loading..."
-                : roomNumber === "No room assigned" || roomNumber === "Error loading room"
-                ? roomNumber
-                : roomNumber}
-            </Text>
-          </TouchableOpacity>
-        </View>
+        <Text style={styles.roomText}>
+          Room No: {loadingRoom ? "Loading..." : roomNumber}
+        </Text>
 
-        {/* ---------------- FILTER BOX ---------------- */}
-        <View style={styles.filterContainer}>
-          {/* Month Filter */}
-          <TouchableOpacity
-            style={styles.filterBox}
-            onPress={() => {
-              setShowMonthDropdown(!showMonthDropdown);
-              setShowStatusDropdown(false);
-            }}
-          >
-            <Text style={styles.filterText}>{filterMonth}</Text>
-            <Text style={styles.arrow}>▼</Text>
-          </TouchableOpacity>
+        {/* FILTER CARD */}
+        <View style={styles.filterCard}>
+          <View style={styles.filterRow}>
+            <TouchableOpacity
+              style={styles.filterInput}
+              onPress={() => {
+                setShowMonthDropdown(!showMonthDropdown);
+                setShowStatusDropdown(false);
+              }}
+            >
+              <Text style={styles.filterText}>{filterMonth}</Text>
+              <Text style={styles.arrow}>▼</Text>
+            </TouchableOpacity>
 
-          {/* Status Filter */}
-          <TouchableOpacity
-            style={styles.filterBox}
-            onPress={() => {
-              setShowStatusDropdown(!showStatusDropdown);
-              setShowMonthDropdown(false);
-            }}
-          >
-            <Text style={styles.filterText}>{filterStatus}</Text>
-            <Text style={styles.arrow}>▼</Text>
+            <TouchableOpacity
+              style={styles.filterInput}
+              onPress={() => {
+                setShowStatusDropdown(!showStatusDropdown);
+                setShowMonthDropdown(false);
+              }}
+            >
+              <Text style={styles.filterText}>{filterStatus}</Text>
+              <Text style={styles.arrow}>▼</Text>
+            </TouchableOpacity>
+          </View>
+
+          <TouchableOpacity style={styles.findBtn}>
+            <Text style={styles.findText}>Find</Text>
           </TouchableOpacity>
         </View>
 
-        {/* Month Dropdown */}
+        {/* DROPDOWNS */}
         {showMonthDropdown && (
           <View style={styles.dropdown}>
             {months.map((m) => (
@@ -175,7 +157,6 @@ const ComplaintHistory = () => {
           </View>
         )}
 
-        {/* Status Dropdown */}
         {showStatusDropdown && (
           <View style={styles.dropdown}>
             {statusOptions.map((s) => (
@@ -192,42 +173,41 @@ const ComplaintHistory = () => {
           </View>
         )}
 
-        {/* FIND BUTTON */}
-        <TouchableOpacity style={styles.findBtn}>
-          <Text style={styles.findText}>Find</Text>
-        </TouchableOpacity>
+        {/* LIST */}
+{filteredTickets.map((item) => (
+  <View style={styles.card} key={item.id}>
 
-        {/* ---------------- LIST ---------------- */}
-        {filteredTickets.length === 0 ? (
-          <Text style={{ paddingHorizontal: 20, color: "#777", marginTop: 20 }}>
-            No complaints found
-          </Text>
-        ) : (
-          filteredTickets.map((item) => (
-            <View style={styles.card} key={item.id}>
-              <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-                <Text style={styles.code}>Complaint No: {item.supportCode}</Text>
-                <Text style={styles.status}>
-                  Status: {item.status === "open" ? "Pending" : "Closed"}
-                </Text>
-              </View>
+    {/* Complaint No – single row */}
+    <Text style={styles.code}>
+      Complaint No: {item.supportCode}
+    </Text>
 
-              <Text style={styles.room}>ROOM NO: {item.roomNumber}</Text>
+    {/* Room No + Status – same row */}
+    <View style={styles.row}>
+      <Text style={styles.room}>
+        ROOM NO: {item.roomNumber}
+      </Text>
 
-              <Text style={styles.date}>Complaint Date: {item.date}</Text>
+      <Text style={styles.status}>
+        Status: {item.status === "open" ? "Pending" : "Closed"}
+      </Text>
+    </View>
 
-              {item.status === "closed" && (
-                <Text style={styles.date}>
-                  Complaint Closed: {item.updatedAt?.split("T")[0]}
-                </Text>
-              )}
+    <Text style={styles.date}>
+      Complaint Date: {item.date}
+    </Text>
 
-              <TouchableOpacity style={styles.detailsBtn}>
-                <Text style={styles.detailsText}>DETAILS ›››</Text>
-              </TouchableOpacity>
-            </View>
-          ))
-        )}
+    {item.status === "closed" && (
+      <Text style={styles.date}>
+        Complaint Closed: {item.updatedAt?.split("T")[0]}
+      </Text>
+    )}
+
+    <TouchableOpacity style={styles.detailsBtn}>
+      <Text style={styles.detailsText}>Details</Text>
+    </TouchableOpacity>
+  </View>
+))}
       </ScrollView>
     </View>
   );
@@ -235,100 +215,150 @@ const ComplaintHistory = () => {
 
 export default ComplaintHistory;
 
+/* ================= STYLES ================= */
+
 const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: "#fff" },
+
   tagline: {
     textAlign: "center",
-    fontSize: 14,
-    marginTop: 10,
-    fontWeight: "700",
+    fontFamily: "Quicksand-Bold",
+    fontSize: 16,
+    color: "#444444",
+    marginTop: 20,
   },
 
-  primaryBtn: {
-    backgroundColor: colors.primary,
-    padding: 18,
-    borderRadius: 30,
-    alignItems: "center",
+  mainTitle: {
+    textAlign: "center",
+    marginTop: 15,
+    fontSize: 20,
+    fontFamily: "Quicksand-Bold",
+    color: "#4a3321",
   },
-  primaryText: { fontSize: 20, color: "#fff", fontWeight: "600" },
-
-  secondaryBtn: {
-    backgroundColor: "#b79e81",
-    padding: 18,
-    borderRadius: 30,
-    marginTop: 10,
-    alignItems: "center",
-  },
-  secondaryText: { fontSize: 20, color: "#fff", fontWeight: "600" },
-
-  filterContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 25,
-    paddingHorizontal: 20,
+  roomText: {
+    textAlign: "left",
+    paddingHorizontal:20,
+    marginTop: 12,
+   
+    fontSize: 16,
+    fontFamily: "Quicksand-Bold",
+    color: "#4f3421",
   },
 
-  filterBox: {
+  filterCard: {
+    backgroundColor: "#fff",
+    marginHorizontal: 20,
+    marginTop: 20,
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: "#eee",
+  },
+
+  filterRow: { flexDirection: "row", gap: 12 },
+
+  filterInput: {
     flex: 1,
     borderWidth: 1,
-    borderColor: "#c9b7a2",
+    borderColor: "#cbb8a3",
     borderRadius: 12,
     padding: 14,
-    marginRight: 10,
     backgroundColor: "#fff",
   },
 
-  filterText: { fontSize: 16, color: "#000" },
+  filterText: {
+    fontFamily: "Quicksand-Medium",
+    fontSize: 15,
+    color: "#555",
+  },
 
   arrow: {
     position: "absolute",
     right: 12,
-    top: 15,
-    fontSize: 15,
-    color: "#555",
+    top: 16,
+    fontSize: 14,
+    color: "#666",
+  },
+
+  findBtn: {
+    marginTop: 16,
+    backgroundColor: "#f1a85b",
+    paddingVertical: 14,
+    borderRadius: 10,
+    alignItems: "center",
+  },
+
+  findText: {
+    fontFamily: "Quicksand-Bold",
+    fontSize: 19,
+    color: "#fff",
   },
 
   dropdown: {
     backgroundColor: "#fff",
     marginHorizontal: 20,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "#c9b7a2",
     marginTop: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#ddd",
     overflow: "hidden",
   },
 
   dropdownItem: {
-    padding: 12,
+    padding: 14,
     borderBottomWidth: 1,
     borderColor: "#eee",
-    fontSize: 14,
+    fontFamily: "Quicksand-Regular",
   },
-
-  findBtn: {
-    backgroundColor: colors.primary,
-    marginHorizontal: 20,
-    marginTop: 15,
-    padding: 16,
-    borderRadius: 30,
-    alignItems: "center",
-  },
-  findText: { fontSize: 18, color: "#fff", fontWeight: "700" },
 
   card: {
-    backgroundColor: colors.border,
+    backgroundColor: "#f4efe8",
     marginHorizontal: 20,
-    borderRadius: 15,
-    padding: 18,
-    marginTop: 15,
-    position: "relative",
+    marginTop: 16,
+    borderRadius: 14,
+    padding: 16,
   },
 
-  code: { fontSize: 14, fontWeight: "700", color: "#fff" },
-  room: { fontSize: 14, fontWeight:"700", color: colors.primary, marginTop: 6 },
-  status: { fontSize: 14, fontWeight: "700", color: "#fff" },
+  row: { flexDirection: "row", justifyContent: "space-between" },
 
-  date: { fontSize: 12, fontWeight: "700", color: "#fff", marginTop: 10 },
+  code: {
+    fontFamily: "Quicksand-Bold",
+    fontSize: 14,
+    color: "#4a3321",
+  },
 
-  detailsBtn: { position: "absolute", right: 20, bottom: 15 },
-  detailsText: { color: colors.primary, fontSize: 15, fontWeight: "700" },
+  status: {
+    fontFamily: "Quicksand-Bold",
+    fontSize: 13,
+    color: "#4a3321",
+  },
+
+  room: {
+    fontFamily: "Quicksand-Bold",
+    fontSize: 13,
+    marginTop: 6,
+    color: "#4a3321",
+  },
+
+ date: {
+    fontFamily: "Quicksand-Bold",
+    fontSize: 12,
+    marginTop: 8,
+    color: "#444444",
+  },
+
+  detailsBtn: {
+    position: "absolute",
+    right: 16,
+    bottom: 14,
+    backgroundColor: "#f1a85b",
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    borderRadius: 5,
+  },
+  detailsText: {
+    fontFamily: "Quicksand-SemiBold",
+    fontSize: 14,
+    color: "#fff",
+  },
 });

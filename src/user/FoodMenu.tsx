@@ -11,8 +11,10 @@ import Ionicons from "react-native-vector-icons/Ionicons";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
 import HeaderGradient from "../components/HeaderGradient";
+import { useRoute } from "@react-navigation/native";
 
 const BASE_URL = "https://staging.cocoliving.in";
+
 
 const days = [
   { id: "01", short: "Mon", full: "Monday" },
@@ -25,12 +27,27 @@ const days = [
 ];
 
 export default function FoodMenuScreen() {
-  const { user } = useAuth();
+ const { user } = useAuth();
   const token = user?.token;
 
+  const route = useRoute(); // ✅ yahin hona chahiye
+
+  const dayNames = [
+    "Sunday",
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+  ];
+
+  const todayName = dayNames[new Date().getDay()];
+
   const [menus, setMenus] = useState([]);
+
   const [activeDay, setActiveDay] = useState(
-    days[new Date().getDay()]?.full || "Monday"
+    route.params?.initialDay || todayName
   );
 
   useEffect(() => {

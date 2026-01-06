@@ -15,10 +15,13 @@ import Toast from 'react-native-toast-message';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import axios from 'axios';
+import Config from 'react-native-config';
 import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
 import colors from '../constants/color';
 
-const API_BASE_URL = 'https://staging.cocoliving.in';
+export const API_BASE_URL = Config.API_BASE_URL;
+const SIGNUP_SEND_OTP = `${API_BASE_URL}/api/user/send-otp`;
+const SIGNUP_REGISTER = `${API_BASE_URL}/api/user/register`;
 
 const COLORS = {
   primary: '#5C4435',
@@ -29,31 +32,14 @@ const COLORS = {
   button: '#F6A452',
 };
 
-/* DEFAULT AVATAR */
-const AVATAR_PLACEHOLDER =
-  'https://cdn-icons-png.flaticon.com/512/847/847969.png';
+const AVATAR_PLACEHOLDER = 'https://cdn-icons-png.flaticon.com/512/847/847969.png';
 
-/* ================= FLOATING INPUT (WITH PLACEHOLDER) ================= */
-const FloatingInput = ({
-  label,
-  value = '',
-  onChangeText,
-  editable = true,
-  onPress,
-  keyboardType,
-}) => {
+const FloatingInput = ({ label, value = '', onChangeText, editable = true, onPress, keyboardType }) => {
   const placeholderHint = label.replace('*', '').trim();
 
   return (
-    <TouchableOpacity
-      activeOpacity={1}
-      onPress={() => !editable && onPress && onPress()}
-      style={styles.floatWrap}
-    >
-      <Text style={styles.floatLabelAlways}>
-        {label}
-      </Text>
-
+    <TouchableOpacity activeOpacity={1} onPress={() => !editable && onPress && onPress()} style={styles.floatWrap}>
+      <Text style={styles.floatLabelAlways}>{label}</Text>
       <TextInput
         value={value}
         onChangeText={onChangeText}
@@ -69,38 +55,43 @@ const FloatingInput = ({
 };
 
 const RegisterProfileScreen = ({ navigation, route }) => {
-  const email = route?.params?.verifiedEmail || '';
+  const params = route.params || {};
+  const prefilledEmail = params.verifiedEmail || '';
+  const prefilledPhone = params.phone || '';
 
-  /* FORM STATES */
+  const prefilledMedium: 'email' | 'phone' | null = prefilledEmail ? 'email' : prefilledPhone ? 'phone' : null;
+  const prefilledIdentifier = prefilledEmail || prefilledPhone;
+
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
-  const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState(prefilledEmail);
+  const [phone, setPhone] = useState(prefilledPhone);
   const [dob, setDob] = useState('');
   const [gender, setGender] = useState('');
-  const [userType, setUserType] = useState('student');
+  const [userType, setUserType] = useState<'student' | 'professional'>('student');
 
-  /* IMAGE STATES */
-  const [profileImage, setProfileImage] = useState(null);
+  const [parentName, setParentName] = useState('');
+  const [parentEmail, setParentEmail] = useState('');
+  const [parentMobile, setParentMobile] = useState('');
+
+  const [profileImage, setProfileImage] = useState<any>(null);
   const [profilePicUri, setProfilePicUri] = useState(AVATAR_PLACEHOLDER);
   const [openSheet, setOpenSheet] = useState(false);
 
-  /* OTP */
   const [otpSent, setOtpSent] = useState(false);
   const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
 
-  /* DOB */
   const [showDOBPicker, setShowDOBPicker] = useState(false);
 
   const isDefaultAvatar = profilePicUri === AVATAR_PLACEHOLDER;
 
-  /* IMAGE HANDLERS */
   const openCamera = async () => {
     setOpenSheet(false);
     const res = await launchCamera({ mediaType: 'photo', quality: 0.7 });
     if (res.assets?.length) {
       const img = res.assets[0];
-      setProfilePicUri(img.uri);
+      setProfilePicUri(img.uri!);
       setProfileImage({
         uri: img.uri,
         type: img.type || 'image/jpeg',
@@ -114,7 +105,7 @@ const RegisterProfileScreen = ({ navigation, route }) => {
     const res = await launchImageLibrary({ mediaType: 'photo', quality: 0.7 });
     if (res.assets?.length) {
       const img = res.assets[0];
-      setProfilePicUri(img.uri);
+      setProfilePicUri(img.uri!);
       setProfileImage({
         uri: img.uri,
         type: img.type || 'image/jpeg',
@@ -123,8 +114,7 @@ const RegisterProfileScreen = ({ navigation, route }) => {
     }
   };
 
-  /* DOB */
-  const onDOBChange = (_, date) => {
+  const onDOBChange = (_: any, date?: Date) => {
     setShowDOBPicker(false);
     if (date) {
       const d = String(date.getDate()).padStart(2, '0');
@@ -134,77 +124,115 @@ const RegisterProfileScreen = ({ navigation, route }) => {
     }
   };
 
-  /* SEND OTP */
   const handleSendOTP = async () => {
-    if (!firstName || !lastName) {
+    if (!firstName.trim() || !lastName.trim()) {
       Toast.show({ type: 'error', text1: 'Enter full name' });
+      return;
+    }
+
+    if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      Toast.show({ type: 'error', text1: 'Enter a valid email address' });
+      return;
+    }
+
+    if (!phone.trim() || phone.length !== 10) {
+      Toast.show({ type: 'error', text1: 'Enter a valid 10-digit mobile number' });
+      return;
+    }
+
+    if (!prefilledIdentifier) {
+      Toast.show({ type: 'error', text1: 'Missing prefilled identifier' });
       return;
     }
 
     setLoading(true);
     try {
-      await axios.post(`${API_BASE_URL}/api/user/send-otp`, {
-        email,
-        fullName: `${firstName} ${lastName}`,
-      });
+      await axios.post(SIGNUP_SEND_OTP, { identifier: prefilledIdentifier });
+
       setOtpSent(true);
-      Toast.show({ type: 'success', text1: 'OTP sent to email' });
-    } catch {
-      Toast.show({ type: 'error', text1: 'Failed to send OTP' });
+      Toast.show({
+        type: 'success',
+        text1: `OTP sent to your ${prefilledMedium === 'phone' ? 'mobile' : 'email'}`,
+      });
+    } catch (error: any) {
+      const msg = error?.response?.data?.message || 'Failed to send OTP';
+      Toast.show({ type: 'error', text1: msg });
     } finally {
       setLoading(false);
     }
   };
 
-  const formatDOB = (d) => {
+  const formatDOB = (d: string) => {
     if (!d) return '';
     const [day, month, year] = d.split('-');
     return `${year}-${month}-${day}`;
   };
 
   const handleSubmitProfile = async () => {
-    if (!otp) {
+    if (!otp.trim()) {
       Toast.show({ type: 'error', text1: 'Enter OTP' });
       return;
     }
 
-    const fullName = `${firstName} ${lastName}`.trim();
+    if (!dob) {
+      Toast.show({ type: 'error', text1: 'Select date of birth' });
+      return;
+    }
+
+    if (!gender) {
+      Toast.show({ type: 'error', text1: 'Select gender' });
+      return;
+    }
+
+    if (userType === 'student') {
+      if (!parentName.trim()) {
+        Toast.show({ type: 'error', text1: 'Enter parent name' });
+        return;
+      }
+      if (!parentEmail.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(parentEmail.trim())) {
+        Toast.show({ type: 'error', text1: 'Enter valid parent email' });
+        return;
+      }
+      // parentMobile optional as per backend
+    }
+
+    const fullName = `${firstName.trim()} ${lastName.trim()}`;
 
     const formData = new FormData();
     formData.append('fullName', fullName);
-    formData.append('email', email);
+    formData.append('email', email.trim());
     formData.append('phone', phone);
     formData.append('gender', gender);
     formData.append('userType', userType);
     formData.append('dateOfBirth', formatDOB(dob));
     formData.append('otp', otp);
+    formData.append('type', prefilledMedium!);
+
+    if (userType === 'student') {
+      formData.append('parentName', parentName.trim());
+      formData.append('parentEmail', parentEmail.trim());
+      if (parentMobile.trim()) {
+        formData.append('parentMobile', parentMobile);
+      }
+    }
 
     if (profileImage) {
-      formData.append('profileImage', {
-        uri: profileImage.uri,
-        name: profileImage.name,
-        type: profileImage.type,
-      });
+      formData.append('profileImage', profileImage as any);
     }
 
     setLoading(true);
     try {
-      const res = await axios.post(
-        `${API_BASE_URL}/api/user/register`,
-        formData,
-        {
-          headers: { 'Content-Type': 'multipart/form-data' },
-        }
-      );
+      const res = await axios.post(SIGNUP_REGISTER, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
 
       if (res.data?.success) {
         Toast.show({ type: 'success', text1: 'Registration successful 🎉' });
-        navigation.replace('Login', { email });
+        navigation.replace('Login');
       } else {
-        Toast.show({ type: 'error', text1: res.data?.message });
+        Toast.show({ type: 'error', text1: res.data?.message || 'Registration failed' });
       }
-    } catch (e) {
-      console.log('REGISTER ERROR:', e);
+    } catch (e: any) {
       Toast.show({
         type: 'error',
         text1: e?.response?.data?.message || 'Registration failed',
@@ -215,44 +243,28 @@ const RegisterProfileScreen = ({ navigation, route }) => {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1 }}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
+    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView contentContainerStyle={styles.container}>
         <Text style={styles.title}>Looks like you are new</Text>
 
-        {/* IMAGE + USER TYPE */}
         <View style={styles.topRow}>
           <TouchableOpacity style={styles.avatar} onPress={() => setOpenSheet(true)}>
             <Image source={{ uri: profilePicUri }} style={styles.avatarImg} />
             <View style={styles.cameraBadge}>
-              <Ionicons
-                name={isDefaultAvatar ? 'camera' : 'create'}
-                size={16}
-                color="#fff"
-              />
+              <Ionicons name={isDefaultAvatar ? 'camera' : 'create'} size={16} color="#fff" />
             </View>
           </TouchableOpacity>
 
           <View style={styles.toggleRow}>
-            {['Student', 'Professional'].map(t => {
-              const key = t.toLowerCase();
+            {['Student', 'Professional'].map((t) => {
+              const key = t.toLowerCase() as 'student' | 'professional';
               return (
                 <TouchableOpacity
                   key={t}
-                  style={[
-                    styles.toggleBtn,
-                    userType === key && styles.toggleActive,
-                  ]}
+                  style={[styles.toggleBtn, userType === key && styles.toggleActive]}
                   onPress={() => setUserType(key)}
                 >
-                  <Text
-                    style={[
-                      styles.toggleText,
-                      userType === key && styles.toggleTextActive,
-                    ]}
-                  >
+                  <Text style={[styles.toggleText, userType === key && styles.toggleTextActive]}>
                     {t}
                   </Text>
                 </TouchableOpacity>
@@ -261,42 +273,84 @@ const RegisterProfileScreen = ({ navigation, route }) => {
           </View>
         </View>
 
-        {/* NAME */}
         <View style={styles.row}>
           <FloatingInput label="First Name*" value={firstName} onChangeText={setFirstName} />
           <FloatingInput label="Last Name*" value={lastName} onChangeText={setLastName} />
         </View>
 
-        {/* DOB + GENDER */}
-        <View style={styles.row}>
-          <FloatingInput
-            label="Date of Birth*"
-            value={dob}
-            editable={false}
-            onPress={() => setShowDOBPicker(true)}
-          />
-          <FloatingInput
-            label="Gender*"
-            value={gender}
-            editable={false}
-            onPress={() => setGender(gender === 'Male' ? 'Female' : 'Male')}
-          />
-        </View>
-
         <FloatingInput
           label="Mobile Number*"
           value={phone}
-          onChangeText={setPhone}
+          onChangeText={prefilledMedium !== 'phone' ? (text) => setPhone(text.replace(/[^0-9]/g, '').slice(0, 10)) : undefined}
+          editable={prefilledMedium !== 'phone'}
           keyboardType="phone-pad"
         />
 
-        <FloatingInput label="Email ID*" value={email} editable={false} />
+        <FloatingInput
+          label="Email ID*"
+          value={email}
+          onChangeText={prefilledMedium !== 'email' ? (text) => setEmail(text.toLowerCase().trim()) : undefined}
+          editable={prefilledMedium !== 'email'}
+          keyboardType="email-address"
+        />
+
+        <FloatingInput
+          label="Date of Birth*"
+          value={dob}
+          editable={false}
+          onPress={() => setShowDOBPicker(true)}
+        />
+
+    <View style={styles.floatWrap}>
+  <Text style={styles.floatLabelAlways}>Gender*</Text>
+
+  <View style={styles.genderRow}>
+    {['Male', 'Female'].map((g) => (
+      <TouchableOpacity
+        key={g}
+        style={[
+          styles.genderBtn,
+          gender === g && styles.genderBtnActive,
+        ]}
+        onPress={() => setGender(g)}
+      >
+        <Text
+          style={[
+            styles.genderText,
+            gender === g && styles.genderTextActive,
+          ]}
+        >
+          {g}
+        </Text>
+      </TouchableOpacity>
+    ))}
+  </View>
+</View>
+
+        {userType === 'student' && (
+          <>
+              <Text style={styles.sectionHeading}>Parents Information</Text>
+            <FloatingInput label="Parent Name*" value={parentName} onChangeText={setParentName} />
+            <FloatingInput
+              label="Parent Email*"
+              value={parentEmail}
+              onChangeText={(text) => setParentEmail(text.toLowerCase().trim())}
+              keyboardType="email-address"
+            />
+            <FloatingInput
+              label="Parent Mobile"
+              value={parentMobile}
+              onChangeText={(text) => setParentMobile(text.replace(/[^0-9]/g, '').slice(0, 10))}
+              keyboardType="phone-pad"
+            />
+          </>
+        )}
 
         {otpSent && (
           <FloatingInput
-            label="Enter OTP"
+            label={`Enter OTP (sent to ${prefilledMedium === 'phone' ? 'mobile' : 'email'})*`}
             value={otp}
-            onChangeText={setOtp}
+            onChangeText={(text) => setOtp(text.replace(/[^0-9]/g, ''))}
             keyboardType="numeric"
           />
         )}
@@ -304,46 +358,35 @@ const RegisterProfileScreen = ({ navigation, route }) => {
         <TouchableOpacity
           style={styles.button}
           onPress={otpSent ? handleSubmitProfile : handleSendOTP}
+          disabled={loading}
         >
           {loading ? (
             <ActivityIndicator color="#fff" />
           ) : (
             <Text style={styles.buttonText}>
-              {otpSent ? 'Save' : 'Send OTP'}
+              {otpSent ? 'Complete Registration' : 'Send OTP'}
             </Text>
           )}
         </TouchableOpacity>
 
         {showDOBPicker && (
-          <DateTimePicker
-            value={new Date()}
-            mode="date"
-            maximumDate={new Date()}
-            onChange={onDOBChange}
-          />
+          <DateTimePicker value={new Date()} mode="date" maximumDate={new Date()} onChange={onDOBChange} />
         )}
       </ScrollView>
 
-      {/* IMAGE PICKER SHEET */}
       {openSheet && (
         <TouchableOpacity style={styles.overlay} onPress={() => setOpenSheet(false)}>
           <View style={styles.sheet}>
             <Text style={styles.sheetTitle}>Select Profile Photo</Text>
-
             <TouchableOpacity style={styles.sheetItem} onPress={openCamera}>
               <Ionicons name="camera" size={22} color={COLORS.primary} />
               <Text style={styles.sheetText}>Take Photo</Text>
             </TouchableOpacity>
-
             <TouchableOpacity style={styles.sheetItem} onPress={openGallery}>
               <Ionicons name="image" size={22} color={COLORS.primary} />
               <Text style={styles.sheetText}>Choose from Gallery</Text>
             </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.sheetItem, { justifyContent: 'center' }]}
-              onPress={() => setOpenSheet(false)}
-            >
+            <TouchableOpacity style={[styles.sheetItem, { justifyContent: 'center' }]} onPress={() => setOpenSheet(false)}>
               <Text style={{ fontWeight: '700', color: COLORS.primary }}>Cancel</Text>
             </TouchableOpacity>
           </View>
@@ -355,29 +398,26 @@ const RegisterProfileScreen = ({ navigation, route }) => {
   );
 };
 
-export default RegisterProfileScreen;
-
-/* ================= STYLES ================= */
 const styles = StyleSheet.create({
   container: { padding: 20, backgroundColor: '#F5F5F5' },
-
+ 
   title: {
     fontSize: 23,
-    fontWeight: '700',
+    // fontWeight: '700',
     textAlign: 'center',
     marginBottom: 24,
     marginTop: 24,
     color: COLORS.text,
-    fontFamily: 'RethnikSans-Medium',
+    fontFamily: 'RethinkSans-ExtraBold',
   },
-
+ 
   topRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 24,
   },
-
+ 
   avatar: {
     width: 100,
     height: 100,
@@ -395,7 +435,7 @@ const styles = StyleSheet.create({
     padding: 6,
     borderRadius: 14,
   },
-
+ 
   toggleRow: {
     flexDirection: 'row',
     borderWidth: 1,
@@ -405,11 +445,11 @@ const styles = StyleSheet.create({
   },
   toggleBtn: { paddingVertical: 8, paddingHorizontal: 18 },
   toggleActive: { backgroundColor: COLORS.primary },
-  toggleText: { color: COLORS.primary, fontWeight: '600' },
+  toggleText: { color: COLORS.primary, fontFamily:'RethinkSans-Bold' },
   toggleTextActive: { color: '#fff' },
-
+ 
   row: { flexDirection: 'row', gap: 12 },
-
+ 
   floatWrap: {
     borderWidth: 1,
     borderColor: colors.nBorder,
@@ -421,7 +461,7 @@ const styles = StyleSheet.create({
     flex: 1,
     position: 'relative',
   },
-
+ 
   floatLabelAlways: {
     position: 'absolute',
     left: 12,
@@ -433,16 +473,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     zIndex: 1,
   },
-
+ 
   floatInputAlways: {
     flex: 1,
     fontSize: 16,
+    fontFamily:'Quicksand-Regular',
     color: COLORS.text,
     paddingHorizontal: 0,
     paddingVertical: 0,
     textAlignVertical: 'center',
   },
-
+ 
   button: {
     backgroundColor: COLORS.button,
     paddingVertical: 16,
@@ -451,7 +492,7 @@ const styles = StyleSheet.create({
     marginTop: 24,
   },
   buttonText: { color: '#fff', fontSize: 20, fontWeight: '600', fontFamily: 'Quicksand-Bold' },
-
+ 
   overlay: {
     position: 'absolute',
     top: 0,
@@ -467,6 +508,47 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
   },
+  genderRow: {
+  flexDirection: 'row',
+  flex: 1,
+  marginTop: 6,
+  gap: 10,
+},
+
+genderBtn: {
+  flex: 1,
+  height: 40,
+  borderRadius: 8,
+  borderWidth: 1,
+  borderColor: COLORS.border,
+  alignItems: 'center',
+  justifyContent: 'center',
+  backgroundColor: '#fff',
+},
+
+genderBtnActive: {
+  backgroundColor: COLORS.primary,
+  borderColor: COLORS.primary,
+},
+sectionHeading: {
+  fontSize: 14,
+  color: COLORS.text,
+  marginBottom: 10,
+  marginLeft: 4,
+  marginTop: 10,
+  fontFamily: 'Quicksand-Bold',
+},
+
+
+genderText: {
+  color: COLORS.primary,
+  fontWeight: '600',
+  fontFamily: 'Quicksand-Medium',
+},
+
+genderTextActive: {
+  color: '#fff',
+},
   sheetTitle: {
     fontSize: 18,
     fontWeight: '700',
@@ -481,3 +563,5 @@ const styles = StyleSheet.create({
   },
   sheetText: { fontSize: 16, color: COLORS.text },
 });
+
+export default RegisterProfileScreen;

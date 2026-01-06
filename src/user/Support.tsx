@@ -44,7 +44,7 @@ const SupportScreen = () => {
                 onPress={() => navigation.navigate('ComplaintStatus')}>
                     <View style={styles.btnContent}>
                         <Text style={styles.btnText}>Complaint Status</Text>
-                        <Icon name="arrow-forward" size={24} color="#fff" />
+                        <Icon name="arrow-forward" size={28} color={colors.nOrange} />
                     </View>
                 </TouchableOpacity>
 
@@ -53,7 +53,7 @@ const SupportScreen = () => {
                 onPress={() => navigation.navigate('ComplaintHistory')}>>
                     <View style={styles.btnContent}>
                         <Text style={styles.btnText}>Complaint History</Text>
-                        <Icon name="arrow-forward" size={24} color="#fff" />
+                        <Icon name="arrow-forward" size={28} color={colors.nOrange}  />
                     </View>
                 </TouchableOpacity>
             </View>
@@ -68,7 +68,7 @@ const styles = StyleSheet.create({
         padding: 20,
     },
     btn: {
-        backgroundColor: colors.primary,
+        backgroundColor: '#ede7df',
         padding: 18,
         borderRadius: 30,
         marginBottom: 15,
@@ -87,28 +87,29 @@ const styles = StyleSheet.create({
     },
     plusIcon: {
         marginLeft: 10,
+        color:colors.nOrange
     },
     btnText: {
-        color: '#fff',
+        color: '#444444',
         fontSize: 20,
-        fontWeight: '600',
+        fontFamily:'Quicksand-Bold'
     },
     tagline: {
         textAlign: 'center',
-        fontSize: 14,
-        fontWeight: '700',
+        fontSize: 16,
+        fontFamily:'Quicksand-Medium',
         marginTop: 10,
-        color: '#333',
+        color: '#000000',
     },
-    highlightedText: {
-        color: colors.primary,
-        fontWeight: '700',
-    },
+    // highlightedText: {
+    //     color: colors.primary,
+    //     fontWeight: '700',
+    // },
     span: {
         textAlign: 'center',
-        fontSize: 14,
-        fontWeight: '700',
-        color: colors.border,
+        fontSize: 16,
+        fontFamily:'Quicksand-SemiBold',
+        color: '#ac9478',
         marginTop: 5,
     }
 });

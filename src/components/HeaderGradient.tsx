@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import { useAuth } from '../context/AuthContext'; // Adjust path if needed (in most files it's ../../ or ../)
+import { useAuth } from '../context/AuthContext';
 import { useNavigation } from '@react-navigation/native';
 import axios from 'axios';
 
@@ -25,10 +25,10 @@ const baseURL = 'https://staging.cocoliving.in';
 
 type Props = {
   title: string;
-  image?: ImageSourcePropType; // Dynamic image (fallback remains)
+  image?: ImageSourcePropType;
 };
 
-const HeaderGradient: React.FC<Props> = ({ title, image,route }) => {
+const HeaderGradient: React.FC<Props> = ({ title, image }) => {
   const { user } = useAuth();
   const token = user?.token;
   const navigation = useNavigation<any>();
@@ -37,9 +37,8 @@ const HeaderGradient: React.FC<Props> = ({ title, image,route }) => {
   const firstName = username.split(' ')[0];
   const firstLetter = username.charAt(0).toUpperCase();
 
-  const [location, setLocation] = useState('Navrangpura'); // Initial fallback like dashboard
+  const [location, setLocation] = useState('Navrangpura');
 
-  // Fetch active booking → only for location (same logic as dashboard)
   const fetchLocation = async () => {
     if (!token) return;
 
@@ -51,18 +50,16 @@ const HeaderGradient: React.FC<Props> = ({ title, image,route }) => {
 
       const bookings = res.data.bookings || [];
       const active = bookings.find(
-        (b) =>
+        (b: any) =>
           b.displayStatus?.toLowerCase() === 'active' ||
           b.displayStatus?.toLowerCase() === 'approved'
       );
 
-      if (active && active.room?.property?.address) {
+      if (active?.room?.property?.address) {
         setLocation(active.room.property.address);
       }
-      // else keep initial/fallback
     } catch (err) {
       console.log('Error fetching location:', err);
-      // Keep fallback
     }
   };
 
@@ -73,11 +70,12 @@ const HeaderGradient: React.FC<Props> = ({ title, image,route }) => {
   return (
     <View style={[styles.container, { height: IMAGE_HEIGHT }]}>
       <ImageBackground
-        source={image || require('../../assets/images/browseRoomsImage.png')}
+        source={image || require('../../assets/images/premium.png')}
         style={styles.image}
         resizeMode="cover"
+        imageStyle={styles.imageRadius} // ✅ IMPORTANT
       >
-        {/* Dark gradient overlay – exactly like dashboard for visibility & consistency */}
+        {/* Gradient Overlay */}
         <LinearGradient
           colors={['#4b3426ee', '#4b3426aa', 'transparent']}
           locations={[0, 0.5, 1]}
@@ -86,19 +84,27 @@ const HeaderGradient: React.FC<Props> = ({ title, image,route }) => {
           style={styles.gradientLayer}
         />
 
-        {/* Main content: top user info + bottom title */}
         <View style={styles.contentContainer}>
-          {/* Top row: name + location (left) & profile (right) */}
+          {/* Top Row */}
           <View style={styles.headerRow}>
-            <View>
-              <Text style={styles.hello}>Hey {firstName}!</Text>
-              <View style={styles.locationRow}>
-                <Ionicons name="location-outline" size={12} color="#fff" />
-                <Text style={styles.location}>{location}</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <TouchableOpacity
+                onPress={() => navigation.goBack()}
+                style={{ padding: 10 }}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="chevron-back" size={30} color="#fff" />
+              </TouchableOpacity>
+
+              <View style={{ marginLeft: 8 }}>
+                <Text style={styles.hello}>Hey {firstName}!</Text>
+                <View style={styles.locationRow}>
+                  {/* <Ionicons name="location-outline" size={12} color="#fff" /> */}
+                  {/* <Text style={styles.location}>{location}</Text> */}
+                </View>
               </View>
             </View>
 
-            {/* Profile circle – clickable + dynamic image/letter (same as dashboard) */}
             <TouchableOpacity
               style={styles.profileCircle}
               onPress={() => navigation.navigate('ProfileScreen')}
@@ -106,7 +112,7 @@ const HeaderGradient: React.FC<Props> = ({ title, image,route }) => {
             >
               {user?.profileImage ? (
                 <Image
-                  source={{ uri: `https://staging.cocoliving.in${user.profileImage}` }}
+                  source={{ uri: `${baseURL}${user.profileImage}` }}
                   style={styles.profileImage}
                 />
               ) : (
@@ -115,7 +121,7 @@ const HeaderGradient: React.FC<Props> = ({ title, image,route }) => {
             </TouchableOpacity>
           </View>
 
-          {/* Title at bottom center */}
+          {/* Bottom Title */}
           <Text style={styles.title}>{title}</Text>
         </View>
       </ImageBackground>
@@ -128,40 +134,50 @@ export default HeaderGradient;
 const styles = StyleSheet.create({
   container: {
     width: '100%',
+    overflow: 'hidden', // ✅ REQUIRED for border radius
+    borderBottomLeftRadius: 22,
+    borderBottomRightRadius: 22,
   },
+
   image: {
     flex: 1,
   },
+
+  imageRadius: {
+    borderBottomLeftRadius: 22,
+    borderBottomRightRadius: 22,
+  },
+
   gradientLayer: {
     ...StyleSheet.absoluteFillObject,
   },
+
   contentContainer: {
     flex: 1,
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingTop: 55, // Safe area like dashboard
+    paddingTop: 55,
     paddingBottom: 20,
   },
+
   headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+
   hello: {
     fontSize: 26,
     fontWeight: '700',
     color: '#fff',
   },
+
   locationRow: {
     flexDirection: 'row',
     alignItems: 'center',
     marginTop: 4,
   },
-  location: {
-    fontSize: 13,
-    color: '#fff',
-    marginLeft: 3,
-  },
+
   profileCircle: {
     width: 55,
     height: 55,
@@ -171,20 +187,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     elevation: 5,
   },
+
   profileImage: {
     width: '100%',
     height: '100%',
     borderRadius: 28,
   },
+
   profileLetter: {
     fontSize: 24,
     fontWeight: '700',
     color: '#4b3426',
   },
+
   title: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#fff',
+    fontSize: 32,
+    color: '#f7f7f7',
     textAlign: 'center',
+    fontFamily: 'Quicksand-Bold',
   },
 });

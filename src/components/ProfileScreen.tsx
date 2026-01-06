@@ -1,295 +1,540 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
   ScrollView,
+  TouchableOpacity,
+  Image,
   Modal,
+  Linking,
 } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { useAuth } from "../context/AuthContext";
 import Ionicons from "react-native-vector-icons/Ionicons";
+import LinearGradient from "react-native-linear-gradient";
 import Toast from "react-native-toast-message";
+import axios from "axios";
+import colors from "../constants/color";
+
+const BASE_URL = "https://staging.cocoliving.in";
 
 const ProfileScreen = () => {
   const navigation = useNavigation();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const token = user?.token;
 
-  const userName = user?.fullName || "User";
-  const userEmail = user?.email || "youremail@domain.com";
-  const userPhone = user?.phone || "+91 XXXXXXXXXX";
-  const firstLetter = userName.charAt(0);
+  const [hasActiveBooking, setHasActiveBooking] = useState(false);
+  const [loadingBooking, setLoadingBooking] = useState(true);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
-  const MenuItem = ({ icon, label, onPress = () => {} }) => (
-  <TouchableOpacity style={styles.menuItem} onPress={onPress}>
-    <Ionicons name={icon} size={22} color="#4b3426" />
-    <Text style={styles.menuLabel}>{label}</Text>
-    <Ionicons name="chevron-forward" size={20} color="#4b3426" />
-  </TouchableOpacity>
-);
+  const userName = user?.fullName || "User";
+  const userType = user?.userType || "Professional";
+  const firstLetter = userName.charAt(0).toUpperCase();
 
-const { logout } = useAuth();
+  // Check active booking (same logic as App.tsx)
+  const checkBookingStatus = async () => {
+    if (!token) {
+      setHasActiveBooking(false);
+      setLoadingBooking(false);
+      return;
+    }
 
-const performLogout = () => {
-  setShowLogoutModal(false);
+    try {
+      const response = await axios.get(
+        `${BASE_URL}/api/book-room/getUserBookings?page=1&limit=10`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
 
-  logout();
-  navigation.navigate("Login");
+      const bookings = response?.data?.bookings || [];
 
-  setTimeout(() => {
+      const active = bookings.find(
+        (b: any) =>
+          b.displayStatus?.toLowerCase() === "active" ||
+          b.displayStatus?.toLowerCase() === "approved"
+      );
+
+      setHasActiveBooking(!!active);
+    } catch (error) {
+      console.log("Booking check error:", error);
+      setHasActiveBooking(false);
+    } finally {
+      setLoadingBooking(false);
+    }
+  };
+
+  useFocusEffect(
+    useCallback(() => {
+      checkBookingStatus();
+    }, [token])
+  );
+
+  useEffect(() => {
+    checkBookingStatus();
+  }, []);
+
+  const performLogout = () => {
+    setShowLogoutModal(false);
+    logout();
     Toast.show({
       type: "success",
       text1: "Logged out successfully",
-      text2: "You have been logged out of your account.",
     });
-  }, 300);
-};
+  };
+
+  const MenuItem = ({ icon, label, onPress = () => {} }) => (
+    <TouchableOpacity style={styles.menuItem} onPress={onPress}>
+      <Ionicons name={icon} size={22} color="#4b3426" />
+      <Text style={styles.menuLabel}>{label}</Text>
+      <Ionicons name="chevron-forward" size={20} color="#4b3426" />
+    </TouchableOpacity>
+  );
+
+  // Booked User Menu Items
+  const bookedMenu = (
+    <>
+      <MenuItem
+        icon="create-outline"
+        label="Edit profile information"
+        onPress={() => navigation.navigate("Profile")}
+      />
+      <MenuItem
+        icon="card-outline"
+        label="Payment history"
+        onPress={() => navigation.navigate("PaymentScreen")}
+      />
+      <MenuItem
+        icon="finger-print-outline"
+        label="Verification Status"
+        onPress={() => navigation.navigate("VerificationStatus")}
+      />
+      <MenuItem
+        icon="home-outline"
+        label="My Bookings"
+        onPress={() => navigation.navigate("MyBookings")}
+      />
+      <MenuItem
+        icon="headset-outline"
+        label="Support"
+        onPress={() => navigation.navigate("Support")}
+      />
+      <MenuItem
+        icon="book-outline"
+        label="Rules"
+        onPress={() => navigation.navigate("CommunityRules")}
+      />
+      <MenuItem
+        icon="document-text-outline"
+        label="Terms & Conditions"
+        onPress={() => navigation.navigate("TermsConditions")}
+      />
+      <MenuItem
+        icon="car-outline"
+        label="Gate Approval"
+        onPress={() => navigation.navigate("GatePassScreen")}
+      />
+      <MenuItem icon="settings-outline" label="Settings" />
+    </>
+  );
+
+  // Non-Booked User Menu Items (exact as screenshot)
+  const nonBookedMenu = (
+    <>
+      <MenuItem
+        icon="person-outline"
+        label="Personal Information"
+        onPress={() => navigation.navigate("Profile")}
+      />
+      <MenuItem icon="calendar-outline" label="Visit" />
+      <MenuItem
+        icon="call-outline"
+        label="Contact Us"
+        onPress={() => Linking.openURL("tel:+911234567890")}
+      />
+      <MenuItem icon="information-circle-outline" label="About Us" onPress={()=>navigation.navigate("AboutUsScreen")} />
+
+       <MenuItem
+        icon="finger-print-outline"
+        label="Verification Status"
+        onPress={() => navigation.navigate("VerificationStatus")}
+      />
+    </>
+  );
+
+  if (loadingBooking) {
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <Text>Loading...</Text>
+      </View>
+    );
+  }
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: "#f3f3f3" }}>
-      
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="chevron-back" size={28} color="#4b3426" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Profile</Text>
-        <View style={{ width: 30 }} />
-      </View>
+    <ScrollView style={styles.container}>
+      {/* GRADIENT HEADER */}
+      <LinearGradient
+        colors={["#855838", "#4F3421"]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={styles.gradientHeader}
+      >
+        <View style={styles.topRow}>
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <Ionicons name="chevron-back" size={26} color="#fff" />
+          </TouchableOpacity>
 
-      {/* User Avatar Section */}
-      <View style={styles.avatarSection}>
-        <View style={styles.avatarCircle}>
-          <Text style={styles.avatarText}>{firstLetter}</Text>
+          <Text style={styles.headerTitle}>Profile</Text>
+
+          <View style={{ width: 26 }} />
         </View>
 
-        <View style={{ marginLeft: 15 }}>
-          <Text style={styles.name}>{userName}</Text>
-          <Text style={styles.phone}>{userPhone}</Text>
-          <Text style={styles.email}>{userEmail}</Text>
+        <View style={styles.profileRow}>
+          <View style={styles.avatarWrapper}>
+            {user?.profileImage ? (
+              <Image
+                source={{ uri: `${BASE_URL}${user.profileImage}` }}
+                style={styles.avatar}
+              />
+            ) : (
+              <View style={styles.avatar}>
+                <Text style={styles.avatarText}>{firstLetter}</Text>
+              </View>
+            )}
+
+            <TouchableOpacity style={styles.editIcon}>
+              <Ionicons name="pencil" size={14} color="#4F3421" />
+            </TouchableOpacity>
+          </View>
+
+          <View style={{ marginLeft: 14 }}>
+            <Text style={styles.name}>{userName}</Text>
+            <View style={styles.roleRow}>
+              <Text style={styles.role}>{userType}</Text>
+              <TouchableOpacity>
+                <Ionicons name="pencil" size={16} color="#fff" style={{ marginLeft: 8 }} />
+              </TouchableOpacity>
+            </View>
+          </View>
         </View>
+      </LinearGradient>
 
-        <TouchableOpacity style={styles.cameraBtn}>
-          <Ionicons name="camera-outline" size={20} color="#4b3426" />
-        </TouchableOpacity>
-      </View>
+      {/* SINGLE CARD FOR ALL MENU ITEMS */}
+      <View style={styles.mainCard}>
+        {hasActiveBooking ? bookedMenu : nonBookedMenu}
 
-      {/* MENU CARDS */}
-      <View style={styles.card}>
+        {/* LOGOUT ALWAYS AT BOTTOM */}
         <MenuItem
-          icon="create-outline"
-          label="Edit profile information"
-          onPress={() => navigation.navigate("Profile")}
+          icon="log-out-outline"
+          label="Logout"
+          onPress={() => setShowLogoutModal(true)}
         />
-        <MenuItem icon="card-outline" label="Payment history" />
-        <MenuItem icon="finger-print-outline" label="Verification Status" onPress={()=>navigation.navigate("VerificationStatus")} />
-         <MenuItem icon="card-outline" label="My Bookings" onPress={()=>navigation.navigate("MyBookings")} />
       </View>
 
-      <View style={styles.card}>
-<MenuItem
-  icon="headset-outline"
-  label="Support"
-  onPress={() =>
-    navigation.navigate("Support")
-  }
-/>       
-<MenuItem icon="book-outline" label="Rules" onPress={()=>navigation.navigate("CommunityRules")} />
-        <MenuItem icon="document-text-outline" label="Terms & Conditions" onPress={()=>navigation.navigate("TermsConditions")} />
-      </View>
+      {/* NON-BOOKED: SOCIAL + POWERED BY */}
+  
+        <View style={styles.footer}>
+          {/* White container with icons + vertical borders */}
+          <View style={styles.socialContainer}>
+            <TouchableOpacity
+              style={styles.socialItem}
+              onPress={() => Linking.openURL("https://facebook.com")}
+            >
+              <Image
+                source={require("../../assets/images/fb.png")}
+                style={styles.socialIcon}
+              />
+            </TouchableOpacity>
 
-     <View style={styles.card}>
-  <MenuItem icon="settings-outline" label="Settings" />
+            <View style={styles.verticalBorder} />
 
-  {/* 🔹 LOGOUT BUTTON FIXED */}
-  <MenuItem
-    icon="log-out-outline"
-    label="Logout"
-    onPress={() => setShowLogoutModal(true)}
-  />
+            <TouchableOpacity
+              style={styles.socialItem}
+              onPress={() => Linking.openURL("https://instagram.com")}
+            >
+              <Image
+                source={require("../../assets/images/instagram.png")}
+                style={styles.socialIcon}
+              />
+            </TouchableOpacity>
 
-  {/* 🔹 LOGOUT CONFIRMATION MODAL */}
-  <Modal
-    transparent
-    animationType="fade"
-    visible={showLogoutModal}
-    onRequestClose={() => setShowLogoutModal(false)}
-  >
-    <View style={styles.modalOverlay}>
-      <View style={styles.modalBox}>
-        <Text style={styles.modalTitle}>Confirm Logout</Text>
-        <Text style={styles.modalMessage}>
-          Are you sure you want to logout of your account?
-        </Text>
+            <View style={styles.verticalBorder} />
 
-        <View style={styles.modalButtons}>
-          <TouchableOpacity
-            style={[styles.modalBtn, styles.cancelBtn]}
-            onPress={() => setShowLogoutModal(false)}
-          >
-            <Text style={styles.cancelText}>Cancel</Text>
-          </TouchableOpacity>
+            <View style={styles.socialItem}>
+              <Image
+                source={require("../../assets/images/cocoLogo.png")}
+                style={styles.cocoLogo}
+              />
+            </View>
+          </View>
 
-          <TouchableOpacity
-            style={[styles.modalBtn, styles.logoutBtn]}
-            onPress={performLogout}
-          >
-            <Text style={styles.logoutTextBtn}>Logout</Text>
-          </TouchableOpacity>
+          {/* Powered by KONCPT AI with image */}
+          <View style={styles.poweredRow}>
+            <Text style={styles.poweredBy}>Powered by </Text>
+            <Image
+              source={require("../../assets/images/koncpt.png")}
+              style={styles.koncptImage}
+            />
+          </View>
         </View>
-      </View>
-    </View>
-  </Modal>
-</View>
+      
 
+      {/* LOGOUT MODAL */}
+      <Modal transparent visible={showLogoutModal} animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalBox}>
+            <Text style={styles.modalTitle}>Confirm Logout</Text>
+            <Text style={styles.modalMessage}>
+              Are you sure you want to logout?
+            </Text>
+
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalBtn, styles.cancelBtn]}
+                onPress={() => setShowLogoutModal(false)}
+              >
+                <Text style={styles.cancelText}>Cancel</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.modalBtn, styles.logoutBtn]}
+                onPress={performLogout}
+              >
+                <Text style={styles.logoutTextBtn}>Logout</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Toast />
     </ScrollView>
   );
 };
 
-// const MenuItem = ({ icon, label, onPress }) => (
-//   <TouchableOpacity style={styles.menuItem} onPress={onPress}>
-//     <Ionicons name={icon} size={22} color="#4b3426" />
-//     <Text style={styles.menuLabel}>{label}</Text>
-//     <Ionicons name="chevron-forward" size={20} color="#4b3426" />
-//   </TouchableOpacity>
-// );
-
-export default ProfileScreen;
-
 const styles = StyleSheet.create({
-  header: {
-    padding: 15,
+  container: {
+    flex: 1,
+    backgroundColor: "#F5F5F5",
+  },
+
+  gradientHeader: {
+    paddingTop: 50,
+    paddingHorizontal: 20,
+    borderBottomLeftRadius: 40,
+    borderBottomRightRadius: 40,
+  },
+
+  topRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
+    justifyContent: "space-between",
   },
 
   headerTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: "#4b3426",
+    color: "#fff",
+    fontSize: 24,
+    fontFamily: "Quicksand-Bold",
   },
 
-  avatarSection: {
+  profileRow: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 20,
-    paddingBottom: 10,
+    marginTop: 30,
+    marginBottom: 10,
+  },
+
+  avatarWrapper: {
     position: "relative",
   },
 
-  avatarCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: "#ddd",
+  avatar: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: "#E6D6C7",
     justifyContent: "center",
     alignItems: "center",
+    borderWidth: 4,
+    borderColor: colors.nOrange,
   },
 
   avatarText: {
-    fontSize: 35,
-    fontWeight: "700",
-    color: "#4b3426",
+    fontSize: 40,
+    fontFamily: "Quicksand-Bold",
+    color: "#4F3421",
   },
 
-  cameraBtn: {
+  editIcon: {
     position: "absolute",
-    right: 40,
-    top: 65,
+    bottom: 0,
+    right: 0,
     backgroundColor: "#fff",
-    padding: 7,
+    padding: 8,
     borderRadius: 20,
-    elevation: 3,
   },
 
-  name: { fontSize: 20, fontWeight: "700", color: "#4b3426" },
-  phone: { color: "#4b3426", marginTop: 4 },
-  email: { color: "#4b3426", marginTop: 2, fontSize: 13 },
+  name: {
+    fontSize: 24,
+    fontFamily: "Quicksand-Bold",
+    color: "#fff",
+  },
 
-  card: {
+  roleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+
+  role: {
+    fontSize: 16,
+    fontFamily: "Quicksand-Regular",
+    color: "#fff",
+  },
+
+  mainCard: {
     marginHorizontal: 20,
-    backgroundColor: "#fff",
-    borderRadius: 14,
-    marginTop: 14,
+    marginTop: 20,
+    borderRadius: 20,
     paddingVertical: 8,
-    elevation: 2,
   },
 
   menuItem: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 14,
-    paddingHorizontal: 20,
+    paddingVertical: 16,
+    paddingHorizontal: 15,
+    backgroundColor: "#FFF",
+    marginHorizontal: 5,
+    marginVertical: 4,
+    borderRadius: 12,
   },
 
   menuLabel: {
     flex: 1,
-    marginLeft: 12,
-    fontSize: 15,
+    marginLeft: 16,
+    fontSize: 16,
+    fontFamily: "Quicksand-Regular",
     color: "#4b3426",
-    fontWeight: "600",
   },
+
+  footer: {
+    alignItems: "center",
+    marginTop: 40,
+    marginBottom: 20,
+  },
+
+  /* NEW: White container with vertical borders */
+  socialContainer: {
+    flexDirection: "row",
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 30,
+    marginBottom: 16,
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    marginHorizontal:20,
+    shadowOffset: { width: 0, height: 2 },
+  },
+
+  socialItem: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  verticalBorder: {
+    width: 1,
+    backgroundColor: "#ddd",
+  },
+
+  socialIcon: {
+    width: 28,
+    height: 28,
+    resizeMode: "contain",
+  },
+
+  cocoLogo: {
+    width: 80,
+    height: 28,
+    resizeMode: "contain",
+  },
+
+  poweredRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+
+  poweredBy: {
+    fontSize: 14,
+    color: "#888",
+    fontFamily: "Quicksand-Regular",
+  },
+
+  koncptImage: {
+    width: 60,
+    height: 18,
+    resizeMode: "contain",
+    marginLeft: 4,
+  },
+
   modalOverlay: {
-  flex: 1,
-  backgroundColor: "rgba(0,0,0,0.4)",
-  justifyContent: "center",
-  alignItems: "center",
-},
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
 
-modalBox: {
-  width: "80%",
-  backgroundColor: "#fff",
-  borderRadius: 12,
-  padding: 20,
-  elevation: 5,
-},
+  modalBox: {
+    width: "80%",
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 24,
+  },
 
-modalTitle: {
-  fontSize: 18,
-  fontWeight: "700",
-  color: "#4b3426",
-  marginBottom: 10,
-},
+  modalTitle: {
+    fontSize: 20,
+    fontFamily: "Quicksand-Bold",
+    color: "#4b3426",
+    textAlign: "center",
+  },
 
-modalMessage: {
-  fontSize: 14,
-  color: "#4b3426",
-  marginBottom: 20,
-},
+  modalMessage: {
+    fontSize: 16,
+    color: "#666",
+    textAlign: "center",
+    marginVertical: 16,
+  },
 
-modalButtons: {
-  flexDirection: "row",
-  justifyContent: "flex-end",
-  gap: 12,
-},
+  modalButtons: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+  },
 
-modalBtn: {
-  paddingVertical: 10,
-  paddingHorizontal: 18,
-  borderRadius: 8,
-},
+  modalBtn: {
+    paddingHorizontal: 30,
+    paddingVertical: 12,
+    borderRadius: 30,
+  },
 
-cancelBtn: {
-  backgroundColor: "#ddd",
-},
+  cancelBtn: {
+    backgroundColor: "#ddd",
+  },
 
-logoutBtn: {
-  backgroundColor: "#4b3426",
-},
+  logoutBtn: {
+    backgroundColor: "#4b3426",
+  },
 
-cancelText: {
-  color: "#333",
-  fontSize: 14,
-  fontWeight: "600",
-},
+  cancelText: {
+    fontFamily: "Quicksand-SemiBold",
+    color: "#333",
+  },
 
-logoutTextBtn: {
-  color: "#fff",
-  fontSize: 14,
-  fontWeight: "700",
-},
-
+  logoutTextBtn: {
+    fontFamily: "Quicksand-Bold",
+    color: "#fff",
+  },
 });
+
+export default ProfileScreen;

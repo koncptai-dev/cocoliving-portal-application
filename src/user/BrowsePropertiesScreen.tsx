@@ -14,11 +14,12 @@ import Toast from "react-native-toast-message";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
 import colors from "../constants/color";
+import Config from "react-native-config";
 import HeaderGradient from "../components/HeaderGradient";
 
-const baseURL = "https://staging.cocoliving.in"
+export const baseURL = Config.API_BASE_URL;
 
-const BrowsePropertiesScreen = ({ navigation,route }) => {
+const BrowsePropertiesScreen = ({ navigation }) => {
   const { user } = useAuth();
   const token = user?.token;
 
@@ -27,276 +28,300 @@ const BrowsePropertiesScreen = ({ navigation,route }) => {
   const [loading, setLoading] = useState(false);
   const [imageIndex, setImageIndex] = useState({});
 
-  // Filter states
+  // Filters
   const [selectedPrice, setSelectedPrice] = useState(null);
   const [selectedRoomType, setSelectedRoomType] = useState(null);
   const [location, setLocation] = useState("");
-
-  // Dropdown toggles
   const [roomTypeOpen, setRoomTypeOpen] = useState(false);
   const [priceOpen, setPriceOpen] = useState(false);
 
-  // Dropdown options
   const priceOptions = ["5000", "10000", "15000", "20000", "25000"];
-  const roomTypeOptions = [
-    "Single sharing",
-    "Double sharing",
-    "Triple sharing",
-    "Four sharing",
-  ];
+  const roomTypeOptions = ["Single", "Double", "Triple", "Four"];
 
-  const fetchProperties = useCallback(async () => {
-    try {
-      setLoading(true);
-      const response = await axios.get(`${baseURL}/api/property/getAll`, {
+  /* ================= API ================= */
+ const fetchProperties = useCallback(async () => {
+  try {
+    setLoading(true);
+
+    const res = await axios.get(
+      `${baseURL}/api/property/getPropertiesForUser`,
+      {
         headers: { Authorization: `Bearer ${token}` },
-      });
-
-      const data = response?.data?.properties?.map((p) => ({
-        ...p,
-        rateCard:
-          p.rateCard?.map((rc) => ({
-            ...rc,
-            propertyId: p.id,
-            rateCardId: rc.id,
-            images: rc.roomImages,
-            roomAmenities: rc.roomAmenities,
-            rent: rc.rent,
-          })) || [],
-      }));
-
-      setProperties(data);
-      setFilteredList(data);
-    } catch {
-      Toast.show({
-        type: "error",
-        text1: "Error",
-        text2: "Failed to load properties",
-      });
-    } finally {
-      setLoading(false);
-    }
-  }, [token]);
-
-  useEffect(() => {
-    fetchProperties();
-  }, [fetchProperties]);
-
-  // Apply filters function
-  const applyFilters = () => {
-    let filteredProperties = properties.filter((p) =>
-      !location || p.address?.toLowerCase().includes(location.toLowerCase())
+      }
     );
 
-    const filteredWithRooms = filteredProperties
+    const data = res.data?.properties || [];
+
+    // ✅ ONLY AVAILABLE RATE CARDS
+    const cleaned = data
       .map((p) => ({
         ...p,
-        rateCard: p.rateCard.filter((r) => {
-          const typeMatch =
-            !selectedRoomType ||
-            r.roomType.toLowerCase().trim() === selectedRoomType.toLowerCase().trim();
-          const priceMatch =
-            !selectedPrice || Number(r.rent) <= Number(selectedPrice);
-          return typeMatch && priceMatch;
-        }),
+        rateCard: (p.rateCard || []).filter(
+          (r) => r.isAvailable && r.availableRooms > 0
+        ),
       }))
       .filter((p) => p.rateCard.length > 0);
 
-    setFilteredList(filteredWithRooms);
+    setProperties(cleaned);
+    setFilteredList(cleaned);
+  } catch (e) {
+    Toast.show({
+      type: "error",
+      text1: "Error",
+      text2: "Failed to load properties",
+    });
+  } finally {
+    setLoading(false);
+  }
+}, [token]);
+
+
+  /* ================= IMAGE AUTO SLIDER ================= */
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setImageIndex((prev) => {
+        const next = { ...prev };
+        filteredList.forEach((p) => {
+          p.rateCard?.forEach((r) => {
+            const total = r.roomImages?.length || 0;
+            if (total > 1) {
+              next[r.id] = ((next[r.id] || 0) + 1) % total;
+            }
+          });
+        });
+        return next;
+      });
+    }, 2000);
+
+    return () => clearInterval(interval);
+  }, [filteredList]);
+
+  /* ================= APPLY FILTER ================= */
+  const applyFilters = () => {
+    let list = properties.filter(
+      (p) =>
+        !location ||
+        p.address?.toLowerCase().includes(location.toLowerCase())
+    );
+
+    list = list
+      .map((p) => ({
+        ...p,
+        rateCard: p.rateCard?.filter((r) => {
+          const typeOk =
+            !selectedRoomType ||
+            r.roomType.toLowerCase() === selectedRoomType.toLowerCase();
+          const priceOk =
+            !selectedPrice || Number(r.rent) <= Number(selectedPrice);
+          return typeOk && priceOk;
+        }),
+      }))
+      .filter((p) => p.rateCard?.length);
+
+    setFilteredList(list);
   };
 
-  // Clear filters
+  useEffect(() => {
+  fetchProperties();
+
+  const interval = setInterval(() => {
+    fetchProperties();
+  }, 10000); // every 10 sec
+
+  return () => clearInterval(interval);
+}, [fetchProperties]);
+
   const clearFilters = () => {
     setSelectedPrice(null);
     setSelectedRoomType(null);
     setLocation("");
     setFilteredList(properties);
-    setPriceOpen(false);
     setRoomTypeOpen(false);
+    setPriceOpen(false);
   };
 
-  // Render each room card
+  /* ================= ROOM CARD (DASHBOARD STYLE) ================= */
   const renderRoomCard = ({ room, property }) => {
-    const images = room.images || [];
-    const idx = imageIndex[`${room.propertyId}-${room.rateCardId}`] || 0;
-    const imgUrl =
+    const images = room.roomImages || [];
+    const idx = imageIndex[room.id] || 0;
+
+    const img =
       images.length > 0
         ? `${baseURL}${images[idx]}`
-        : "https://images.unsplash.com/photo-1721322800607-8c38375eef04?w=400";
+        : "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85";
 
     return (
       <TouchableOpacity
-        style={roomCard.card}
-        onPress={() => navigation.navigate("RoomDetails", { room, property })}
-        activeOpacity={0.8}
+        style={styles.card}
+        activeOpacity={0.9}
+        onPress={() =>
+          navigation.navigate("RoomDetails", {
+            room: { ...room, rateCardId: room.id },
+            property,
+          })
+        }
       >
-        <View style={roomCard.imageBox}>
-          <Image source={{ uri: imgUrl }} style={roomCard.image} />
-          <TouchableOpacity style={roomCard.detailsBtn}>
-            <Text style={roomCard.detailsText}>Details</Text>
-            <Ionicons name="chevron-forward" size={15} color="#fff" />
-          </TouchableOpacity>
-        </View>
+        {/* IMAGE */}
+        <Image source={{ uri: img }} style={styles.image} />
 
-        <View style={roomCard.bottom}>
-          <Text style={roomCard.title}>{room.roomType}</Text>
-          <View style={roomCard.rightBlock}>
-            <View style={roomCard.iconRow}>
-              <Ionicons name="wifi" size={18} color="#5C4636" />
-              <Ionicons name="car" size={18} color="#5C4636" />
-              <Ionicons name="restaurant" size={18} color="#5C4636" />
+        {/* CONTENT */}
+        <View style={styles.cardContent}>
+          <View style={styles.titleRow}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.roomName}>
+                {room.roomType} 
+              </Text>
+              <Text style={styles.address} numberOfLines={2}>
+                {property.address}
+              </Text>
             </View>
-            <Text style={roomCard.price}>₹{room.rent}/month</Text>
+
+            <View style={styles.priceBox}>
+              <Text style={styles.price}>₹ {room.rent}</Text>
+              <Text style={styles.perMonth}>per month</Text>
+            </View>
+          </View>
+
+          {/* PROPERTY AMENITIES */}
+          <View style={styles.amenitiesRow}>
+            {property.amenities
+              ?.filter(Boolean)
+              .slice(0, 4)
+              .map((a, i) => (
+                <View key={i} style={styles.amenityChip}>
+                  <Ionicons
+                    name="checkmark-circle-outline"
+                    size={14}
+                    color="#F2A85B"
+                  />
+                  <Text style={styles.amenityText}>{a}</Text>
+                </View>
+              ))}
           </View>
         </View>
       </TouchableOpacity>
     );
   };
 
-  // Render property block
+  /* ================= PROPERTY SECTION ================= */
   const renderPropertySection = ({ item: property }) => {
     if (!property.rateCard?.length) return null;
 
     return (
-      <View style={propertySectionStyles.propertySection}>
-        <View style={propertySectionStyles.propertyHeader}>
-          <Text style={propertySectionStyles.propertyTitle}>{property.name}</Text>
-          {property.address && (
-            <Text style={propertySectionStyles.propertyAddress} numberOfLines={1}>
-              {property.address}
-            </Text>
-          )}
-        </View>
+      <View style={styles.propertySection}>
+        <Text style={styles.propertyTitle}>{property.name}</Text>
 
-        <FlatList
-          data={property.rateCard}
-          keyExtractor={(room) => room.rateCardId.toString()}
-          renderItem={({ item }) => renderRoomCard({ room: item, property })}
-          contentContainerStyle={propertySectionStyles.roomsContainer}
-          showsVerticalScrollIndicator={false}
-        />
+        {property.rateCard.map((room) => (
+          <View key={room.id}>
+            {renderRoomCard({ room, property })}
+          </View>
+        ))}
       </View>
     );
   };
 
-  // Filter block as ListHeader
+  /* ================= FILTER HEADER ================= */
   const FilterHeader = () => (
-    <View style={filterStyles.filterWrapper}>
-      <View style={filterStyles.container}>
-        {/* First Row */}
-        <View style={filterStyles.row}>
-          {/* Price filter */}
-          <TouchableOpacity
-            style={filterStyles.dropDown}
-            onPress={() => {
-              setPriceOpen(!priceOpen);
-              setRoomTypeOpen(false);
-            }}
-          >
-            <Text style={filterStyles.dropText}>
-              {selectedPrice ? `₹${selectedPrice}` : "Price range"}
-            </Text>
-            <Ionicons 
-              name={priceOpen ? "chevron-up" : "chevron-down"} 
-              size={16} 
-              color="#5C4636" 
-            />
-          </TouchableOpacity>
+    <View style={filterStyles.filterContainer}>
+      {/* Price + Room Type Row */}
+      <View style={filterStyles.filterRow}>
+        <TouchableOpacity
+          style={filterStyles.filterInput}
+          onPress={() => {
+            setPriceOpen(!priceOpen);
+            setRoomTypeOpen(false);
+          }}
+        >
+          <Text style={filterStyles.filterText}>
+            {selectedPrice ? `Under ₹${selectedPrice}` : "Price"}
+          </Text>
+          <Ionicons name="chevron-down" size={18} color="#616161" />
+        </TouchableOpacity>
 
-          {/* Room type filter */}
-          <TouchableOpacity
-            style={filterStyles.dropDown}
-            onPress={() => {
-              setRoomTypeOpen(!roomTypeOpen);
-              setPriceOpen(false);
-            }}
-          >
-            <Text style={filterStyles.dropText}>
-              {selectedRoomType ? selectedRoomType : "Room type"}
-            </Text>
-            <Ionicons 
-              name={roomTypeOpen ? "chevron-up" : "chevron-down"} 
-              size={16} 
-              color="#5C4636" 
-            />
-          </TouchableOpacity>
+        <TouchableOpacity
+          style={filterStyles.filterInput}
+          onPress={() => {
+            setRoomTypeOpen(!roomTypeOpen);
+            setPriceOpen(false);
+          }}
+        >
+          <Text style={filterStyles.filterText}>
+            {selectedRoomType || "Room Type"}
+          </Text>
+          <Ionicons name="chevron-down" size={18} color="#616161" />
+        </TouchableOpacity>
+      </View>
+
+      {/* Price Dropdown */}
+      {priceOpen && (
+        <View style={filterStyles.listContainer}>
+          {priceOptions.map((p) => (
+            <TouchableOpacity
+              key={p}
+              style={filterStyles.listItem}
+              onPress={() => {
+                setSelectedPrice(p);
+                setPriceOpen(false);
+              }}
+            >
+              <Text style={filterStyles.listText}>Under ₹{p}</Text>
+            </TouchableOpacity>
+          ))}
         </View>
+      )}
 
-        {/* Price Options */}
-        {priceOpen && (
-          <View style={filterStyles.optionsBox}>
-            {priceOptions.map((opt, idx) => (
-              <TouchableOpacity
-                key={idx}
-                style={[
-                  filterStyles.optionItem,
-                  idx === priceOptions.length - 1 && { borderBottomWidth: 0 }
-                ]}
-                onPress={() => {
-                  setSelectedPrice(opt);
-                  setPriceOpen(false);
-                }}
-              >
-                <Text style={filterStyles.optionText}>₹{opt}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        )}
-
-        {/* Room Type Options */}
-        {roomTypeOpen && (
-          <View style={filterStyles.optionsBox}>
-            {roomTypeOptions.map((opt, idx) => (
-              <TouchableOpacity
-                key={idx}
-                style={[
-                  filterStyles.optionItem,
-                  idx === roomTypeOptions.length - 1 && { borderBottomWidth: 0 }
-                ]}
-                onPress={() => {
-                  setSelectedRoomType(opt);
-                  setRoomTypeOpen(false);
-                }}
-              >
-                <Text style={filterStyles.optionText}>{opt}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        )}
-
-        {/* Location */}
-        <View style={filterStyles.locationBox}>
-          <Ionicons name="location" size={18} color="#5C4636" />
-          <TextInput
-            placeholder="Enter location"
-            value={location}
-            onChangeText={setLocation}
-            style={filterStyles.locationInput}
-          />
+      {/* Room Type Dropdown */}
+      {roomTypeOpen && (
+        <View style={filterStyles.listContainer}>
+          {roomTypeOptions.map((t) => (
+            <TouchableOpacity
+              key={t}
+              style={filterStyles.listItem}
+              onPress={() => {
+                setSelectedRoomType(t);
+                setRoomTypeOpen(false);
+              }}
+            >
+              <Text style={filterStyles.listText}>{t} Sharing</Text>
+            </TouchableOpacity>
+          ))}
         </View>
+      )}
 
-        {/* Buttons Row */}
-        <View style={filterStyles.buttonsRow}>
-          <TouchableOpacity 
-            style={[filterStyles.applyBtn, filterStyles.btn]} 
-            onPress={applyFilters}
-          >
-            <Text style={filterStyles.btnText}>Apply Filter</Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={[filterStyles.clearBtn, filterStyles.btn]} 
-            onPress={clearFilters}
-          >
-            <Text style={filterStyles.btnText}>Clear</Text>
-          </TouchableOpacity>
-        </View>
+      {/* Location Input */}
+      <TouchableOpacity style={filterStyles.locationInput}>
+        <Ionicons name="location-outline" size={18} color="#616161" />
+        <TextInput
+          placeholder="Location"
+          placeholderTextColor="#888"
+          value={location}
+          onChangeText={setLocation}
+          style={filterStyles.locationTextInput}
+        />
+      </TouchableOpacity>
+
+      {/* Clear + Apply Buttons */}
+      <View style={filterStyles.buttonRow}>
+        <TouchableOpacity
+          style={filterStyles.clearButton}
+          onPress={clearFilters}
+        >
+          <Text style={filterStyles.clearText}>Clear</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={filterStyles.applyButton}
+          onPress={applyFilters}
+        >
+          <Text style={filterStyles.applyText}>Apply</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
 
   return (
-    <View style={styles.container}>
-      <HeaderGradient title="Connect, Learn, Celebrate! join Your Community" />
+    <View style={{ flex: 1 }}>
+      <HeaderGradient title="Premium Spaces" />
 
       <FlatList
         data={loading ? [] : filteredList}
@@ -304,19 +329,16 @@ const BrowsePropertiesScreen = ({ navigation,route }) => {
         renderItem={renderPropertySection}
         ListHeaderComponent={<FilterHeader />}
         ListEmptyComponent={
-          <View style={emptyStyles.container}>
+          <View style={styles.empty}>
             {loading ? (
-              <>
-                <ActivityIndicator size="large" color={colors.primary} />
-                <Text style={emptyStyles.text}>Loading properties...</Text>
-              </>
+              <ActivityIndicator size="large" />
             ) : (
-              <Text style={emptyStyles.text}>No properties matching your filters</Text>
+              <Text>No properties found</Text>
             )}
           </View>
         }
-        contentContainerStyle={styles.flatListContent}
         showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 30 }}
       />
     </View>
   );
@@ -324,202 +346,211 @@ const BrowsePropertiesScreen = ({ navigation,route }) => {
 
 export default BrowsePropertiesScreen;
 
-// ---------------- Styles ----------------
+/* ================= MAIN STYLES (UNCHANGED) ================= */
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.backgroundMain,
-  },
-  flatListContent: {
-    paddingBottom: 20,
-  },
-});
-
-const emptyStyles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingTop: 100,
-  },
-  text: {
-    marginTop: 20,
-    fontSize: 16,
-    color: "#777",
-    textAlign: "center",
-  },
-});
-
-const propertySectionStyles = StyleSheet.create({
   propertySection: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    marginHorizontal: 12,
-    marginBottom: 20,
-    overflow: "hidden",
-    elevation: 4,
-  },
-  propertyHeader: {
-    padding: 14,
-    backgroundColor: "#f8f9fa",
-    borderBottomWidth: 1,
-    borderBottomColor: "#eee",
+    marginBottom: 10,
   },
   propertyTitle: {
-    fontSize: 19,
-    fontWeight: "700",
-    color: colors.primary,
+    marginLeft: 16,
+    marginBottom: 10,
+    fontSize: 20,
+    fontFamily:'Quicksand-Bold',
+    color: "#4B3426",
   },
-  propertyAddress: {
-    fontSize: 13,
-    color: "#666",
-    marginTop: 2,
-  },
-  roomsContainer: {
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-  },
-});
 
-const roomCard = StyleSheet.create({
   card: {
-    width: '100%',
-    height: 210,
-    backgroundColor: "#FFF7EC",
-    borderRadius: 12,
-    marginBottom: 16,
-    alignSelf: "center",
+    height: 400,
+    backgroundColor: "#EFE8E2",
+    marginHorizontal: 16,
+    marginBottom: 18,
+    borderRadius: 20,
     overflow: "hidden",
-    borderWidth: 1.2,
-    borderColor: "#E2D6C4",
-  },
-  imageBox: {
-    width: "100%",
-    height: 135,
-  },
-  image: {
-    width: "100%",
-    height: "100%",
-  },
-  detailsBtn: {
-    position: "absolute",
-    bottom: 8,
-    left: 10,
-    backgroundColor: "#5C4636",
-    borderRadius: 18,
-    paddingVertical: 4,
-    paddingHorizontal: 12,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
-  detailsText: {
-    color: "#fff",
-    fontSize: 13,
-    fontWeight: "700",
-  },
-  bottom: {
-    flex: 1,
-    paddingHorizontal: 12,
-    paddingTop: 8,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  title: { fontSize: 16, fontWeight: "700", color: "#3C2A1E" },
-  rightBlock: { alignItems: "flex-end" },
-  iconRow: { flexDirection: "row", gap: 10, marginBottom: 6 },
-  price: { fontSize: 17, fontWeight: "900", color: "#3C2A1E" },
-});
-
-const filterStyles = StyleSheet.create({
-  filterWrapper: {
-    backgroundColor: '#fff',
-    marginHorizontal: 12,
-    marginTop: 12,
-    marginBottom: 20,
-    borderRadius: 14,
     elevation: 4,
   },
-  container: {
-    padding: 16,
-    gap: 12,
+
+  image: {
+    width: "100%",
+    height: 240,
   },
-  row: {
+
+  cardContent: {
+    flex: 1,
+    padding: 14,
+    justifyContent: "space-between",
+  },
+
+  titleRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+
+  roomName: {
+    fontSize: 18,
+    fontFamily:'Quicksand-Bold',
+    color: "#3E3E3E",
+  },
+
+  address: {
+    marginTop: 4,
+    fontSize: 13,
+    color: "#6F6F6F",
+    fontFamily:'Quicksand-Regular'
+  },
+
+  priceBox: {
+    alignItems: "flex-end",
+  },
+
+  price: {
+    fontSize: 20,
+    fontFamily:'Quicksand-Bold',
+    color: "#F2A85B",
+  },
+
+  perMonth: {
+    fontSize: 12,
+    color: "#6F6F6F",
+    fontFamily:'Quicksand-Regular'
+  },
+
+  amenitiesRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+
+  amenityChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    borderWidth: 1,
+    borderColor: "#E5D5C5",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+
+  amenityText: {
+    fontSize: 12,
+    fontFamily:'Quicksand-Medium',
+    color: "#4B3426",
+  },
+
+  empty: {
+    alignItems: "center",
+    marginTop: 80,
+  },
+});
+
+/* ================= FILTER STYLES - NOW EXACT SAME AS EVENTS SCREEN ================= */
+const filterStyles = StyleSheet.create({
+  filterContainer: {
+    backgroundColor: "#fff",
+    margin: 12,
+    borderRadius: 14,
+    elevation: 4,
+    padding: 16,
+  },
+
+  filterRow: {
     flexDirection: "row",
     gap: 12,
+    marginBottom: 12,
   },
-  dropDown: {
+
+  filterInput: {
     flex: 1,
-    height: 44,
-    borderRadius: 28,
-    paddingHorizontal: 16,
-    backgroundColor: "#F4EDE5",
-    borderWidth: 1.3,
-    borderColor: "#D5C3AC",
+    height: 45,
+    backgroundColor: "#FFF",
+    borderRadius: 15,
+    borderWidth: 1,
+    borderColor: "#616161",
+    paddingHorizontal: 12,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    fontFamily: "Quicksand-Regular",
   },
-  dropText: {
+
+  filterText: {
     fontSize: 14,
-    color: "#5C4636",
-    fontWeight: "500",
+    color: "#616161",
+    fontFamily: "Quicksand-Regular",
   },
-  optionsBox: {
-    backgroundColor: "#F4EDE5",
+
+  listContainer: {
+    backgroundColor: "#FFF",
     borderRadius: 12,
-    paddingVertical: 8,
-    maxHeight: 150,
+    borderWidth: 1,
+    borderColor: "#CBBBA2",
+    marginBottom: 12,
   },
-  optionItem: {
-    paddingVertical: 10,
-    paddingHorizontal: 16,
+
+  listItem: {
+    padding: 12,
     borderBottomWidth: 1,
-    borderBottomColor: "#D5C3AC",
+    borderBottomColor: "#EEE",
   },
-  optionText: {
+
+  listText: {
     fontSize: 14,
-    color: "#5C4636",
-    fontWeight: "500",
+    color: "#616161",
+    fontFamily: "Quicksand-Regular",
   },
-  locationBox: {
-    height: 44,
-    borderRadius: 28,
-    backgroundColor: "#F4EDE5",
-    borderWidth: 1.3,
-    borderColor: "#D5C3AC",
+
+  locationInput: {
+    height: 45,
+    backgroundColor: "#FFF",
+    borderRadius: 15,
+    borderWidth: 1,
+    borderColor: "#616161",
+    paddingHorizontal: 12,
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 16,
-    gap: 8,
   },
-  locationInput: {
+
+  locationTextInput: {
     flex: 1,
+    marginLeft: 10,
     fontSize: 14,
-    color: "#5C4636",
-    paddingVertical: 0,
+    color: "#616161",
+    fontFamily: "Quicksand-Regular",
   },
-  buttonsRow: {
+
+  buttonRow: {
     flexDirection: "row",
     gap: 12,
+    marginTop: 10,
   },
-  btn: {
+
+  clearButton: {
     flex: 1,
-    height: 46,
-    borderRadius: 30,
+    backgroundColor: "#FFF",
+    borderWidth: 1,
+    borderColor: colors.nOrange,
+    paddingVertical: 14,
+    borderRadius: 10,
     alignItems: "center",
-    justifyContent: "center",
   },
-  applyBtn: {
-    backgroundColor: "#5C4636",
+
+  clearText: {
+    color: colors.nOrange,
+    fontSize: 19,
+    fontFamily: "Quicksand-Bold",
   },
-  clearBtn: {
-    backgroundColor: "#D5C3AC",
+
+  applyButton: {
+    flex: 1,
+    backgroundColor: colors.nOrange,
+    paddingVertical: 14,
+    borderRadius: 10,
+    alignItems: "center",
   },
-  btnText: {
-    fontSize: 17,
-    fontWeight: "600",
-    color: "#fff",
+
+  applyText: {
+    color: "#FFF",
+    fontSize: 19,
+    fontFamily: "Quicksand-Bold",
   },
 });
