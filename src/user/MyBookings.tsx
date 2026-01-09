@@ -14,11 +14,11 @@ import HeaderGradient from "../components/HeaderGradient";
 
 const API_BASE_URL = "https://staging.cocoliving.in";
 
-const MyBookings = ({ navigation }) => {
+const MyBookings = ({ navigation }: any) => {
   const { user } = useAuth();
   const token = user?.token;
 
-  const [bookings, setBookings] = useState([]);
+  const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -29,9 +29,11 @@ const MyBookings = ({ navigation }) => {
     try {
       const res = await axios.get(
         `${API_BASE_URL}/api/book-room/getUserBookings?page=1&limit=20`,
-        { headers: { Authorization: `Bearer ${token}` } }
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
       );
-      setBookings(res.data.bookings || []);
+      setBookings(res.data?.bookings || []);
     } catch (e) {
       console.log("Booking fetch error", e);
     } finally {
@@ -41,7 +43,6 @@ const MyBookings = ({ navigation }) => {
 
   const today = new Date();
 
-  // 🔒 CURRENT STAY (UNCHANGED LOGIC)
   const currentBooking = bookings.find((b) => {
     const status = b.displayStatus?.toLowerCase();
     const checkIn = new Date(b.checkInDate);
@@ -54,12 +55,12 @@ const MyBookings = ({ navigation }) => {
     );
   });
 
-  const otherBookings = bookings.filter((b) => b !== currentBooking);
+  const pastBookings = bookings.filter((b) => b !== currentBooking);
 
   if (loading) {
     return (
       <View style={styles.loader}>
-        <ActivityIndicator size="large" color="#C97B63" />
+        <ActivityIndicator size="large" />
       </View>
     );
   }
@@ -69,82 +70,106 @@ const MyBookings = ({ navigation }) => {
       <HeaderGradient title="My Bookings" />
 
       <ScrollView showsVerticalScrollIndicator={false}>
-        <Text style={styles.subtitle}>
-          Your stays, beautifully organised ✨
-        </Text>
-
-        {/* ===== CURRENT STAY ===== */}
+        {/* ===== CURRENT BOOKING ===== */}
         {currentBooking && (
-          <>
-            <Text style={styles.sectionTitle}>Current Stay</Text>
+          <View style={styles.currentWrap}>
+            <Text style={styles.currentTitle}>Current Booking</Text>
 
             <View style={styles.currentCard}>
-              <Text style={styles.propertyName}>
-                {currentBooking.rateCard?.property?.name}
+              <Text style={styles.roomNumber}>
+                Room #{currentBooking.room?.roomNumber || "--"}
               </Text>
 
-              <Text style={styles.roomType}>
-                {currentBooking.roomType} Room
-              </Text>
-
-              <View style={styles.row}>
+              <View style={styles.infoGrid}>
                 <Info
-                  icon="calendar-outline"
-                  label="Check-in"
-                  value={formatDate(currentBooking.checkInDate)}
+                  label="Last Payment"
+                  value={formatDate(currentBooking.updatedAt)}
                 />
                 <Info
-                  icon="calendar-clear-outline"
-                  label="Check-out"
-                  value={formatDate(currentBooking.checkOutDate)}
+                  label="Duration"
+                  value={`${currentBooking.duration} months`}
+                />
+                <Info
+                  label="Days Left"
+                  value={daysLeft(currentBooking.checkOutDate)}
                 />
               </View>
 
-              <View style={styles.activeBadge}>
-                <Text style={styles.activeText}>ACTIVE</Text>
+              {/* ACTION BUTTONS */}
+              <View style={styles.actionRow}>
+                {currentBooking.bookingType === "PREBOOK" &&
+                  currentBooking.paymentStatus === "PARTIAL" && (
+                    <PrimaryBtn
+                      title="Pay Remaining"
+                      onPress={() =>
+                        navigation.navigate("BookingDetails", {
+                          booking: currentBooking,
+                        })
+                      }
+                    />
+                  )}
+
+                {currentBooking.bookingType === "BOOK" && (
+                  <PrimaryBtn
+                    title="Extend Stay"
+                    onPress={() =>
+                      navigation.navigate("BookingDetails", {
+                        booking: currentBooking,
+                      })
+                    }
+                  />
+                )}
+
+                <OutlineBtn
+                  title="Cancel"
+                  onPress={() =>
+                    navigation.navigate("BookingDetails", {
+                      booking: currentBooking,
+                    })
+                  }
+                />
               </View>
             </View>
-          </>
+          </View>
         )}
 
-        {/* ===== ALL BOOKINGS ===== */}
-        <Text style={styles.sectionTitle}>All Bookings</Text>
+        {/* ===== BOOKING HISTORY ===== */}
+        <Text style={styles.historyTitle}>Booking History</Text>
 
-        {otherBookings.map((b, i) => (
-          <TouchableOpacity
-            key={i}
-            activeOpacity={0.85}
-            style={styles.card}
-            onPress={() =>
-              navigation.navigate("BookingDetails", { booking: b })
-            }
-          >
-            <Text style={styles.propertyName}>
-              {b.rateCard?.property?.name}
-            </Text>
-
-            <Text style={styles.address}>
-              {b.rateCard?.property?.address}
-            </Text>
-
-            <View style={styles.metaRow}>
-              <Text style={styles.meta}>
-                {b.roomType} • {b.bookingType}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ paddingHorizontal: 16 }}
+        >
+          {pastBookings.map((b, i) => (
+            <TouchableOpacity
+              key={i}
+              style={styles.historyCard}
+              activeOpacity={0.85}
+              onPress={() =>
+                navigation.navigate("BookingDetails", { booking: b })
+              }
+            >
+              <Text style={styles.propertyName}>
+                {b.rateCard?.property?.name}
               </Text>
 
-              <View
-                style={[
-                  styles.badge,
-                  badgeColor(b.displayStatus),
-                ]}
-              >
+              <Text style={styles.smallText}>
+                Room #{b.room?.roomNumber || "--"}
+              </Text>
+
+              <Text style={styles.smallText}>
+                {formatDate(b.checkInDate)} → {formatDate(b.checkOutDate)}
+              </Text>
+
+              <View style={[styles.badge, badgeColor(b.displayStatus)]}>
                 <Text style={styles.badgeText}>
                   {b.displayStatus?.toUpperCase()}
                 </Text>
               </View>
-            </View>
-          </TouchableOpacity>
-        ))}
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
 
         <View style={{ height: 80 }} />
       </ScrollView>
@@ -152,149 +177,178 @@ const MyBookings = ({ navigation }) => {
   );
 };
 
-/* ===== HELPERS ===== */
+export default MyBookings;
 
-const formatDate = (d) =>
-  d ? new Date(d).toLocaleDateString("en-IN") : "--";
+/* ================= COMPONENTS ================= */
 
-const badgeColor = (status = "") => {
-  switch (status.toLowerCase()) {
-    case "approved":
-      return { backgroundColor: "#DFF3E4" };
-    case "upcoming":
-      return { backgroundColor: "#FFF3CD" };
-    case "pending":
-      return { backgroundColor: "#E3F2FD" };
-    default:
-      return { backgroundColor: "#EEE" };
-  }
-};
-
-const Info = ({ icon, label, value }) => (
-  <View style={styles.info}>
-    <Ionicons name={icon} size={16} color="#5C4435" />
+const Info = ({ label, value }: any) => (
+  <View style={styles.infoBox}>
     <Text style={styles.infoLabel}>{label}</Text>
     <Text style={styles.infoValue}>{value}</Text>
   </View>
 );
 
-/* ===== STYLES ===== */
+const PrimaryBtn = ({ title, onPress }: any) => (
+  <TouchableOpacity style={styles.primaryBtn} onPress={onPress}>
+    <Text style={styles.primaryBtnText}>{title}</Text>
+  </TouchableOpacity>
+);
+
+const OutlineBtn = ({ title, onPress }: any) => (
+  <TouchableOpacity style={styles.outlineBtn} onPress={onPress}>
+    <Text style={styles.outlineBtnText}>{title}</Text>
+  </TouchableOpacity>
+);
+
+/* ================= HELPERS ================= */
+
+const formatDate = (d: any) =>
+  d ? new Date(d).toLocaleDateString("en-IN") : "--";
+
+const daysLeft = (d: any) => {
+  if (!d) return "--";
+  const diff = new Date(d).getTime() - new Date().getTime();
+  return Math.max(Math.ceil(diff / (1000 * 60 * 60 * 24)), 0);
+};
+
+const badgeColor = (status = "") => {
+  switch (status.toLowerCase()) {
+    case "approved":
+    case "active":
+      return { backgroundColor: "#DFF3E4" };
+    case "cancelled":
+      return { backgroundColor: "#FDECEA" };
+    default:
+      return { backgroundColor: "#EEE" };
+  }
+};
+
+/* ================= STYLES ================= */
 
 const styles = StyleSheet.create({
-  loader: { flex: 1, justifyContent: "center", alignItems: "center" },
-
-  subtitle: {
-    textAlign: "center",
-    marginTop: 12,
-    fontFamily: "Quicksand-Medium",
-    color: "#6B5A4A",
+  loader: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
   },
 
-  sectionTitle: {
-    marginHorizontal: 16,
-    marginTop: 26,
-    marginBottom: 12,
-    fontFamily: "Quicksand-Bold",
+  currentWrap: {
+    paddingHorizontal: 16,
+    marginTop: 10,
+  },
+
+  currentTitle: {
     fontSize: 20,
+    fontFamily: "Quicksand-Bold",
     color: "#4B3426",
+    marginBottom: 12,
   },
 
   currentCard: {
     backgroundColor: "#FFF",
-    marginHorizontal: 16,
-    borderRadius: 24,
+    borderRadius: 26,
     padding: 18,
-    borderLeftWidth: 5,
-    borderLeftColor: "#4CAF50",
+  },
+
+  roomNumber: {
+    fontSize: 18,
+    fontFamily: "Quicksand-Bold",
+    color: "#3C2A1E",
+    marginBottom: 14,
+  },
+
+  infoGrid: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+
+  infoBox: {
+    backgroundColor: "#F6F1EA",
+    borderRadius: 14,
+    padding: 10,
+    width: "32%",
+    alignItems: "center",
+  },
+
+  infoLabel: {
+    fontSize: 11,
+    color: "#777",
+    fontFamily: "Quicksand-Medium",
+  },
+
+  infoValue: {
+    fontSize: 13,
+    fontFamily: "Quicksand-Bold",
+    marginTop: 4,
+  },
+
+  actionRow: {
+    marginTop: 18,
+  },
+
+  primaryBtn: {
+    backgroundColor: "#F6A452",
+    paddingVertical: 12,
+    borderRadius: 14,
+    alignItems: "center",
+    marginBottom: 10,
+  },
+
+  primaryBtnText: {
+    color: "#FFF",
+    fontFamily: "Quicksand-Bold",
+  },
+
+  outlineBtn: {
+    borderWidth: 1,
+    borderColor: "#C97B63",
+    paddingVertical: 12,
+    borderRadius: 14,
+    alignItems: "center",
+  },
+
+  outlineBtnText: {
+    color: "#C97B63",
+    fontFamily: "Quicksand-Bold",
+  },
+
+  historyTitle: {
+    marginLeft: 16,
+    marginTop: 26,
+    marginBottom: 12,
+    fontSize: 18,
+    fontFamily: "Quicksand-Bold",
+  },
+
+  historyCard: {
+    width: 240,
+    backgroundColor: "#FFF",
+    borderRadius: 20,
+    padding: 16,
+    marginRight: 14,
   },
 
   propertyName: {
     fontFamily: "Quicksand-Bold",
-    fontSize: 16,
-    color: "#4B3426",
-  },
-
-  roomType: {
-    fontFamily: "Quicksand-SemiBold",
     fontSize: 15,
-    marginTop: 4,
-    color: "#6B4E3D",
   },
 
-  address: {
-    fontFamily: "Quicksand-Medium",
+  smallText: {
     fontSize: 12,
-    color: "#777",
+    color: "#666",
     marginTop: 4,
-  },
-
-  row: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 12,
-  },
-
-  info: { width: "48%" },
-
-  infoLabel: {
-    fontSize: 11,
-    fontFamily: "Quicksand-Medium",
-    color: "#777",
-  },
-
-  infoValue: {
-    fontFamily: "Quicksand-SemiBold",
-    fontSize: 13,
-    marginTop: 2,
-  },
-
-  activeBadge: {
-    backgroundColor: "#DFF3E4",
-    alignSelf: "flex-start",
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 20,
-    marginTop: 14,
-  },
-
-  activeText: {
-    color: "#2E7D32",
-    fontFamily: "Quicksand-Bold",
-    fontSize: 12,
-  },
-
-  card: {
-    backgroundColor: "#FFF",
-    marginHorizontal: 16,
-    borderRadius: 18,
-    padding: 16,
-    marginBottom: 14,
-  },
-
-  metaRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginTop: 10,
-  },
-
-  meta: {
-    fontFamily: "Quicksand-Medium",
-    fontSize: 13,
-    color: "#555",
   },
 
   badge: {
+    marginTop: 10,
+    alignSelf: "flex-start",
     paddingHorizontal: 12,
     paddingVertical: 4,
-    borderRadius: 14,
+    borderRadius: 12,
   },
 
   badgeText: {
-    fontFamily: "Quicksand-Bold",
     fontSize: 11,
-    color: "#4B3426",
+    fontFamily: "Quicksand-Bold",
   },
 });
-
-export default MyBookings;

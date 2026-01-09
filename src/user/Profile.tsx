@@ -1,4 +1,4 @@
-// FINAL PROFILE SCREEN — UPDATED WITH PARENT EMAIL, VALIDATIONS, FUNCTIONAL GENDER
+// FINAL PROFILE SCREEN — ONLY CAMERA FOR PROFILE PHOTO (NO GALLERY UPLOAD)
 
 import React, { useState, useEffect } from "react";
 import {
@@ -13,7 +13,7 @@ import {
 import axios from "axios";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import { launchImageLibrary } from "react-native-image-picker";
+import { launchCamera } from "react-native-image-picker";  // ← CHANGED TO CAMERA ONLY
 import Toast from "react-native-toast-message";
 import { useAuth } from "../context/AuthContext";
 import { useNavigation } from "@react-navigation/native";
@@ -22,7 +22,7 @@ const BASE_URL = "https://staging.cocoliving.in";
 
 export default function Profile() {
   const { user } = useAuth();
-  const {refreshUser} = useAuth();
+  const { refreshUser } = useAuth();
   const token = user?.token;
   const navigation = useNavigation();
   const isStudent = user?.userType === "student";
@@ -63,13 +63,6 @@ export default function Profile() {
   });
 
   // 🔥 Validation functions (same logic as web)
-  // const validateParentMobile = (value: string) => {
-  //   if (value && !/^\d{10}$/.test(value)) {
-  //     return "Parent Mobile must be exactly 10 digits";
-  //   }
-  //   return "";
-  // };
-
   const validateParentEmail = (value: string) => {
     if (value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
       return "Invalid email format";
@@ -118,22 +111,48 @@ export default function Profile() {
     }
   };
 
+  // 🔥 ONLY CAMERA — NO GALLERY UPLOAD
   const pickImage = () => {
-    launchImageLibrary({ mediaType: "photo" }, (res) => {
-      if (res.didCancel) return;
-      if (res.assets) setImage(res.assets[0].uri);
-    });
+    launchCamera(
+      {
+        mediaType: "photo",
+        cameraType: "front",          // optional: front camera by default (better for selfies)
+        quality: 0.8,
+        includeBase64: false,
+      },
+      (res) => {
+        if (res.didCancel) {
+          console.log("User cancelled camera");
+          return;
+        }
+        if (res.errorCode) {
+          console.log("Camera error:", res.errorMessage);
+          Toast.show({
+            type: "error",
+            text1: "Camera Error",
+            text2: res.errorMessage || "Unable to open camera",
+          });
+          return;
+        }
+        if (res.assets && res.assets[0]?.uri) {
+          setImage(res.assets[0].uri);
+          Toast.show({
+            type: "success",
+            text1: "Photo captured!",
+            text2: "Save profile to upload",
+          });
+        }
+      }
+    );
   };
 
   const update = (key, val) => setProfile({ ...profile, [key]: val });
 
   // 🔥 Save Profile
   const saveProfile = async () => {
-    // Validate parent fields before sending
-    // const mobileError = validateParentMobile(profile.parentMobile);
     const emailError = validateParentEmail(profile.parentEmail);
 
-   if (emailError) {
+    if (emailError) {
       setErrors({ parentEmail: emailError });
       Toast.show({ type: "error", text1: "Please fix error in parent email" });
       return;
@@ -157,9 +176,9 @@ export default function Profile() {
       form.append("companyName", profile.companyName || "");
       form.append("position", profile.position || "");
       form.append("allergies", profile.allergies || "");
-      form.append("foodPreference", profile.foodPreference || "");  // ← FIXED & always append
+      form.append("foodPreference", profile.foodPreference || "");
 
-      // IMAGE UPLOAD
+      // IMAGE UPLOAD (only if new photo taken)
       if (image && !image.startsWith("https://")) {
         form.append("profileImage", {
           uri: image,
@@ -196,198 +215,195 @@ export default function Profile() {
 
   return (
     <>
-    <ScrollView style={styles.container}>
-      {/* HEADER */}
-      <View style={styles.header}>
-        <Ionicons name="chevron-back" size={26} color="#4C3D2A" onPress={() => navigation.goBack()} />
-        <Text style={styles.title}>Profile</Text>
-      </View>
+      <ScrollView style={styles.container}>
+        {/* HEADER */}
+        <View style={styles.header}>
+          <Ionicons name="chevron-back" size={26} color="#4C3D2A" onPress={() => navigation.goBack()} />
+          <Text style={styles.title}>Profile</Text>
+        </View>
 
-      {/* IMAGE + USER TYPE */}
-      <View style={styles.rowTop}>
-        <View style={styles.imageWrapper}>
-          {image ? (
-            <Image source={{ uri: image }} style={styles.profileImg} />
-          ) : (
-            <View style={styles.profileCircle}>
-              <Text style={styles.profileLetter}>
-                {profile.firstName?.charAt(0)?.toUpperCase()}
+        {/* IMAGE + USER TYPE */}
+        <View style={styles.rowTop}>
+          <View style={styles.imageWrapper}>
+            {image ? (
+              <Image source={{ uri: image }} style={styles.profileImg} />
+            ) : (
+              <View style={styles.profileCircle}>
+                <Text style={styles.profileLetter}>
+                  {profile.firstName?.charAt(0)?.toUpperCase()}
+                </Text>
+              </View>
+            )}
+
+            <TouchableOpacity style={styles.camIcon} onPress={pickImage}>
+              <Ionicons name="camera-outline" size={20} color="#4C3D2A" />
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.tabWrapper}>
+            <View style={[styles.tab, isStudent ? styles.tabActive : styles.tabInactive]}>
+              <Text style={isStudent ? styles.tabTextActive : styles.tabTextInactive}>Student</Text>
+            </View>
+
+            <View style={[styles.tab, isProfessional ? styles.tabActive : styles.tabInactive]}>
+              <Text style={isProfessional ? styles.tabTextActive : styles.tabTextInactive}>
+                Professional
               </Text>
             </View>
-          )}
-
-          <TouchableOpacity style={styles.camIcon} onPress={pickImage}>
-            <Ionicons name="camera-outline" size={20} color="#4C3D2A" />
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.tabWrapper}>
-          <View style={[styles.tab, isStudent ? styles.tabActive : styles.tabInactive]}>
-            <Text style={isStudent ? styles.tabTextActive : styles.tabTextInactive}>Student</Text>
-          </View>
-
-          <View style={[styles.tab, isProfessional ? styles.tabActive : styles.tabInactive]}>
-            <Text style={isProfessional ? styles.tabTextActive : styles.tabTextInactive}>
-              Professional
-            </Text>
           </View>
         </View>
-      </View>
 
-      {/* SECTION */}
-      <Text style={styles.sectionTitle}>Personal & Contact Information</Text>
+        {/* SECTION */}
+        <Text style={styles.sectionTitle}>Personal & Contact Information</Text>
 
-      {/* FIRST + LAST NAME */}
-      <View style={styles.twoCol}>
-        <FloatingInput label="First Name" value={profile.firstName} onChangeText={(v) => update("firstName", v)} />
-        <FloatingInput label="Last Name" value={profile.lastName} onChangeText={(v) => update("lastName", v)} />
-      </View>
-
-      {/* DOB + GENDER */}
-      <View style={styles.twoCol}>
-        <FloatingDropdown
-          label="Date of Birth"
-          value={profile.dateOfBirth ? new Date(profile.dateOfBirth).toLocaleDateString('en-IN') : "Select"}
-          onPress={() => setShowDOB(true)}
-        />
-
-        <FloatingDropdown
-          label="Gender"
-          value={profile.gender || "Select Gender"}
-          onPress={() => setShowGender(!showGender)}
-        />
-      </View>
-
-      {/* Gender Options */}
-      {showGender && (
-        <View style={styles.optionList}>
-          <TouchableOpacity onPress={() => { update("gender", "Male"); setShowGender(false); }}>
-            <Text style={styles.optionItem}>Male</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => { update("gender", "Female"); setShowGender(false); }}>
-            <Text style={styles.optionItem}>Female</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => { update("gender", "Other"); setShowGender(false); }}>
-            <Text style={styles.optionItem}>Other</Text>
-          </TouchableOpacity>
+        {/* FIRST + LAST NAME */}
+        <View style={styles.twoCol}>
+          <FloatingInput label="First Name" value={profile.firstName} onChangeText={(v) => update("firstName", v)} />
+          <FloatingInput label="Last Name" value={profile.lastName} onChangeText={(v) => update("lastName", v)} />
         </View>
-      )}
 
-      {/* DOB Picker */}
-      {showDOB && (
-        <DateTimePicker
-          value={profile.dateOfBirth ? new Date(profile.dateOfBirth) : new Date()}
-          mode="date"
-          onChange={(e, d) => {
-            if (d) update("dateOfBirth", d.toISOString().split("T")[0]);
-            setShowDOB(false);
-          }}
-        />
-      )}
+        {/* DOB + GENDER */}
+        <View style={styles.twoCol}>
+          <FloatingDropdown
+            label="Date of Birth"
+            value={profile.dateOfBirth ? new Date(profile.dateOfBirth).toLocaleDateString('en-IN') : "Select"}
+            onPress={() => setShowDOB(true)}
+          />
 
-      {/* EMAIL */}
-      <FloatingStaticVerified
-  label="Email"
-  value={profile.email}
-  verified={user?.isEmailVerified}
-/>
+          <FloatingDropdown
+            label="Gender"
+            value={profile.gender || "Select Gender"}
+            onPress={() => setShowGender(!showGender)}
+          />
+        </View>
 
-      {/* PHONE */}
-   <FloatingPhone
-  label="Mobile Number"
-  value={profile.phone}
-  onChangeText={(v) => update("phone", v)}
-  verified={user?.isPhoneVerified}
-/>
+        {/* Gender Options */}
+        {showGender && (
+          <View style={styles.optionList}>
+            <TouchableOpacity onPress={() => { update("gender", "Male"); setShowGender(false); }}>
+              <Text style={styles.optionItem}>Male</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => { update("gender", "Female"); setShowGender(false); }}>
+              <Text style={styles.optionItem}>Female</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => { update("gender", "Other"); setShowGender(false); }}>
+              <Text style={styles.optionItem}>Other</Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
-      {/* ADDRESS */}
-      <FloatingInputFull label="Permanent Address" value={profile.address} onChangeText={(v) => update("address", v)} />
-
-      {/* STUDENT SECTION */}
-      {isStudent && (
-        <>
-          <Text style={styles.sectionTitle}>Academic Information</Text>
-
-          <FloatingInputFull label="School/College" value={profile.collegeName} onChangeText={(v) => update("collegeName", v)} />
-
-          <FloatingInputFull label="Course" value={profile.course} onChangeText={(v) => update("course", v)} />
-
-          <Text style={styles.sectionTitle}>Emergency Contact</Text>
-
-          <FloatingInputFull label="Parent Name" value={profile.parentName} onChangeText={(v) => update("parentName", v)} />
-
-          <FloatingInputFull
-            label="Parent Email"
-            value={profile.parentEmail}
-            onChangeText={(v) => {
-              update("parentEmail", v);
-              setErrors(prev => ({ ...prev, parentEmail: validateParentEmail(v) }));
+        {/* DOB Picker */}
+        {showDOB && (
+          <DateTimePicker
+            value={profile.dateOfBirth ? new Date(profile.dateOfBirth) : new Date()}
+            mode="date"
+            onChange={(e, d) => {
+              if (d) update("dateOfBirth", d.toISOString().split("T")[0]);
+              setShowDOB(false);
             }}
-            keyboardType="email-address"
           />
-          {errors.parentEmail && <Text style={styles.errorText}>{errors.parentEmail}</Text>}
+        )}
 
-       <FloatingInputFull
-            label="Parent Mobile"
-            value={profile.parentMobile}
-            onChangeText={(v) => update("parentMobile", v)}  
-            keyboardType="phone-pad"
-          />
-          
-        </>
-      )}
+        {/* EMAIL */}
+        <FloatingStaticVerified
+          label="Email"
+          value={profile.email}
+          verified={user?.isEmailVerified}
+        />
 
-      {/* PROFESSIONAL SECTION */}
-      {isProfessional && (
-        <>
-          <Text style={styles.sectionTitle}>Professional Information</Text>
+        {/* PHONE */}
+        <FloatingPhone
+          label="Mobile Number"
+          value={profile.phone}
+          onChangeText={(v) => update("phone", v)}
+          verified={user?.isPhoneVerified}
+        />
 
-          <FloatingInputFull label="Company Name" value={profile.companyName} onChangeText={(v) => update("companyName", v)} />
+        {/* ADDRESS */}
+        <FloatingInputFull label="Permanent Address" value={profile.address} onChangeText={(v) => update("address", v)} />
 
-          <FloatingInputFull label="Position" value={profile.position} onChangeText={(v) => update("position", v)} />
-        </>
-      )}
+        {/* STUDENT SECTION */}
+        {isStudent && (
+          <>
+            <Text style={styles.sectionTitle}>Academic Information</Text>
 
-      {/* FOOD PREFERENCE */}
-      <Text style={styles.sectionTitle}>Health & Dietary Information</Text>
+            <FloatingInputFull label="School/College" value={profile.collegeName} onChangeText={(v) => update("collegeName", v)} />
 
-      <FloatingDropdown
-        label="Food Preference"
-        value={profile.foodPreference || "Select"}
-        onPress={() => setShowFood(!showFood)}
-      />
+            <FloatingInputFull label="Course" value={profile.course} onChangeText={(v) => update("course", v)} />
 
-      {showFood && (
-        <View style={styles.optionList}>
-          <TouchableOpacity onPress={() => { update("foodPreference", "Jain"); setShowFood(false); }}>
-            <Text style={styles.optionItem}>Jain</Text>
-          </TouchableOpacity>
+            <Text style={styles.sectionTitle}>Emergency Contact</Text>
 
-          <TouchableOpacity onPress={() => { update("foodPreference", "Non-Jain"); setShowFood(false); }}>
-            <Text style={styles.optionItem}>Non-Jain</Text>
-          </TouchableOpacity>
-        </View>
-      )}
+            <FloatingInputFull label="Parent Name" value={profile.parentName} onChangeText={(v) => update("parentName", v)} />
 
-      
+            <FloatingInputFull
+              label="Parent Email"
+              value={profile.parentEmail}
+              onChangeText={(v) => {
+                update("parentEmail", v);
+                setErrors(prev => ({ ...prev, parentEmail: validateParentEmail(v) }));
+              }}
+              keyboardType="email-address"
+            />
+            {errors.parentEmail && <Text style={styles.errorText}>{errors.parentEmail}</Text>}
 
-      <FloatingInputFull label="Allergies" value={profile.allergies} onChangeText={(v) => update("allergies", v)} />
+            <FloatingInputFull
+              label="Parent Mobile"
+              value={profile.parentMobile}
+              onChangeText={(v) => update("parentMobile", v)}  
+              keyboardType="phone-pad"
+            />
+          </>
+        )}
 
-      {/* SAVE BUTTON */}
-      <TouchableOpacity style={styles.saveBtn} onPress={saveProfile}>
-        <Text style={styles.saveText}>Save</Text>
-      </TouchableOpacity>
+        {/* PROFESSIONAL SECTION */}
+        {isProfessional && (
+          <>
+            <Text style={styles.sectionTitle}>Professional Information</Text>
 
-      <View style={{ height: 40 }} />
-    </ScrollView>
+            <FloatingInputFull label="Company Name" value={profile.companyName} onChangeText={(v) => update("companyName", v)} />
+
+            <FloatingInputFull label="Position" value={profile.position} onChangeText={(v) => update("position", v)} />
+          </>
+        )}
+
+        {/* FOOD PREFERENCE */}
+        <Text style={styles.sectionTitle}>Health & Dietary Information</Text>
+
+        <FloatingDropdown
+          label="Food Preference"
+          value={profile.foodPreference || "Select"}
+          onPress={() => setShowFood(!showFood)}
+        />
+
+        {showFood && (
+          <View style={styles.optionList}>
+            <TouchableOpacity onPress={() => { update("foodPreference", "Jain"); setShowFood(false); }}>
+              <Text style={styles.optionItem}>Jain</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity onPress={() => { update("foodPreference", "Non-Jain"); setShowFood(false); }}>
+              <Text style={styles.optionItem}>Non-Jain</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        <FloatingInputFull label="Allergies" value={profile.allergies} onChangeText={(v) => update("allergies", v)} />
+
+        {/* SAVE BUTTON */}
+        <TouchableOpacity style={styles.saveBtn} onPress={saveProfile}>
+          <Text style={styles.saveText}>Save</Text>
+        </TouchableOpacity>
+
+        <View style={{ height: 40 }} />
+      </ScrollView>
 
       <Toast />
-</>
-    
+    </>
   );
 }
 
 /* FLOATING COMPONENTS */
+// (unchanged - same as before)
 const FloatingInput = ({ label, value, onChangeText, keyboardType = "default" }) => (
   <View style={styles.floatWrapper}>
     <Text style={styles.smallLabel}>{label}</Text>
@@ -450,7 +466,6 @@ const FloatingStaticVerified = ({ label, value, verified }) => (
   </View>
 );
 
-
 const FloatingPhone = ({ label, value, onChangeText, verified }) => (
   <View style={styles.floatWrapper}>
     <Text style={styles.smallLabel}>{label}</Text>
@@ -464,8 +479,8 @@ const FloatingPhone = ({ label, value, onChangeText, verified }) => (
         value={value}
         onChangeText={onChangeText}
         keyboardType="phone-pad"
-        editable={!verified}              // 🔒 KEY LINE
-        selectTextOnFocus={!verified}     // 🔒 prevents cursor
+        editable={!verified}
+        selectTextOnFocus={!verified}
       />
 
       {verified ? (
@@ -488,6 +503,7 @@ const FloatingPhone = ({ label, value, onChangeText, verified }) => (
 );
 
 /* STYLES */
+// (unchanged)
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#fff", padding: 15 },
 

@@ -54,6 +54,8 @@ import {
   listenForegroundNotifications,
 } from '././src/user/notificationservice';
 import AboutUsScreen from './src/components/AboutUsScreen';
+import NotificationListScreen from './src/components/notificationIcon';
+import NotificationSettingsScreen from './src/components/setting';
 const Stack = createNativeStackNavigator();
 const API_BASE_URL = 'https://staging.cocoliving.in';
 
@@ -150,6 +152,8 @@ const AppNavigator = () => {
           <Stack.Screen name="GatePassScreen" component={GatepassScreen}/>
           <Stack.Screen name="EditProfileScreen" component={EditProfileScreen}/>
           <Stack.Screen name="AboutUsScreen" component={AboutUsScreen}/>
+           <Stack.Screen name="notificationListScreen" component={NotificationListScreen}/>
+          {/* <Stack.Screen name="notificationSettingScreen" component={NotificationSettingsScreen}/> */}
           
         </>
       ) : (

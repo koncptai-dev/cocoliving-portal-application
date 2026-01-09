@@ -16,7 +16,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import axios from 'axios';
 import Config from 'react-native-config';
-import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
+import { launchCamera } from 'react-native-image-picker';  // ← ONLY CAMERA
 import colors from '../constants/color';
 
 export const API_BASE_URL = Config.API_BASE_URL;
@@ -76,7 +76,6 @@ const RegisterProfileScreen = ({ navigation, route }) => {
 
   const [profileImage, setProfileImage] = useState<any>(null);
   const [profilePicUri, setProfilePicUri] = useState(AVATAR_PLACEHOLDER);
-  const [openSheet, setOpenSheet] = useState(false);
 
   const [otpSent, setOtpSent] = useState(false);
   const [otp, setOtp] = useState('');
@@ -86,9 +85,29 @@ const RegisterProfileScreen = ({ navigation, route }) => {
 
   const isDefaultAvatar = profilePicUri === AVATAR_PLACEHOLDER;
 
-  const openCamera = async () => {
-    setOpenSheet(false);
-    const res = await launchCamera({ mediaType: 'photo', quality: 0.7 });
+  // 🔥 DIRECT CAMERA ONLY (NO GALLERY, NO BOTTOM SHEET)
+  const takePhoto = async () => {
+    const res = await launchCamera({
+      mediaType: 'photo',
+      quality: 0.7,
+      cameraType: 'front',  // front camera by default for better selfies/live photo
+    });
+
+    if (res.didCancel) {
+      console.log('User cancelled camera');
+      return;
+    }
+
+    if (res.errorCode) {
+      console.log('Camera error:', res.errorMessage);
+      Toast.show({
+        type: 'error',
+        text1: 'Camera Error',
+        text2: res.errorMessage || 'Unable to open camera',
+      });
+      return;
+    }
+
     if (res.assets?.length) {
       const img = res.assets[0];
       setProfilePicUri(img.uri!);
@@ -97,19 +116,10 @@ const RegisterProfileScreen = ({ navigation, route }) => {
         type: img.type || 'image/jpeg',
         name: img.fileName || `photo_${Date.now()}.jpg`,
       });
-    }
-  };
-
-  const openGallery = async () => {
-    setOpenSheet(false);
-    const res = await launchImageLibrary({ mediaType: 'photo', quality: 0.7 });
-    if (res.assets?.length) {
-      const img = res.assets[0];
-      setProfilePicUri(img.uri!);
-      setProfileImage({
-        uri: img.uri,
-        type: img.type || 'image/jpeg',
-        name: img.fileName || `photo_${Date.now()}.jpg`,
+      Toast.show({
+        type: 'success',
+        text1: 'Photo captured!',
+        text2: 'Live photo ready',
       });
     }
   };
@@ -193,7 +203,6 @@ const RegisterProfileScreen = ({ navigation, route }) => {
         Toast.show({ type: 'error', text1: 'Enter valid parent email' });
         return;
       }
-      // parentMobile optional as per backend
     }
 
     const fullName = `${firstName.trim()} ${lastName.trim()}`;
@@ -248,10 +257,10 @@ const RegisterProfileScreen = ({ navigation, route }) => {
         <Text style={styles.title}>Looks like you are new</Text>
 
         <View style={styles.topRow}>
-          <TouchableOpacity style={styles.avatar} onPress={() => setOpenSheet(true)}>
+          <TouchableOpacity style={styles.avatar} onPress={takePhoto}>
             <Image source={{ uri: profilePicUri }} style={styles.avatarImg} />
             <View style={styles.cameraBadge}>
-              <Ionicons name={isDefaultAvatar ? 'camera' : 'create'} size={16} color="#fff" />
+              <Ionicons name={isDefaultAvatar ? 'camera' : 'camera'} size={16} color="#fff" />
             </View>
           </TouchableOpacity>
 
@@ -301,35 +310,35 @@ const RegisterProfileScreen = ({ navigation, route }) => {
           onPress={() => setShowDOBPicker(true)}
         />
 
-    <View style={styles.floatWrap}>
-  <Text style={styles.floatLabelAlways}>Gender*</Text>
+        <View style={styles.floatWrap}>
+          <Text style={styles.floatLabelAlways}>Gender*</Text>
 
-  <View style={styles.genderRow}>
-    {['Male', 'Female'].map((g) => (
-      <TouchableOpacity
-        key={g}
-        style={[
-          styles.genderBtn,
-          gender === g && styles.genderBtnActive,
-        ]}
-        onPress={() => setGender(g)}
-      >
-        <Text
-          style={[
-            styles.genderText,
-            gender === g && styles.genderTextActive,
-          ]}
-        >
-          {g}
-        </Text>
-      </TouchableOpacity>
-    ))}
-  </View>
-</View>
+          <View style={styles.genderRow}>
+            {['Male', 'Female'].map((g) => (
+              <TouchableOpacity
+                key={g}
+                style={[
+                  styles.genderBtn,
+                  gender === g && styles.genderBtnActive,
+                ]}
+                onPress={() => setGender(g)}
+              >
+                <Text
+                  style={[
+                    styles.genderText,
+                    gender === g && styles.genderTextActive,
+                  ]}
+                >
+                  {g}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
 
         {userType === 'student' && (
           <>
-              <Text style={styles.sectionHeading}>Parents Information</Text>
+            <Text style={styles.sectionHeading}>Parents Information</Text>
             <FloatingInput label="Parent Name*" value={parentName} onChangeText={setParentName} />
             <FloatingInput
               label="Parent Email*"
@@ -374,25 +383,6 @@ const RegisterProfileScreen = ({ navigation, route }) => {
         )}
       </ScrollView>
 
-      {openSheet && (
-        <TouchableOpacity style={styles.overlay} onPress={() => setOpenSheet(false)}>
-          <View style={styles.sheet}>
-            <Text style={styles.sheetTitle}>Select Profile Photo</Text>
-            <TouchableOpacity style={styles.sheetItem} onPress={openCamera}>
-              <Ionicons name="camera" size={22} color={COLORS.primary} />
-              <Text style={styles.sheetText}>Take Photo</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.sheetItem} onPress={openGallery}>
-              <Ionicons name="image" size={22} color={COLORS.primary} />
-              <Text style={styles.sheetText}>Choose from Gallery</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={[styles.sheetItem, { justifyContent: 'center' }]} onPress={() => setOpenSheet(false)}>
-              <Text style={{ fontWeight: '700', color: COLORS.primary }}>Cancel</Text>
-            </TouchableOpacity>
-          </View>
-        </TouchableOpacity>
-      )}
-
       <Toast />
     </KeyboardAvoidingView>
   );
@@ -403,7 +393,6 @@ const styles = StyleSheet.create({
  
   title: {
     fontSize: 23,
-    // fontWeight: '700',
     textAlign: 'center',
     marginBottom: 24,
     marginTop: 24,
@@ -424,16 +413,21 @@ const styles = StyleSheet.create({
     borderRadius: 50,
     borderWidth: 2,
     borderColor: colors.nOrange,
-    overflow: 'hidden',
+    overflow: 'visible',
   },
   avatarImg: { width: '100%', height: '100%' },
   cameraBadge: {
-    position: 'absolute',
-    bottom: 3,
-    right: 6,
+ position: 'absolute',
+    bottom: -5,     // ← neeche shift kiya taaki half outside
+    right: -5,      // ← right shift kiya taaki half outside
     backgroundColor: COLORS.primary,
-    padding: 6,
-    borderRadius: 14,
+    width: 35,       // ← fixed size for better control
+    height: 35,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 4,  // ← white border taaki overlap clean dikhe
+    borderColor: '#fff',
   },
  
   toggleRow: {
@@ -493,75 +487,46 @@ const styles = StyleSheet.create({
   },
   buttonText: { color: '#fff', fontSize: 20, fontWeight: '600', fontFamily: 'Quicksand-Bold' },
  
-  overlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    justifyContent: 'flex-end',
-  },
-  sheet: {
-    backgroundColor: '#fff',
-    padding: 20,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-  },
   genderRow: {
-  flexDirection: 'row',
-  flex: 1,
-  marginTop: 6,
-  gap: 10,
-},
-
-genderBtn: {
-  flex: 1,
-  height: 40,
-  borderRadius: 8,
-  borderWidth: 1,
-  borderColor: COLORS.border,
-  alignItems: 'center',
-  justifyContent: 'center',
-  backgroundColor: '#fff',
-},
-
-genderBtnActive: {
-  backgroundColor: COLORS.primary,
-  borderColor: COLORS.primary,
-},
-sectionHeading: {
-  fontSize: 14,
-  color: COLORS.text,
-  marginBottom: 10,
-  marginLeft: 4,
-  marginTop: 10,
-  fontFamily: 'Quicksand-Bold',
-},
-
-
-genderText: {
-  color: COLORS.primary,
-  fontWeight: '600',
-  fontFamily: 'Quicksand-Medium',
-},
-
-genderTextActive: {
-  color: '#fff',
-},
-  sheetTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    textAlign: 'center',
-    marginBottom: 15,
-  },
-  sheetItem: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingVertical: 14,
+    flex: 1,
+    marginTop: 6,
+    gap: 10,
   },
-  sheetText: { fontSize: 16, color: COLORS.text },
+
+  genderBtn: {
+    flex: 1,
+    height: 40,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#fff',
+  },
+
+  genderBtnActive: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
+  },
+  sectionHeading: {
+    fontSize: 14,
+    color: COLORS.text,
+    marginBottom: 10,
+    marginLeft: 4,
+    marginTop: 10,
+    fontFamily: 'Quicksand-Bold',
+  },
+
+  genderText: {
+    color: COLORS.primary,
+    fontWeight: '600',
+    fontFamily: 'Quicksand-Medium',
+  },
+
+  genderTextActive: {
+    color: '#fff',
+  },
 });
 
 export default RegisterProfileScreen;

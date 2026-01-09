@@ -93,7 +93,7 @@ const HeaderGradient: React.FC<Props> = ({ title, image }) => {
                 style={{ padding: 10 }}
                 activeOpacity={0.7}
               >
-                <Ionicons name="chevron-back" size={30} color="#fff" />
+                {/* <Ionicons name="chevron-back" size={30} color="#fff" /> */}
               </TouchableOpacity>
 
               <View style={{ marginLeft: 8 }}>

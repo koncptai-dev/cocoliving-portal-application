@@ -118,7 +118,7 @@ const RoomDetailsScreen = ({ route, navigation }) => {
         <View style={styles.servicesSection}>
           <View style={styles.servicesHeader}>
             <Text style={styles.servicesTitle}>Services</Text>
-            <Text style={styles.viewAll}>View All</Text>
+            {/* <Text style={styles.viewAll}>View All</Text> */}
           </View>
 
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>

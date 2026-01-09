@@ -16,77 +16,121 @@ import axios from "axios";
 import Toast from "react-native-toast-message";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { useAuth } from "../context/AuthContext";
-
+ 
 const baseURL = "https://staging.cocoliving.in/api";
-
+ 
 const GatepassScreen = () => {
   const { user } = useAuth();
   const loginAs = user?.loginAs || "student";
   const isParentLogin = loginAs === "parent";
-
+ 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [gatePasses, setGatePasses] = useState([]);
   const [editingId, setEditingId] = useState(null);
-
+ 
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [showListModal, setShowListModal] = useState(false);
-
+ 
   const [form, setForm] = useState({
     requestType: "",
     date: "",
     time: "",
     reason: "",
   });
-
+ 
   /* ---------------- FETCH ---------------- */
-  const fetchGatePasses = async () => {
-    try {
-      const url = isParentLogin
-        ? "/gate-pass/all"
-        : "/gate-pass/user-gate-passes";
-
-      const res = await axios.get(`${baseURL}${url}`, {
-        headers: { Authorization: `Bearer ${user.token}` },
-      });
-
-      setGatePasses(res.data.gatePasses || []);
-    } catch {
-      Toast.show({ type: "error", text1: "Failed to load gate passes" });
-    } finally {
-      setLoading(false);
+const fetchGatePasses = async () => {
+  console.log("📡 fetchGatePasses started");
+ 
+  try {
+    const url = isParentLogin
+      ? "/gate-pass/all"
+      : "/gate-pass/user-gate-passes";
+ 
+    console.log("➡️ API URL:", `${baseURL}${url}`);
+    console.log("🔐 Token:", user?.token ? "Present" : "Missing");
+ 
+    const res = await axios.get(`${baseURL}${url}`, {
+      headers: { Authorization: `Bearer ${user.token}` },
+    });
+ 
+    console.log("✅ fetchGatePasses SUCCESS");
+    console.log("📦 Response status:", res.status);
+    console.log("📦 Response data:", res.data);
+ 
+    setGatePasses(res.data?.gatePasses || []);
+  } catch (error: any) {
+    console.log("❌ fetchGatePasses FAILED");
+ 
+    if (error.response) {
+      console.log("🚨 Status:", error.response.status);
+      console.log("🚨 Data:", error.response.data);
+      console.log("🚨 Headers:", error.response.headers);
+    } else if (error.request) {
+      console.log("🚨 No response received:", error.request);
+    } else {
+      console.log("🚨 Error message:", error.message);
     }
-  };
-
+ 
+    Toast.show({
+      type: "error",
+      text1: "Failed to load gate passes",
+    });
+  } finally {
+    console.log("🏁 fetchGatePasses finished");
+    setLoading(false);
+  }
+};
+ 
+  // /* ---------------- FETCH ---------------- */
+  // const fetchGatePasses = async () => {
+  //   try {
+  //     const url = isParentLogin
+  //       ? "/gate-pass/all"
+  //       : "/gate-pass/user-gate-passes";
+ 
+  //     const res = await axios.get(`${baseURL}${url}`, {
+  //       headers: { Authorization: `Bearer ${user.token}` },
+  //     });
+ 
+  //     setGatePasses(res.data.gatePasses || []);
+  //   } catch {
+  //     Toast.show({ type: "error", text1: "Failed to load gate passes" });
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+ 
   useEffect(() => {
     fetchGatePasses();
   }, []);
-
+ 
   /* ---------------- SUBMIT ---------------- */
   const handleSubmit = async () => {
     if (!form.requestType || !form.date || !form.time || form.reason.length < 5) {
       Toast.show({ type: "error", text1: "Please fill all fields properly" });
       return;
     }
-
+ 
     try {
       setSaving(true);
       const url = editingId
         ? `/gate-pass/update/${editingId}`
         : "/gate-pass/create";
-
+ 
       const method = editingId ? axios.put : axios.post;
-
+ 
       await method(`${baseURL}${url}`, form, {
         headers: { Authorization: `Bearer ${user.token}` },
       });
-
+ 
       Toast.show({
         type: "success",
         text1: editingId ? "Gate pass updated" : "Gate pass created",
       });
-
+ 
       setForm({ requestType: "", date: "", time: "", reason: "" });
       setEditingId(null);
       fetchGatePasses();
@@ -96,7 +140,7 @@ const GatepassScreen = () => {
       setSaving(false);
     }
   };
-
+ 
   /* ---------------- APPROVE / REJECT ---------------- */
   const updateStatus = async (id, status) => {
     try {
@@ -111,7 +155,7 @@ const GatepassScreen = () => {
       Toast.show({ type: "error", text1: "Action failed" });
     }
   };
-
+ 
   /* ---------------- EDIT ---------------- */
   const handleEdit = (item) => {
     setEditingId(item.id);
@@ -123,39 +167,39 @@ const GatepassScreen = () => {
     });
     setShowListModal(false);
   };
-
+ 
   /* ---------------- LIST ITEM ---------------- */
   const renderItem = ({ item }) => {
     const isPending = item.status === "pending";
-
+ 
     return (
       <View style={styles.card}>
         <View style={styles.cardAccent} />
-
+ 
         <View style={styles.cardContent}>
           <Text style={styles.cardTitle}>{item.requestType}</Text>
-
+ 
           {isParentLogin && item.user && (
             <Text style={styles.sub}>
               {item.user.fullName} • {item.user.phone}
             </Text>
           )}
-
+ 
           <Text style={styles.sub}>{item.date} • {item.time}</Text>
           <Text style={styles.reason}>{item.reason}</Text>
-
+ 
           <View style={styles.statusRow}>
             <View style={[styles.statusPill, styles[item.status]]}>
               <Text style={styles.statusText}>{item.status.toUpperCase()}</Text>
             </View>
-
+ 
             {!isParentLogin && isPending && (
               <TouchableOpacity onPress={() => handleEdit(item)}>
                 <Ionicons name="create-outline" size={20} color="#5B3A23" />
               </TouchableOpacity>
             )}
           </View>
-
+ 
           {isParentLogin && isPending && (
             <View style={styles.actionRow}>
               <TouchableOpacity
@@ -164,7 +208,7 @@ const GatepassScreen = () => {
               >
                 <Text style={styles.btnText}>Approve</Text>
               </TouchableOpacity>
-
+ 
               <TouchableOpacity
                 style={styles.rejectBtn}
                 onPress={() => updateStatus(item.id, "rejected")}
@@ -177,7 +221,7 @@ const GatepassScreen = () => {
       </View>
     );
   };
-
+ 
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
@@ -185,26 +229,26 @@ const GatepassScreen = () => {
       </SafeAreaView>
     );
   }
-
+ 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Gate Pass</Text>
       </View>
-
+ 
       {!isParentLogin && (
         <View style={styles.form}>
           <Input label="Request Type" value={form.requestType} onChange={(v) => setForm({ ...form, requestType: v })} />
           <PickerInput label="Visit Date" value={form.date} onPress={() => setShowDatePicker(true)} />
           <PickerInput label="Visit Time" value={form.time} onPress={() => setShowTimePicker(true)} />
           <Input label="Reason" value={form.reason} multiline onChange={(v) => setForm({ ...form, reason: v })} />
-
+ 
           <TouchableOpacity style={styles.saveBtn} onPress={handleSubmit}>
             <Text style={styles.saveText}>{editingId ? "Update" : "Submit"}</Text>
           </TouchableOpacity>
         </View>
       )}
-
+ 
       <TouchableOpacity
         style={[styles.viewBtn, isParentLogin && { marginTop: 24 }]}
         onPress={() => setShowListModal(true)}
@@ -212,7 +256,7 @@ const GatepassScreen = () => {
         <Ionicons name="document-text-outline" size={20} color="#FFF" />
         <Text style={styles.viewBtnText}>View Gate Passes</Text>
       </TouchableOpacity>
-
+ 
       <Modal visible={showListModal} animationType="slide">
         <SafeAreaView style={styles.container}>
           <View style={styles.modalHeader}>
@@ -221,7 +265,7 @@ const GatepassScreen = () => {
               <Ionicons name="close" size={26} color="#FFF" />
             </TouchableOpacity>
           </View>
-
+ 
           <FlatList
             data={gatePasses}
             keyExtractor={(item) => item.id.toString()}
@@ -230,7 +274,7 @@ const GatepassScreen = () => {
           />
         </SafeAreaView>
       </Modal>
-
+ 
       {showDatePicker && (
         <DateTimePicker
           value={new Date()}
@@ -241,7 +285,7 @@ const GatepassScreen = () => {
           }}
         />
       )}
-
+ 
       {showTimePicker && (
         <DateTimePicker
           value={new Date()}
@@ -262,9 +306,9 @@ const GatepassScreen = () => {
     </SafeAreaView>
   );
 };
-
+ 
 export default GatepassScreen;
-
+ 
 /* ---------------- INPUTS ---------------- */
 const Input = ({ label, value, onChange, multiline = false }) => (
   <View style={styles.inputWrap}>
@@ -277,7 +321,7 @@ const Input = ({ label, value, onChange, multiline = false }) => (
     />
   </View>
 );
-
+ 
 const PickerInput = ({ label, value, onPress }) => (
   <View style={styles.inputWrap}>
     <Text style={styles.label}>{label}</Text>
@@ -289,11 +333,11 @@ const PickerInput = ({ label, value, onPress }) => (
     </TouchableOpacity>
   </View>
 );
-
+ 
 /* ---------------- STYLES ---------------- */
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#EEF0F2" },
-
+ 
   header: {
     backgroundColor: "#5B3A23",
     paddingVertical: 22,
@@ -301,15 +345,15 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 28,
     borderBottomRightRadius: 28,
   },
-  headerTitle: { color: "#FFF", fontSize: 18, fontWeight: "600" },
-
+  headerTitle: { color: "#FFF", fontSize: 24, fontFamily:'Quicksand-Bold'},
+ 
   form: {
     backgroundColor: "#F7EFE8",
     margin: 16,
     padding: 16,
     borderRadius: 14,
   },
-
+ 
   inputWrap: { marginBottom: 14 },
   label: { fontSize: 12, color: "#8A8A8A", marginBottom: 6 },
   input: {
@@ -319,7 +363,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#E5E5E5",
   },
-
+ 
   picker: {
     backgroundColor: "#FFF",
     borderRadius: 10,
@@ -330,7 +374,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
   },
-
+ 
   saveBtn: {
     backgroundColor: "#F4A261",
     borderRadius: 10,
@@ -339,7 +383,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   saveText: { color: "#FFF", fontSize: 16, fontWeight: "600" },
-
+ 
   viewBtn: {
     backgroundColor: "#5B3A23",
     marginHorizontal: 16,
@@ -357,7 +401,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     marginLeft: 10,
   },
-
+ 
   modalHeader: {
     backgroundColor: "#5B3A23",
     padding: 16,
@@ -366,7 +410,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   modalTitle: { color: "#FFF", fontSize: 16, fontWeight: "600" },
-
+ 
   /* ----- CARD ----- */
   card: {
     flexDirection: "row",
@@ -392,7 +436,7 @@ const styles = StyleSheet.create({
   },
   sub: { fontSize: 12, color: "#7A7A7A", marginVertical: 4 },
   reason: { fontSize: 13, color: "#4A4A4A", marginVertical: 6 },
-
+ 
   statusRow: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -408,7 +452,7 @@ const styles = StyleSheet.create({
   pending: { backgroundColor: "#F4A261" },
   approved: { backgroundColor: "#2E7D32" },
   rejected: { backgroundColor: "#C62828" },
-
+ 
   actionRow: { flexDirection: "row", marginTop: 12 },
   approveBtn: {
     backgroundColor: "#2E7D32",
@@ -427,5 +471,3 @@ const styles = StyleSheet.create({
   },
   btnText: { color: "#FFF", fontWeight: "600" },
 });
-
-

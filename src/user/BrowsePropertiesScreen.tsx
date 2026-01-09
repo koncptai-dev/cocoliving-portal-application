@@ -288,7 +288,7 @@ const BrowsePropertiesScreen = ({ navigation }) => {
         </View>
       )}
 
-      {/* Location Input */}
+      {/* Location Input
       <TouchableOpacity style={filterStyles.locationInput}>
         <Ionicons name="location-outline" size={18} color="#616161" />
         <TextInput
@@ -298,7 +298,7 @@ const BrowsePropertiesScreen = ({ navigation }) => {
           onChangeText={setLocation}
           style={filterStyles.locationTextInput}
         />
-      </TouchableOpacity>
+      </TouchableOpacity> */}
 
       {/* Clear + Apply Buttons */}
       <View style={filterStyles.buttonRow}>

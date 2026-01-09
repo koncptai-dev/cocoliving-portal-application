@@ -1,0 +1,208 @@
+import React, { useEffect, useState } from "react";
+import {
+  SafeAreaView,
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  ActivityIndicator,
+} from "react-native";
+import Ionicons from "react-native-vector-icons/Ionicons";
+import axios from "axios";
+import Toast from "react-native-toast-message";
+import { useAuth } from "../context/AuthContext";
+ 
+const baseURL = "https://staging.cocoliving.in";
+ 
+const POLLING_INTERVAL = 10000; // 10 seconds
+ 
+const NotificationListScreen = () => {
+  const { user } = useAuth();
+ 
+  const [loading, setLoading] = useState(true);
+  const [notifications, setNotifications] = useState([]);
+ 
+  /* ---------------- FETCH NOTIFICATIONS ---------------- */
+  const fetchNotifications = async (silent = false) => {
+    if (!silent) setLoading(true);
+ 
+    console.log("📡 Fetching notifications...");
+    console.log("🔐 Token:", user?.token ? "Present" : "Missing");
+ 
+    try {
+      const res = await axios.get(
+        `${baseURL}/api/fcm/get-notifications`,
+        {
+          headers: {
+            Authorization: `Bearer ${user.token}`,
+          },
+        }
+      );
+ 
+      console.log("✅ API Success:", res.status);
+      console.log("📦 Raw Data:", res.data);
+ 
+      if (res.data?.success) {
+        setNotifications(res.data.data || []);
+      } else {
+        Toast.show({
+          type: "error",
+          text1: "Invalid notification response",
+        });
+      }
+    } catch (error: any) {
+      console.log("❌ Notification fetch failed");
+ 
+      if (error.response) {
+        console.log("🚨 Status:", error.response.status);
+        console.log("🚨 Data:", error.response.data);
+      } else {
+        console.log("🚨 Error:", error.message);
+      }
+ 
+      Toast.show({
+        type: "error",
+        text1: "Failed to load notifications",
+      });
+    } finally {
+      if (!silent) setLoading(false);
+    }
+  };
+ 
+  /* ---------------- INITIAL LOAD + POLLING ---------------- */
+  useEffect(() => {
+    fetchNotifications();
+ 
+    const interval = setInterval(() => {
+      fetchNotifications(true); // silent refresh
+    }, POLLING_INTERVAL);
+ 
+    return () => clearInterval(interval);
+  }, []);
+ 
+  /* ---------------- RENDER ITEM ---------------- */
+  const renderItem = ({ item }) => (
+    <View style={styles.card}>
+      <View style={styles.iconWrap}>
+        <Ionicons
+          name="notifications-outline"
+          size={22}
+          color="#F4A261"
+        />
+      </View>
+ 
+      <View style={styles.cardContent}>
+        <Text style={styles.title}>{item.title}</Text>
+        <Text style={styles.message}>{item.message}</Text>
+        <Text style={styles.date}>
+          {new Date(item.createdAt).toLocaleString()}
+        </Text>
+      </View>
+    </View>
+  );
+ 
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <ActivityIndicator size="large" color="#F4A261" />
+      </SafeAreaView>
+    );
+  }
+ 
+  return (
+    <SafeAreaView style={styles.container}>
+      {/* Header */}
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Notifications</Text>
+      </View>
+ 
+      {notifications.length === 0 ? (
+        <View style={styles.emptyWrap}>
+          <Ionicons
+            name="notifications-off-outline"
+            size={64}
+            color="#C7C7C7"
+          />
+          <Text style={styles.emptyText}>No notifications found</Text>
+        </View>
+      ) : (
+        <FlatList
+          data={notifications}
+          keyExtractor={(item) => item.id.toString()}
+          renderItem={renderItem}
+          contentContainerStyle={{ padding: 16 }}
+        />
+      )}
+    </SafeAreaView>
+  );
+};
+ 
+export default NotificationListScreen;
+ 
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: "#F6F7F9" },
+ 
+  header: {
+    paddingVertical: 22,
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    elevation: 3,
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#333",
+  },
+ 
+  card: {
+    flexDirection: "row",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 14,
+    elevation: 2,
+  },
+ 
+  iconWrap: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: "#FFF3E8",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
+  },
+ 
+  cardContent: { flex: 1 },
+ 
+  title: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#333",
+  },
+ 
+  message: {
+    fontSize: 13,
+    color: "#666",
+    marginVertical: 4,
+  },
+ 
+  date: {
+    fontSize: 11,
+    color: "#999",
+    marginTop: 2,
+  },
+ 
+  emptyWrap: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  emptyText: {
+    marginTop: 12,
+    fontSize: 14,
+    color: "#999",
+  },
+});

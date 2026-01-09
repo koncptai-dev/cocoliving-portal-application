@@ -256,7 +256,7 @@ export default function EventsScreen() {
             </View>
           )}
 
-          <TouchableOpacity
+          {/* <TouchableOpacity
             style={styles.locationInput}
             onPress={() => setShowLocationList(!showLocationList)}
           >
@@ -265,7 +265,7 @@ export default function EventsScreen() {
               {locationFilter || "Location"}
             </Text>
             <Ionicons name="chevron-down" size={18} color="#3C2A1E" />
-          </TouchableOpacity>
+          </TouchableOpacity> */}
 
           {showLocationList && (
             <View style={styles.listContainer}>

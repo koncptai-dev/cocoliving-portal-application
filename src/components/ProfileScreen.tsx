@@ -133,7 +133,7 @@ const ProfileScreen = () => {
         label="Gate Approval"
         onPress={() => navigation.navigate("GatePassScreen")}
       />
-      <MenuItem icon="settings-outline" label="Settings" />
+      <MenuItem icon="settings-outline" label="Settings" onPress={()=>navigation.navigate("notificationSettingScreen")} />
     </>
   );
 

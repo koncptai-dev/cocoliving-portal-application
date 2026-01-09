@@ -179,7 +179,7 @@ const DashboardScreen = ({ navigation }) => {
             </TouchableOpacity>
 
             <View style={styles.notification}>
-              <Ionicons name="notifications-outline" size={22} color="#fff" />
+              <Ionicons name="notifications-outline" size={22} color="#fff" onPress={()=>navigation.navigate("notificationListScreen")} />
               <View style={styles.badge}>
                 <Text style={styles.badgeText}>4</Text>
               </View>

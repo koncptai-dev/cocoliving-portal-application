@@ -1,0 +1,14 @@
+diff --git a/node_modules/react-native-pdf-lib/android/build.gradle b/node_modules/react-native-pdf-lib/android/build.gradle
+index 0a3c611..8a4480d 100644
+--- a/node_modules/react-native-pdf-lib/android/build.gradle
++++ b/node_modules/react-native-pdf-lib/android/build.gradle
+@@ -35,7 +35,7 @@ repositories {
+ }
+ 
+ dependencies {
+-    implementation 'com.tom_roush:pdfbox-android:1.8.9.1'
++implementation 'com.github.tom-roush:pdfbox-android:1.8.10.1'
+     implementation 'com.facebook.react:react-native:+'
+ }
+   
+\ No newline at end of file

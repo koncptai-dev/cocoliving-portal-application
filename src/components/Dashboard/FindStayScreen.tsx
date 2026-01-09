@@ -258,7 +258,7 @@ useEffect(() => {
           <Text style={styles.sectionTitle}>
             Experience the vibe at{"\n"}Community Events
           </Text>
-          <Text style={styles.viewAll}>View All</Text>
+          {/* <Text style={styles.viewAll}>View All</Text> */}
         </View>
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
