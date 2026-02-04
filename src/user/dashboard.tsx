@@ -290,9 +290,9 @@ const DashboardScreen = ({ navigation }) => {
             <Text style={styles.visitSubHeading}>Invite Guest</Text>
           </View>
 
-          <TouchableOpacity style={styles.visitBookBtn}>
-            <Text style={styles.visitBookText}>Add</Text>
-          </TouchableOpacity>
+          {/* <TouchableOpacity style={styles.visitBookBtn}>
+            {/* <Text style={styles.visitBookText}>Add</Text> */}
+          {/* </TouchableOpacity> */} */
         </View>
 
         <View style={styles.visitCard}>

@@ -24,16 +24,21 @@ const BASE_URL = "https://staging.cocoliving.in";
    SCREEN
 ===================== */
 const PayableAmountScreen = ({ route, navigation }) => {
-  const {
-    room,
-    property,
-    rent,
-    monthsNumber,
-    isoDate,
-    netPayable,
-    preBookAmount,
-    actionType,
-  } = route.params;
+ const {
+  room,
+  property,
+  rent,
+  monthsNumber,
+  isoDate,
+  netPayable,
+  preBookAmount,
+  actionType,
+
+  // ✅ RECEIVED HERE
+  preferredFloor,
+  preferredRoomNumber,
+  preferredBed,
+} = route.params;
 
   const { user } = useAuth();
   const token = user?.token;
@@ -76,14 +81,19 @@ const PayableAmountScreen = ({ route, navigation }) => {
       const payload = {
         userId: Number(user.id),
         bookingType: actionType === "PreBook" ? "PREBOOK" : "BOOK",
-        metadata: {
-          rateCardId: room.rateCardId,
-          propertyId: room.propertyId,
-          roomType: room.roomType,
-          checkInDate: isoDate,
-          duration: monthsNumber,
-          monthlyRent: rent,
-        },
+       metadata: {
+  rateCardId: room.rateCardId,
+  propertyId: room.propertyId,
+  roomType: room.roomType,
+  checkInDate: isoDate,
+  duration: monthsNumber,
+  monthlyRent: rent,
+
+  // ✅ PREFERENCES (MISSING PART)
+  preferredFloor: preferredFloor ?? null,
+  preferredRoomNumber: preferredRoomNumber ?? null,
+  preferredBed: preferredBed ?? null,
+},
         clientType: "mobile",
       };
       console.log("Payload which will sent: ",payload)

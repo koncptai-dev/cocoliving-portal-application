@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState,useEffect } from "react";
 import {
   View,
   Text,
@@ -13,6 +13,7 @@ import Toast from "react-native-toast-message";
 import { useAuth } from "../context/AuthContext";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import colors from "../constants/color";
+import axios from "axios";
 
 const SelectYourBedScreen = ({ route, navigation }) => {
   const baseURL = "https://staging.cocoliving.in";
@@ -29,6 +30,69 @@ const SelectYourBedScreen = ({ route, navigation }) => {
 
   const [durationSelected, setDurationSelected] = useState(false);
   const [dateSelected, setDateSelected] = useState(false);
+
+const [availableRooms, setAvailableRooms] = useState([]);
+const [availableFloors, setAvailableFloors] = useState([]);
+
+const [preferredFloor, setPreferredFloor] = useState(null);
+const [roomsOnFloor, setRoomsOnFloor] = useState([]);
+
+const [preferredRoomId, setPreferredRoomId] = useState(null);
+const [bedsInRoom, setBedsInRoom] = useState([]);
+
+const [showFloorDD, setShowFloorDD] = useState(false);
+const [showRoomDD, setShowRoomDD] = useState(false);
+const [showBedDD, setShowBedDD] = useState(false);
+
+const [preferredBedInventoryId, setPreferredBedInventoryId] = useState(null);
+
+//getting floor from backend
+useEffect(() => {
+  if (!room?.roomType || !property?.id) return;
+
+  axios
+    .get(
+      `${baseURL}/api/rooms/available/${property.id}/${room.roomType}`,
+      { headers: { Authorization: `Bearer ${user?.token}` } }
+    )
+    .then(res => {
+      const rooms = res.data.rooms || [];
+      setAvailableRooms(rooms);
+
+      const floors = [...new Set(
+        rooms.map(r => r.floorNumber).filter(Boolean)
+      )];
+      setAvailableFloors(floors);
+    });
+}, []);
+
+useEffect(() => {
+  if (!preferredFloor) return;
+
+  const filtered = availableRooms.filter(
+    r => r.floorNumber === preferredFloor
+  );
+
+  setRoomsOnFloor(filtered);
+  setPreferredRoomId(null);
+  setBedsInRoom([]);
+}, [preferredFloor]);
+
+useEffect(() => {
+  if (!preferredRoomId) return;
+
+  axios
+    .get(
+      `${baseURL}/api/inventory/available/${preferredRoomId}`,
+      { headers: { Authorization: `Bearer ${user?.token}` } }
+    )
+    .then(res => {
+      const beds = (res.data.items || []).filter(i =>
+        i.itemName?.toLowerCase().includes("bed")
+      );
+      setBedsInRoom(beds);
+    });
+}, [preferredRoomId]);
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -79,6 +143,125 @@ const SelectYourBedScreen = ({ route, navigation }) => {
           </View>
         </View>
       )}
+
+  <View style={styles.fieldWrapper}>
+  <Text style={styles.floatingLabel}>
+    Preferred Floor (Optional)
+  </Text>
+
+  <TouchableOpacity
+    style={styles.fieldInput}
+    onPress={() => setShowFloorDD(!showFloorDD)}
+  >
+    <Text style={[styles.fieldText, !preferredFloor && styles.placeholderText]}>
+      {preferredFloor ? `Floor ${preferredFloor}` : "Select Floor"}
+    </Text>
+    <Ionicons name="chevron-down" size={20} color="#6C5840" />
+  </TouchableOpacity>
+</View>
+
+{showFloorDD && (
+  <View style={styles.dropdownList}>
+    {availableFloors.map(f => (
+      <TouchableOpacity
+        key={f}
+        style={styles.selectItem}
+        onPress={() => {
+          setPreferredFloor(f);
+          setShowFloorDD(false);
+        }}
+      >
+        <Text style={styles.selectText}>Floor {f}</Text>
+      </TouchableOpacity>
+    ))}
+  </View>
+)}
+
+
+<View style={styles.fieldWrapper}>
+  <Text style={styles.floatingLabel}>
+    Preferred Room (Optional)
+  </Text>
+
+  <TouchableOpacity
+    style={[
+      styles.fieldInput,
+      !preferredFloor && { opacity: 0.5 },
+    ]}
+    disabled={!preferredFloor}
+    onPress={() => setShowRoomDD(!showRoomDD)}
+  >
+    <Text style={[styles.fieldText, !preferredRoomId && styles.placeholderText]}>
+      {preferredRoomId
+        ? `Room ${roomsOnFloor.find(r => r.id === preferredRoomId)?.roomNumber}`
+        : "Select Room"}
+    </Text>
+    <Ionicons name="chevron-down" size={20} color="#6C5840" />
+  </TouchableOpacity>
+</View>
+
+{showRoomDD && preferredFloor && (
+  <View style={styles.dropdownList}>
+    {roomsOnFloor.map(r => (
+      <TouchableOpacity
+        key={r.id}
+        style={styles.selectItem}
+        onPress={() => {
+          setPreferredRoomId(r.id);
+          setShowRoomDD(false);
+        }}
+      >
+        <Text style={styles.selectText}>Room {r.roomNumber}</Text>
+      </TouchableOpacity>
+    ))}
+  </View>
+)}
+
+
+<View style={styles.fieldWrapper}>
+  <Text style={styles.floatingLabel}>
+    Preferred Bed (Optional)
+  </Text>
+
+  <TouchableOpacity
+    style={[
+      styles.fieldInput,
+      !preferredRoomId && { opacity: 0.5 },
+    ]}
+    disabled={!preferredRoomId}
+    onPress={() => setShowBedDD(!showBedDD)}
+  >
+    <Text style={[styles.fieldText, !preferredBedInventoryId && styles.placeholderText]}>
+      {preferredBedInventoryId
+        ? bedsInRoom.find(b => b.id === preferredBedInventoryId)?.inventoryCode
+        : "Select Bed"}
+    </Text>
+    <Ionicons name="chevron-down" size={20} color="#6C5840" />
+  </TouchableOpacity>
+  <Text style={{ fontSize: 11, color: "#777", marginTop: 6 }}>
+  Preferences are not guaranteed. Final allocation is done by admin.
+</Text>
+</View>
+
+{showBedDD && preferredRoomId && (
+  <View style={styles.dropdownList}>
+    {bedsInRoom.map(b => (
+      <TouchableOpacity
+        key={b.id}
+        style={styles.selectItem}
+        onPress={() => {
+          setPreferredBedInventoryId(b.id);
+          setShowBedDD(false);
+        }}
+      >
+        <Text style={styles.selectText}>
+          {b.inventoryCode ?? `Bed ${b.id}`}
+        </Text>
+      </TouchableOpacity>
+    ))}
+  </View>
+)}
+
 
       {/* ================= BOOKING DURATION ================= */}
       <View style={styles.fieldWrapper}>
@@ -181,15 +364,24 @@ const SelectYourBedScreen = ({ route, navigation }) => {
           const preBookAmount = Math.round(netPayable * 0.1);
 
           navigation.navigate("PayableAmountScreen", {
-            room,
-            property,
-            rent,
-            monthsNumber,
-            isoDate,
-            netPayable,
-            preBookAmount,
-            actionType,
-          });
+  room,
+  property,
+  rent,
+  monthsNumber,
+  isoDate,
+  netPayable,
+  preBookAmount,
+  actionType,
+
+  // ✅ PREFERENCES (NEW)
+  preferredFloor,
+
+  preferredRoomNumber:
+    roomsOnFloor.find(r => r.id === preferredRoomId)?.roomNumber ?? null,
+
+  preferredBed:
+    bedsInRoom.find(b => b.id === preferredBedInventoryId)?.inventoryCode ?? null,
+});
         }}
       >
         <Text style={styles.continueText}>

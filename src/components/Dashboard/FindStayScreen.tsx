@@ -284,9 +284,9 @@ useEffect(() => {
       <Text style={styles.visitSubHeading}>Make A Visit</Text>
     </View>
 
-    <TouchableOpacity style={styles.visitBookBtn}>
+    {/* <TouchableOpacity style={styles.visitBookBtn}>
       <Text style={styles.visitBookText}>Book</Text>
-    </TouchableOpacity>
+    </TouchableOpacity> */}
   </View>
 
   <View style={styles.visitCard}>

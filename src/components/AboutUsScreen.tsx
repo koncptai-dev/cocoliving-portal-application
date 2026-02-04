@@ -203,7 +203,7 @@ const AboutUsScreen = ({ navigation }) => {
   </Text>
 
   <Text style={styles.footerHeading}>Contact Info</Text>
-  <Text style={styles.footerText}>+91-7041454455</Text>
+  <Text style={styles.footerText}>+91-8141676967</Text>
   <Text style={styles.footerText}>info@cocoliving.in</Text>
 
   <Text style={styles.footerHeading}>Policy</Text>

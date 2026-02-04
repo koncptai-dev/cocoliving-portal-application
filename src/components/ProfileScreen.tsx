@@ -17,6 +17,7 @@ import Toast from "react-native-toast-message";
 import axios from "axios";
 import colors from "../constants/color";
 
+
 const BASE_URL = "https://staging.cocoliving.in";
 
 const ProfileScreen = () => {
@@ -82,6 +83,22 @@ const ProfileScreen = () => {
     });
   };
 
+const openWhatsApp = async () => {
+  const phoneNumber = "918141676967"; // 91 + number
+  const url = `https://wa.me/${phoneNumber}`;
+
+  const supported = await Linking.canOpenURL(url);
+
+  if (supported) {
+    Linking.openURL(url);
+  } else {
+    Toast.show({
+      type: "error",
+      text1: "WhatsApp not available",
+      text2: "Please install WhatsApp to continue",
+    });
+  }
+};
   const MenuItem = ({ icon, label, onPress = () => {} }) => (
     <TouchableOpacity style={styles.menuItem} onPress={onPress}>
       <Ionicons name={icon} size={22} color="#4b3426" />
@@ -145,11 +162,11 @@ const ProfileScreen = () => {
         label="Personal Information"
         onPress={() => navigation.navigate("Profile")}
       />
-      <MenuItem icon="calendar-outline" label="Visit" />
+      {/* <MenuItem icon="calendar-outline" label="Visit" /> */}
       <MenuItem
         icon="call-outline"
         label="Contact Us"
-        onPress={() => Linking.openURL("tel:+911234567890")}
+        onPress={() => Linking.openURL("tel:+918141676967")}
       />
       <MenuItem icon="information-circle-outline" label="About Us" onPress={()=>navigation.navigate("AboutUsScreen")} />
 
@@ -201,9 +218,9 @@ const ProfileScreen = () => {
               </View>
             )}
 
-            <TouchableOpacity style={styles.editIcon}>
-              <Ionicons name="pencil" size={14} color="#4F3421" />
-            </TouchableOpacity>
+            {/* <TouchableOpacity style={styles.editIcon}>
+              {/* <Ionicons name="pencil" size={14} color="#4F3421" /> */}
+            {/* </TouchableOpacity> * */}
           </View>
 
           <View style={{ marginLeft: 14 }}>
@@ -211,7 +228,7 @@ const ProfileScreen = () => {
             <View style={styles.roleRow}>
               <Text style={styles.role}>{userType}</Text>
               <TouchableOpacity>
-                <Ionicons name="pencil" size={16} color="#fff" style={{ marginLeft: 8 }} />
+                {/* <Ionicons name="pencil" size={16} color="#fff" style={{ marginLeft: 8 }} /> */}
               </TouchableOpacity>
             </View>
           </View>
@@ -265,6 +282,17 @@ const ProfileScreen = () => {
                 style={styles.cocoLogo}
               />
             </View>
+
+            <View style={styles.verticalBorder} />
+
+             <TouchableOpacity onPress={openWhatsApp}>
+  <View style={styles.socialItem}>
+    <Image
+      source={require("../../assets/images/whatsapp.png")}
+      style={styles.cocoLogo}
+    />
+  </View>
+</TouchableOpacity>
           </View>
 
           {/* Powered by KONCPT AI with image */}
