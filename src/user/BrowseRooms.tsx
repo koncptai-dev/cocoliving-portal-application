@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { Linking } from 'react-native';
+
 import {
   View,
   ScrollView,
@@ -233,6 +235,35 @@ const BrowseRooms = () => {
 
     return matchesSearch && matchesType && matchesPrice;
   }), [processedRooms, searchTerm, selectedType, priceRange]);
+
+
+
+
+const openInMaps = (address) => {
+  if (!address) return;
+
+  const encodedAddress = encodeURIComponent(address);
+  const url = Platform.select({
+    ios: `http://maps.apple.com/?q=${encodedAddress}`,
+    android: `geo:0,0?q=${encodedAddress}`,
+    default: `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`,
+  });
+
+  Linking.openURL(url).catch(err => {
+    console.error("Failed to open maps:", err);
+    toast({
+      title: "Error",
+      description: "Could not open maps application",
+      variant: "destructive"
+    });
+  });
+};
+
+
+
+
+
+
 
   // =================================================================
   // useEffects (after useMemos)
@@ -479,12 +510,24 @@ const submitBooking = async () => {
             <Badge variant="outline">{room.roomType}</Badge>
           </View>
 
-          {room.property && (
-            <View style={styles.infoRow}>
-              <MaterialCommunityIcons name="map-marker-outline" size={14} color="#757575" />
-              <Text style={styles.cardAddress} numberOfLines={1}>{room.property.name}</Text>
-            </View>
-          )}
+         
+
+
+{room.property && (
+  <View style={styles.infoRow}>
+    <MaterialCommunityIcons name="map-marker-outline" size={14} color="#757575" />
+    <TouchableOpacity onPress={() => openInMaps(room.property.address)}>
+      <Text
+        style={[styles.cardAddress, { color: '#007BFF', textDecorationLine: 'underline' }]}
+        numberOfLines={1}
+      >
+        {room.property.address || room.property.name}
+      </Text>
+    </TouchableOpacity>
+  </View>
+)}
+
+
 
           <View style={styles.infoRow}>
             <MaterialCommunityIcons name="account-group-outline" size={14} color="#757575" />
@@ -598,12 +641,32 @@ const submitBooking = async () => {
                             <Text style={styles.detailLabel}>Property:</Text>
                             <Text style={styles.detailValue}>{selectedRoom.property.name}</Text>
                         </View>
-                        {selectedRoom.property.address && (
-                            <View style={styles.detailRow}>
-                                <Text style={styles.detailLabel}>Address:</Text>
-                                <Text style={styles.detailValueSmall}>{selectedRoom.property.address}</Text>
-                            </View>
-                        )}
+                       
+
+{selectedRoom.property.address && (
+  <View style={styles.detailRow}>
+    <Text style={styles.detailLabel}>Address:</Text>
+
+    <TouchableOpacity
+      onPress={() => {
+        const address = selectedRoom.property.address;
+        const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
+        Linking.openURL(url);
+      }}
+    >
+      <Text style={[styles.detailValueSmall, { color: "#2E86DE" }]}>
+        {selectedRoom.property.address}
+      </Text>
+    </TouchableOpacity>
+  </View>
+)}
+
+
+
+
+
+
+
                          <View style={styles.detailRow}>
                             <Text style={styles.detailLabel}>Room Number:</Text>
                             <Text style={styles.detailValue}>{selectedRoom.roomNumber}</Text>

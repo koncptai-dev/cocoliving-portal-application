@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   TextInput,
   ScrollView,
+  KeyboardAvoidingView,
   Image,
   Platform,
 } from 'react-native';
@@ -234,7 +235,12 @@ const handleSubmit = async () => {
 
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#fff' }}>
+<KeyboardAvoidingView
+  style={{ flex: 1 }}
+  behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+  keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 0}
+>
+
           <HeaderGradient
         image={require("../../../assets/images/support.png")}
         title="Help & Support"
@@ -372,7 +378,7 @@ const handleSubmit = async () => {
 
         </View>
       </ScrollView>
-    </View>
+    </KeyboardAvoidingView>
   );
 };
 

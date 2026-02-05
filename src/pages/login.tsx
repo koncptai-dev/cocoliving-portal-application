@@ -185,8 +185,16 @@ const LoginScreen = () => {
   };
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScrollView contentContainerStyle={styles.container}>
+    <KeyboardAvoidingView
+  style={{ flex: 1 }}
+  behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+  keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 0}
+>
+<ScrollView
+  contentContainerStyle={styles.container}
+  keyboardShouldPersistTaps="handled"
+  showsVerticalScrollIndicator={false}
+>
         <View style={styles.heroContainer}>
           <Image source={{ uri: 'https://images.pexels.com/photos/261102/pexels-photo-261102.jpeg' }} style={styles.heroImage} />
           <Text style={styles.heroTitle}>Sign In</Text>

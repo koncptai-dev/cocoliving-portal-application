@@ -295,7 +295,7 @@ useEffect(() => {
 
       {showDuration && (
         <View style={styles.dropdownList}>
-          {["3 Months", "6 Months", "12 Months"].map((item) => (
+          {[ "6 Months", "12 Months"].map((item) => (
             <TouchableOpacity
               key={item}
               style={styles.selectItem}

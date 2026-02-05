@@ -11,6 +11,7 @@ import {
   Image,
   Platform,
   PermissionsAndroid,
+  KeyboardAvoidingView,
   Alert,
   ScrollView,
 } from 'react-native';
@@ -20,6 +21,7 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 import axios from 'axios';
 import Toast from 'react-native-toast-message';
 import { useAuth } from '../context/AuthContext';
+import { useNavigation } from '@react-navigation/native';
 
 const BASE_URL_APP = 'https://staging.cocoliving.in';
 const DIGI_BASE = 'https://prod.idto.ai';
@@ -41,6 +43,7 @@ const VerificationStatusScreen = () => {
   const [aadhaarBack, setAadhaarBack] = useState<any>(null);
   const [aadhaarUploading, setAadhaarUploading] = useState(false);
   const [aadhaarVerifying, setAadhaarVerifying] = useState(false);
+  const navigation = useNavigation();
 
   // ─── Smart Image Picker ────────────────────────────────────────────────────────────────
   const pickImage = async (setImageFn: (img: any) => void) => {
@@ -390,9 +393,20 @@ const handlePanSubmit = async () => {
     );
 
   return (
-    <SafeAreaView style={styles.container}>
+    <KeyboardAvoidingView
+  style={{ flex: 1 }}
+  behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+  keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 0}
+>
+   <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.header}>
-        <Ionicons name="chevron-back" size={28} color="#7A5F4A" />
+       <TouchableOpacity
+  onPress={() => navigation.goBack()}
+  activeOpacity={0.7}
+  style={{ padding: 4 }}   // optional: better touch area
+>
+  <Ionicons name="chevron-back" size={28} color="#7A5F4A" />
+</TouchableOpacity>
         <Text style={styles.headerTitle}>Verification Status</Text>
         <View style={{ width: 28 }} />
       </View>
@@ -622,7 +636,8 @@ const handlePanSubmit = async () => {
       </ScrollView>
 
       <Toast />
-    </SafeAreaView>
+ </ScrollView >
+    </KeyboardAvoidingView>
   );
 };
 

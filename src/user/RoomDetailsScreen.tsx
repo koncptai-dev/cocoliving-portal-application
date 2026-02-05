@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Linking } from "react-native";
 import {
   View,
   Text,
@@ -94,9 +95,34 @@ const RoomDetailsScreen = ({ route, navigation }) => {
         <View style={styles.infoRow}>
           <View style={styles.infoLeft}>
             <Text style={styles.title}>{room.roomType} Sharing Space</Text>
-            <Text style={styles.address} numberOfLines={2}>
-              <Ionicons name="location" size={12} /> {property.address}
-            </Text>
+          
+
+<TouchableOpacity
+  onPress={() => {
+    console.log("Address clicked:", property.address);
+
+    const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+      property.address
+    )}`;
+
+    Linking.openURL(url).catch(err =>
+      console.log("Map open error:", err)
+    );
+  }}
+>
+  <Text
+    style={[
+      styles.address,
+      { color: "#2E86DE", textDecorationLine: "underline" },
+    ]}
+    numberOfLines={2}
+  >
+    <Ionicons name="location" size={12} /> {property.address}
+  </Text>
+</TouchableOpacity>
+
+
+
           </View>
 
           <View style={styles.infoRight}>

@@ -1,4 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { Linking } from "react-native";
+
+
 import {
   View,
   Text,
@@ -171,9 +174,32 @@ const BrowsePropertiesScreen = ({ navigation }) => {
               <Text style={styles.roomName}>
                 {room.roomType} 
               </Text>
-              <Text style={styles.address} numberOfLines={2}>
-                {property.address}
-              </Text>
+             
+
+<TouchableOpacity
+  onPress={() => {
+    console.log("Address clicked:", property.address);
+
+    const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+      property.address
+    )}`;
+
+    Linking.openURL(url).catch(err =>
+      console.log("Error opening maps:", err)
+    );
+  }}
+>
+  <Text
+    style={[styles.address, { color: "#2E86DE", textDecorationLine: "underline" }]}
+    numberOfLines={2}
+  >
+    {property.address}
+  </Text>
+</TouchableOpacity>
+
+
+
+
             </View>
 
             <View style={styles.priceBox}>

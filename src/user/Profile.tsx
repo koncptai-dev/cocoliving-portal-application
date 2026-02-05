@@ -9,6 +9,7 @@ import {
   ScrollView,
   StyleSheet,
   Image,
+  KeyboardAvoidingView
 } from "react-native";
 import axios from "axios";
 import Ionicons from "react-native-vector-icons/Ionicons";
@@ -214,7 +215,12 @@ export default function Profile() {
   };
 
   return (
-    <>
+       <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 0}
+    >
+    
       <ScrollView style={styles.container}>
         {/* HEADER */}
         <View style={styles.header}>
@@ -398,7 +404,7 @@ export default function Profile() {
       </ScrollView>
 
       <Toast />
-    </>
+ </KeyboardAvoidingView>
   );
 }
 

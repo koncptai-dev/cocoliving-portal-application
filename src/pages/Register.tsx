@@ -252,17 +252,28 @@ const RegisterProfileScreen = ({ navigation, route }) => {
   };
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScrollView contentContainerStyle={styles.container}>
+    <KeyboardAvoidingView
+  style={{ flex: 1 }}
+  behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+  keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 0}
+>
+<ScrollView
+  contentContainerStyle={styles.container}
+  keyboardShouldPersistTaps="handled"
+  showsVerticalScrollIndicator={false}
+>
         <Text style={styles.title}>Looks like you are new</Text>
 
         <View style={styles.topRow}>
-          <TouchableOpacity style={styles.avatar} onPress={takePhoto}>
-            <Image source={{ uri: profilePicUri }} style={styles.avatarImg} />
-            <View style={styles.cameraBadge}>
-              <Ionicons name={isDefaultAvatar ? 'camera' : 'camera'} size={16} color="#fff" />
-            </View>
-          </TouchableOpacity>
+        <TouchableOpacity style={styles.avatar} onPress={takePhoto}>
+  <View style={styles.avatarImageWrapper}>
+    <Image source={{ uri: profilePicUri }} style={styles.avatarImg} />
+  </View>
+
+  <View style={styles.cameraBadge}>
+    <Ionicons name="camera" size={16} color="#fff" />
+  </View>
+</TouchableOpacity>
 
           <View style={styles.toggleRow}>
             {['Student', 'Professional'].map((t) => {
@@ -378,6 +389,8 @@ const RegisterProfileScreen = ({ navigation, route }) => {
           )}
         </TouchableOpacity>
 
+        <View style={{ height: 80 }} />
+
         {showDOBPicker && (
           <DateTimePicker value={new Date()} mode="date" maximumDate={new Date()} onChange={onDOBChange} />
         )}
@@ -407,15 +420,25 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
  
-  avatar: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    borderWidth: 2,
-    borderColor: colors.nOrange,
-    overflow: 'visible',
-  },
-  avatarImg: { width: '100%', height: '100%' },
+avatar: {
+  width: 100,
+  height: 100,
+  borderRadius: 50,
+  borderWidth: 2,
+  borderColor: colors.nOrange,
+  position: 'relative',   // ✅ important
+},
+avatarImageWrapper: {
+  width: '100%',
+  height: '100%',
+  borderRadius: 50,
+  overflow: 'hidden',     // ✅ image yahin clip hogi
+},
+avatarImg: {
+  width: '100%',
+  height: '100%',
+  resizeMode: 'cover',
+},
   cameraBadge: {
  position: 'absolute',
     bottom: -5,     // ← neeche shift kiya taaki half outside

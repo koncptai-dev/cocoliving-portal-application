@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import { Linking } from "react-native";
+
 import {
   View,
   Text,
@@ -12,6 +14,17 @@ import colors from "../constants/color";
 
 const baseURL = "https://staging.cocoliving.in";
 // const baseURL = "http://10.0.2.2:5001"; // backend
+
+const openInMaps = (address) => {
+  console.log("Address clicked:", address);
+
+  const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
+
+  Linking.openURL(url).catch(err =>
+    console.error("Failed to open maps", err)
+  );
+};
+
 
 const PropertyDetailsScreen = ({ route, navigation }) => {
   const { property } = route.params; // property received from previous screen
@@ -34,9 +47,18 @@ const PropertyDetailsScreen = ({ route, navigation }) => {
     <ScrollView style={styles.container}>
       {/* Property Title */}
       <Text style={styles.title}>{property.name}</Text>
-      {property.address && (
-        <Text style={styles.address}>{property.address}</Text>
-      )}
+     
+
+
+{property.address && (
+  <TouchableOpacity onPress={() => openInMaps(property.address)}>
+    <Text style={[styles.address, { color: "#007BFF", textDecorationLine: "underline" }]}>
+      {property.address}
+    </Text>
+  </TouchableOpacity>
+)}
+
+
 
       <Text style={styles.sectionHeader}>Available Rooms</Text>
 
