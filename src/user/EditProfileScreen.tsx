@@ -26,6 +26,7 @@ interface FormDataType {
   course: string;
   companyName: string;
   position: string;
+  foodPreference: "Jain" | "Non-Jain" | null;
 }
 
 const EditProfileScreen = () => {
@@ -44,6 +45,7 @@ const EditProfileScreen = () => {
     course: "",
     companyName: "",
     position: "",
+    foodPreference: null,
   });
 
   const [userType, setUserType] =
@@ -82,6 +84,7 @@ const EditProfileScreen = () => {
         course: u.course ?? "",
         companyName: u.companyName ?? "",
         position: u.position ?? "",
+        foodPreference: u.foodPreference ?? null,
       });
     } catch {
       Toast.show({ type: "error", text1: "Failed to load profile data" });
@@ -95,9 +98,12 @@ const EditProfileScreen = () => {
   }, [user?.id]);
 
   /* ---------------------- SAVE PROFILE ---------------------- */
+/* ---------------------- SAVE PROFILE (CORRECTED) ---------------------- */
   const handleSave = async () => {
+    // 1. Agar parent login hai to save nahi karne dena
     if (isParentLogin) return;
 
+    // 2. Validation
     if (!formData.fullName.trim()) {
       Toast.show({ type: "error", text1: "Full name is required" });
       return;
@@ -106,11 +112,15 @@ const EditProfileScreen = () => {
     try {
       setSaving(true);
 
+      // 3. Payload Build Karein
+      // Yahan hum ensure kar rahe hain ki agar foodPreference empty hai to null jaye
       const payload: any = {
-        fullName: formData.fullName,
-        phone: formData.phone,
+        fullName: formData.fullName.trim(),
+        phone: formData.phone.trim(),
+        foodPreference: formData.foodPreference || null, // FIX: "" ki jagah null jayega
       };
 
+      // Student fields
       if (userType === "student") {
         payload.parentName = formData.parentName;
         payload.parentMobile = formData.parentMobile;
@@ -119,22 +129,38 @@ const EditProfileScreen = () => {
         payload.course = formData.course;
       }
 
+      // Professional fields
       if (userType === "professional") {
         payload.companyName = formData.companyName;
         payload.position = formData.position;
       }
 
-      await axios.put(
+      // 4. Console Log (Check karne ke liye)
+      console.log("Final Payload being sent:", JSON.stringify(payload, null, 2));
+
+      // 5. API Call
+      const res = await axios.put(
         `https://staging.cocoliving.in/api/user/update-profile/${user.id}`,
         payload,
         {
-          headers: { Authorization: `Bearer ${user.token}` },
+          headers: { 
+            Authorization: `Bearer ${user.token}`,
+            "Content-Type": "application/json" 
+          },
         }
       );
 
+      console.log("Success Response:", res.data);
+
       Toast.show({ type: "success", text1: "Profile updated successfully" });
+      
+      // Data refresh karein
       fetchUserProfile();
+      
     } catch (error: any) {
+      // Error logging taaki console me dikhe error kya hai
+      console.log("UPDATE ERROR DETAILS:", error.response?.data || error.message);
+      
       Toast.show({
         type: "error",
         text1: error.response?.data?.message || "Update failed",

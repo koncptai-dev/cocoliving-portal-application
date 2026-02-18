@@ -143,7 +143,15 @@ useEffect(() => {
                             <Text style={styles.profileLetter}>{firstLetter}</Text>
                           )}
                         </TouchableOpacity>
-            <Ionicons name="notifications-outline" size={28} color="#fff" />
+            {/* <Ionicons name="notifications-outline" size={28} color="#fff" /> */}
+          
+           <View style={styles.notification}>
+                        <Ionicons name="notifications-outline" size={22} color="#fff" onPress={()=>navigation.navigate("notificationListScreen")} />
+                        <View style={styles.badge}>
+                          <Text style={styles.badgeText}></Text>
+                        </View>
+                      </View>
+
           </View>
         </View>
 
@@ -284,9 +292,10 @@ useEffect(() => {
       <Text style={styles.visitSubHeading}>Make A Visit</Text>
     </View>
 
-    {/* <TouchableOpacity style={styles.visitBookBtn}>
+    <TouchableOpacity style={styles.visitBookBtn}
+    onPress={()=>navigation.navigate("myVisit")}>
       <Text style={styles.visitBookText}>Book</Text>
-    </TouchableOpacity> */}
+    </TouchableOpacity>
   </View>
 
   <View style={styles.visitCard}>
@@ -389,6 +398,21 @@ image: {
   width: "100%",
   height: 240,                // ✅ FIGMA IMAGE HEIGHT
 },
+
+
+
+notification: { position: "relative" },
+
+  badge: {
+    position: "absolute",
+    top: -4,
+    right: -6,
+    backgroundColor: "#E84C3D",
+    borderRadius: 10,
+    paddingHorizontal: 5,
+  },
+
+  badgeText: { color: "#fff", fontSize: 10 },
 
 cardContent: {
   flex: 1,

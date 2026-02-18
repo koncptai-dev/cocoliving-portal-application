@@ -21,7 +21,11 @@ const DashboardHeader = ({ username, firstLetter, headerAnim, quoteAnim, navigat
 
         <TouchableOpacity
           style={styles.profileCircle}
-          onPress={() => navigation.navigate("ProfileScreen")}
+  onPress={() =>
+  navigation.navigate("Center", {
+    screen: "ProfileScreen",
+  })
+}
           activeOpacity={0.8}
         >
           <Text style={styles.profileLetter}>{firstLetter}</Text>

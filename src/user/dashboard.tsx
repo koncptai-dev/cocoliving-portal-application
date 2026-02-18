@@ -286,13 +286,14 @@ const DashboardScreen = ({ navigation }) => {
       <View style={styles.visitWrapper}>
         <View style={styles.visitHeaderRow}>
           <View>
-            {/* <Text style={styles.visitHeading}>Experience Coco Living</Text> */}
+            <Text style={styles.visitHeading}>Experience Coco Living</Text>
             <Text style={styles.visitSubHeading}>Invite Guest</Text>
           </View>
 
-          {/* <TouchableOpacity style={styles.visitBookBtn}>
-            {/* <Text style={styles.visitBookText}>Add</Text> */}
-          {/* </TouchableOpacity> */} */
+           <TouchableOpacity style={styles.visitBookBtn}
+           onPress={()=>navigation.navigate("GuestVisit")}>
+             <Text style={styles.visitBookText}>Add</Text> 
+          </TouchableOpacity>   
         </View>
 
         <View style={styles.visitCard}>

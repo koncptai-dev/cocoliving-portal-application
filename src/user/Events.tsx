@@ -50,33 +50,45 @@ export default function EventsScreen() {
     fetchEvents();
   }, []);
 
-  const fetchEvents = async () => {
-    try {
-      const res = await axios.get(
-        `${BASE_URL}/api/events/allevents?page=1&limit=20`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+ const fetchEvents = async () => {
+  try {
+    const res = await axios.get(
+      `${BASE_URL}/api/events/allevents?page=1&limit=20`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
 
-      const fetchedEvents = res.data.events || [];
+    const fetchedEvents = res.data.events || [];
 
-      setEvents(fetchedEvents);
-      setFilteredEvents(fetchedEvents);
+    // 🔥 CHANGE HERE: Sirf future ya aaj ke events dikhane ke liye filter logic
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Sirf date compare karne ke liye time 0 kar diya
 
-      const locs = [
-        ...new Set(fetchedEvents.map((e) => e.location || "Unknown")),
-      ];
-      setLocations(locs);
-    } catch (e) {
-      console.log("Events Error:", e?.response?.data || e);
-      Toast.show({
-        type: "error",
-        text1: "Error",
-        text2: "Failed to fetch events",
-      });
-    }
-  };
+    const upcomingEvents = fetchedEvents.filter((event) => {
+      if (!event.eventDate) return false;
+      const eventDate = new Date(event.eventDate);
+      eventDate.setHours(0, 0, 0, 0); 
+      
+      return eventDate >= today; // Aaj ki date ya badi date honi chahiye
+    });
+
+    setEvents(upcomingEvents); // Sirf filtered events state mein jayenge
+    setFilteredEvents(upcomingEvents);
+
+    const locs = [
+      ...new Set(upcomingEvents.map((e) => e.location || "Unknown")),
+    ];
+    setLocations(locs);
+  } catch (e) {
+    console.log("Events Error:", e?.response?.data || e);
+    Toast.show({
+      type: "error",
+      text1: "Error",
+      text2: "Failed to fetch events",
+    });
+  }
+};
 
   const handleJoinEvent = async (event) => {
     if (!user?.id) return;

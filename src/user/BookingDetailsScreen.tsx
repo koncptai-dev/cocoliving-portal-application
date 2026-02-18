@@ -8,6 +8,8 @@ import {
   ActivityIndicator,
   TextInput,
   Linking,
+  KeyboardAvoidingView,
+  Platform
 } from "react-native";
 import axios from "axios";
 import Toast from "react-native-toast-message";
@@ -324,7 +326,16 @@ const BookingDetailsScreen = ({ route }) => {
      UI
   ===================== */
   return (
-    <ScrollView style={styles.container}>
+    <KeyboardAvoidingView
+  style={{ flex: 1 }}
+  behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+  keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 0}
+>
+    <ScrollView
+  contentContainerStyle={styles.container}
+  keyboardShouldPersistTaps="handled"
+  showsVerticalScrollIndicator={false}
+>
       <Text style={styles.title}>Booking Details</Text>
 
       <InfoCard label="Property" value={booking.rateCard?.property?.name} />
@@ -422,6 +433,8 @@ const BookingDetailsScreen = ({ route }) => {
 
       <View style={{ height: 40 }} />
     </ScrollView>
+
+    </KeyboardAvoidingView>
   );
 };
 

@@ -1,4 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { Linking } from 'react-native';
+import RNOtpVerify from 'react-native-otp-verify';
+
+import Icon from 'react-native-vector-icons/Ionicons';
+import { StatusBar } from 'react-native';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView,
   ActivityIndicator, KeyboardAvoidingView, Platform, Keyboard,
@@ -18,6 +23,13 @@ const LOGIN_VERIFY_OTP = `${API_BASE_URL}/api/common/login/verify-otp`;
 const OTP_TIMER = 30;
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
+
+const openTerms = () => Linking.openURL('https://cocoliving.in/terms-and-conditions');
+const openPrivacy = () => Linking.openURL('https://cocoliving.in/privacy-policy');
+
+
+
+
 const LoginScreen = () => {
   const navigation = useNavigation<any>();
   const { setUser } = useAuth();
@@ -27,10 +39,28 @@ const LoginScreen = () => {
   const [verifiedIdentifier, setVerifiedIdentifier] = useState('');
   const [medium, setMedium] = useState<'email' | 'phone' | null>(null);
 
+const [fakeLoading, setFakeLoading] = useState(false);
+
+const handleBackToLogin = () => {
+  setIsOTPSent(false);
+  setOtp('');
+  setErrors({});
+  setTimer(OTP_TIMER);
+  setCanResend(false);
+};
+
+
+
+
   const [otp, setOtp] = useState('');
   const [isOTPSent, setIsOTPSent] = useState(false);
   const [loading, setLoading] = useState(false);
   const [verifying, setVerifying] = useState(false);
+  
+  //const isButtonLoading = loading || verifying;
+
+  const isButtonLoading = fakeLoading;
+
   const [errors, setErrors] = useState<{ identifier?: string; otp?: string }>({});
   const [timer, setTimer] = useState(OTP_TIMER);
   const [canResend, setCanResend] = useState(false);
@@ -43,20 +73,106 @@ const LoginScreen = () => {
   const emailRef = useRef('');
   const phoneRef = useRef('');
 
-  // TIMER
+
+// 👇 ADD THIS useEffect HERE
   useEffect(() => {
-    let interval: any;
-    if (isOTPSent && timer > 0) {
-      interval = setInterval(() => setTimer(t => t - 1), 1000);
+    if (otp.length === 6) {
+      Keyboard.dismiss();
     }
-    if (timer === 0) setCanResend(true);
-    return () => interval && clearInterval(interval);
-  }, [timer, isOTPSent]);
+  }, [otp]);
+
+  // TIMER
+  // useEffect(() => {
+  //   let interval: any;
+  //   if (isOTPSent && timer > 0) {
+  //     interval = setInterval(() => setTimer(t => t - 1), 1000);
+  //   }
+  //   if (timer === 0) setCanResend(true);
+  //   return () => interval && clearInterval(interval);
+  // }, [timer, isOTPSent]);
+
+  
+
+
+useEffect(() => {
+  if (!isOTPSent) return;
+
+  if (timer === 0) {
+    setCanResend(true);
+    return;
+  }
+
+  const interval = setInterval(() => {
+    setTimer(t => t - 1);
+  }, 1000);
+
+  return () => clearInterval(interval);
+}, [timer, isOTPSent]);
+
+
+  
+useEffect(() => {
+  RNOtpVerify.getHash()
+    .then(hash => console.log("APP HASH:", hash))
+    .catch(console.log);
+}, []);
+
+
+useEffect(() => {
+  if (!isOTPSent || medium !== 'phone') return;
+
+  const startOtpListener = async () => {
+    try {
+      await RNOtpVerify.getOtp(); // starts SMS Retriever
+
+   
+
+
+      RNOtpVerify.addListener(message => {
+  const otpMatch = message.match(/\b\d{6}\b/);
+  if (otpMatch) {
+    const code = otpMatch[0];
+
+    setOtp(code);
+
+    setTimeout(() => {
+      verifyOTP(); // 👈 NO PARAM
+    }, 300);
+
+    RNOtpVerify.removeListener();
+  }
+});
+
+
+
+
+
+
+    } catch (e) {
+      console.log("OTP Listener error:", e);
+    }
+  };
+
+  startOtpListener();
+
+  return () => RNOtpVerify.removeListener();
+}, [isOTPSent]);
+
+
+
 
   const resetTimer = () => {
     setTimer(OTP_TIMER);
     setCanResend(false);
   };
+
+const startFiveSecLoader = () => {
+  setFakeLoading(true);
+  setTimeout(() => {
+    setFakeLoading(false);
+  }, 5000); // 5 seconds
+};
+
 
   const shake = () => {
     Animated.sequence([
@@ -136,7 +252,7 @@ const LoginScreen = () => {
 
   // ---------------- SEND OTP ----------------
   const sendOTP = async (identifier: string, mediumType: 'email' | 'phone', selectedChildId: number | null) => {
-    setLoading(true);
+   // setLoading(true);
     setOtp('');
     try {
       await axios.post(LOGIN_SEND_OTP, {
@@ -153,7 +269,7 @@ const LoginScreen = () => {
     } catch (err: any) {
       Toast.show({ type: 'error', text1: err?.response?.data?.message || 'Failed to send OTP' });
     } finally {
-      setLoading(false);
+     // setLoading(false);
     }
   };
 
@@ -185,19 +301,47 @@ const LoginScreen = () => {
   };
 
   return (
-    <KeyboardAvoidingView
+    
+    // <KeyboardAvoidingView style={{ flex: 1 }} 
+    //  behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+
+<KeyboardAvoidingView
   style={{ flex: 1 }}
   behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
   keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 0}
 >
-<ScrollView
-  contentContainerStyle={styles.container}
-  keyboardShouldPersistTaps="handled"
-  showsVerticalScrollIndicator={false}
->
+
+
+      <ScrollView 
+        contentContainerStyle={styles.container}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+        >
         <View style={styles.heroContainer}>
-          <Image source={{ uri: 'https://images.pexels.com/photos/261102/pexels-photo-261102.jpeg' }} style={styles.heroImage} />
-          <Text style={styles.heroTitle}>Sign In</Text>
+        
+
+
+
+      
+
+<Image
+  source={require('../../assets/images/premium.png')}
+  style={styles.heroImage}
+  resizeMode="cover"
+/>
+
+
+        {isOTPSent && (
+    <TouchableOpacity style={styles.backBtn} onPress={handleBackToLogin}>
+      <Icon name="arrow-back" size={26} color="#fff" />
+    </TouchableOpacity>
+  )}
+
+  <Text style={styles.heroTitle}>
+    {isOTPSent ? '' : 'Sign In'}
+  </Text>
+          
+      
         </View>
 
         <View style={styles.sheet}>
@@ -208,6 +352,7 @@ const LoginScreen = () => {
                 <View style={styles.divider} />
                 <TextInput
                   placeholder="Mobile Number"
+                  placeholderTextColor="#9E9E9E"
                   keyboardType="numeric"
                   maxLength={10}
                   style={styles.input}
@@ -231,6 +376,7 @@ const LoginScreen = () => {
               <View style={styles.inputBox}>
                 <TextInput
                   placeholder="Email ID"
+                  placeholderTextColor="#9E9E9E"
                   autoCapitalize="none"
                   style={styles.input}
                   value={email}
@@ -246,21 +392,130 @@ const LoginScreen = () => {
 
               {errors.identifier && <Text style={styles.error}>{errors.identifier}</Text>}
             </>
+          
+          
+          
           )}
 
-          {isOTPSent && (
-            <>
-              <Text style={styles.otpLabel}>Enter the code sent to your {medium}</Text>
-              <Animated.View style={{ transform: [{ translateX: shakeAnim }] }}>
-                <OTPTextInput inputCount={6} handleTextChange={setOtp} containerStyle={styles.otpRow} textInputStyle={styles.otpBox} />
-              </Animated.View>
-              {errors.otp && <Text style={styles.error}>{errors.otp}</Text>}
-            </>
-          )}
 
-          <TouchableOpacity style={styles.button} onPress={isOTPSent ? verifyOTP : checkAndProceed} disabled={loading || verifying}>
+{!isOTPSent && (
+  <Text style={styles.termsText}>
+    By continuing, I agree to the{' '}
+    <Text style={styles.linkText} onPress={openTerms}>
+      Term of Use
+    </Text>{' '}
+    &{'\n'}
+    <Text style={styles.linkText} onPress={openPrivacy}>
+      Privacy Policy
+    </Text>
+  </Text>
+)}
+
+
+
+
+         
+
+{isOTPSent && (
+  <>
+    <Text style={styles.otpLabel}>Enter the code sent to your {medium}</Text>
+
+    <Animated.View style={{ transform: [{ translateX: shakeAnim }] }}>
+      <OTPTextInput
+        key={otp}
+        inputCount={6}
+        handleTextChange={setOtp}
+        defaultValue={otp}
+        containerStyle={styles.otpRow}
+        textInputStyle={styles.otpBox}
+      />
+    </Animated.View>
+
+    {errors.otp && <Text style={styles.error}>{errors.otp}</Text>}
+
+    {/* 👇 ADD TIMER + RESEND HERE */}
+    <Text style={styles.timer}>
+      {canResend ? "Didn't receive code?" : `Resend OTP in ${timer}s`}
+    </Text>
+
+    {canResend && (
+      <TouchableOpacity
+        onPress={() => sendOTP(verifiedIdentifier, medium!, childId)}
+      >
+        <Text style={{
+          textAlign: 'center',
+          color: '#F6A452',
+          fontWeight: '600',
+          marginTop: 6
+        }}>
+          Resend OTP
+        </Text>
+      </TouchableOpacity>
+    )}
+  </>
+)}
+
+<TouchableOpacity
+  style={[
+    styles.button,
+    isButtonLoading && { opacity: 0.7 }
+  ]}
+  onPress={() => {
+    Keyboard.dismiss();  
+    startFiveSecLoader();           // show loader 5 sec
+    isOTPSent ? verifyOTP() : checkAndProceed();
+  }}
+  disabled={isButtonLoading}
+  activeOpacity={0.8}
+>
+  {isButtonLoading ? (
+    <ActivityIndicator size="small" color="#fff" />
+  ) : (
+    <Text style={styles.buttonText}>
+      {isOTPSent ? 'Verify' : 'Login'}
+    </Text>
+  )}
+</TouchableOpacity>
+
+
+{/* 
+<TouchableOpacity
+  style={[
+    styles.button,
+    isButtonLoading && { opacity: 0.7 }   // fade effect while loading
+  ]}
+  onPress={isOTPSent ? verifyOTP : checkAndProceed}
+  disabled={isButtonLoading}
+  activeOpacity={0.8}
+>
+  {isButtonLoading ? (
+    <ActivityIndicator size="small" color="#fff" />
+  ) : (
+    <Text style={styles.buttonText}>
+      {isOTPSent ? 'Verify' : 'Login'}
+    </Text>
+  )}
+</TouchableOpacity> */}
+
+
+          {/* <TouchableOpacity style={styles.button} onPress={isOTPSent ? verifyOTP : checkAndProceed} disabled={loading || verifying}>
             {(loading || verifying) ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>{isOTPSent ? 'Verify' : 'Login'}</Text>}
-          </TouchableOpacity>
+          </TouchableOpacity> */}
+
+
+{!isOTPSent && (
+<TouchableOpacity
+  onPress={() => navigation.navigate('Signup')}
+  style={{ marginTop: 18 }}
+>
+  <Text style={styles.signupText}>
+    Don’t have an account?{' '}
+    <Text style={styles.signupLink}>Sign up</Text>
+  </Text>
+</TouchableOpacity>
+)}
+
+
         </View>
       </ScrollView>
 
@@ -292,8 +547,8 @@ const styles = StyleSheet.create({
   inputBox: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#ccc', borderRadius: 12, height: 52, paddingHorizontal: 14, marginBottom: 4 },
   code: { color: '#7A7A7A', fontSize: 16 },
   divider: { width: 1, height: 24, backgroundColor: '#616161', marginHorizontal: 10 },
-  input: { flex: 1, fontSize: 18, color: '#000' },
-  button: { backgroundColor: '#F6A452', height: 52, borderRadius: 14, justifyContent: 'center', alignItems: 'center', marginTop: 10 },
+  input: { flex: 1, fontSize: 18, color: '#000',includeFontPadding: false, textAlignVertical: 'center' },
+  button: { backgroundColor: '#F6A452', height: 52, borderRadius: 14, justifyContent: 'center', alignItems: 'center', marginTop: 10 ,flexDirection: 'row'},
   buttonText: { color: '#fff', fontSize: 20, fontWeight: '600' },
   error: { color: '#E94235', marginBottom: 8, marginTop: 4 },
   otpLabel: { marginBottom: 10 },
@@ -305,12 +560,56 @@ const styles = StyleSheet.create({
   orText: { marginHorizontal: 12, color: '#111', fontWeight: '800' },
   heroContainer: { position: 'relative' },
   heroImage: { width: '100%', height: SCREEN_HEIGHT * 0.5 },
-  heroTitle: { position: 'absolute', top: 10, left: 20, color: '#fff', fontSize: 28, fontWeight: '700' },
+//  heroTitle: { position: 'absolute', top: 10, left: 20, color: '#fff', fontSize: 28, fontWeight: '700' },
+ heroTitle: {
+  position: 'absolute',
+  top: StatusBar.currentHeight ? StatusBar.currentHeight + 10 : 30,
+  left: 20,
+  color: '#fff',
+  fontSize: 28,
+  fontWeight: '700',
+},
+
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'center', alignItems: 'center' },
   modalBox: { width: '85%', backgroundColor: '#fff', borderRadius: 16, padding: 20 },
   modalTitle: { fontSize: 18, fontWeight: '700', marginBottom: 12, textAlign: 'center' },
   terms: { fontSize: 14, color: '#444', lineHeight: 16.5, marginBottom: 14, marginTop: 10, fontFamily: 'Quicksand-Regular' },
   link: { color: '#E94235', fontFamily: 'Quicksand-Medium' },
+ termsText: {
+  fontSize: 13,
+  color: '#555',
+  marginBottom: 14,
+  marginTop: 6,
+  lineHeight: 18,
+  textAlign: 'left',
+  paddingHorizontal: 4, // adjust 2–6 if needed
+},
+
+
+linkText: {
+  color: '#E94235',
+  fontWeight: '600',
+},
+signupText: {
+  textAlign: 'center',
+  color: '#333',
+  fontSize: 14,
+},
+backBtn: {
+  position: 'absolute',
+  top: 40,
+  left: 16,
+  zIndex: 10,
+  backgroundColor: 'rgba(0,0,0,0.35)',
+  padding: 8,
+  borderRadius: 20,
+},
+
+signupLink: {
+  fontWeight: '700',
+  color: '#000',
+},
+
   childName: { fontSize: 16, color: '#000', textAlign: 'center', paddingVertical: 12, borderBottomWidth: 1, borderColor: '#eee' },
 });
 

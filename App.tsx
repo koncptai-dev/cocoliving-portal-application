@@ -17,29 +17,22 @@ import { AuthProvider, useAuth } from './src/context/AuthContext';
 import AuthStack from './src/navigation/AuthStack';
 import BottomTabs from './src/components/BottomTabs';
 
-// User Screens
-import DashboardScreen from './src/user/dashboard';
-import Profile from './src/user/Profile';
-import MyBookings from './src/user/MyBookings';
-import Payments from './src/user/Payments';
-import AccessHistory from './src/user/AccessHistory';
-import Support from './src/user/Support';
-import EventsScreen from './src/user/Events';
-import FoodMenuScreen from './src/user/FoodMenu';
-import BrowsePropertiesScreen from './src/user/BrowsePropertiesScreen';
-import PropertyDetailsScreen from './src/user/PropertyDetailsScreen';
-import RoomDetailsScreen from './src/user/RoomDetailsScreen';
-import SelectYourBedScreen from './src/user/SelectYourBedScreen';
-import PayableAmountScreen from './src/user/PayableAmountScreen';
-import FindStayScreen from './src/components/Dashboard/FindStayScreen';
-import EventDetailsScreen from './src/components/Events/eventsDetails';
+// Screens (only detail / non-tab screens here)
 import RaiseComplaint from './src/components/Support/RaiseComplaint';
 import ComplaintStatus from './src/components/Support/ComplaintStatus';
 import ComplaintHistory from './src/components/Support/ComplaintHistory';
 import ProfileScreen from './src/components/ProfileScreen';
+import PropertyDetailsScreen from './src/user/PropertyDetailsScreen';
+import RoomDetailsScreen from './src/user/RoomDetailsScreen';
+import SelectYourBedScreen from './src/user/SelectYourBedScreen';
+import PayableAmountScreen from './src/user/PayableAmountScreen';
+import EventDetailsScreen from './src/components/Events/eventsDetails';
+import Profile from './src/user/Profile';
 import CommunityRules from './src/components/CommunityRules';
 import TermsConditions from './src/components/TermsConditions';
 import VerificationStatusScreen from './src/components/verificationStatusScreen';
+import MyBookings from './src/user/MyBookings';
+import FoodMenuScreen from './src/user/FoodMenu';
 import NoBookingProfileScreen from './src/components/NoBookingScreens/NoBookingProfileScreen';
 import BookingSuccessScreen from './src/components/Payments/BookingSuccessScreen';
 import PaymentFailedScreen from './src/components/Payments/PaymentFailedScreen';
@@ -47,66 +40,75 @@ import BookingDetailsScreen from './src/user/BookingDetailsScreen';
 import PaymentHistoryScreen from './src/user/PaymentsScreen';
 import GatepassScreen from './src/user/GatePassScreen';
 import EditProfileScreen from './src/user/EditProfileScreen';
+import AboutUsScreen from './src/components/AboutUsScreen';
+import NotificationListScreen from './src/components/notificationIcon';
+import Myvisit from './src/components/Myvisit';
+import GuestVisit from './src/components/GuestVisit';
+import VideoSplash from './src/components/AnimatedSplash';
+
 import {
   requestNotificationPermission,
   createNotificationChannel,
   getFcmToken,
   listenForegroundNotifications,
-} from '././src/user/notificationservice';
-import AboutUsScreen from './src/components/AboutUsScreen';
-import NotificationListScreen from './src/components/notificationIcon';
-import NotificationSettingsScreen from './src/components/setting';
+} from './src/user/notificationservice';
+import SupportScreen from './src/user/Support';
+
 const Stack = createNativeStackNavigator();
 const API_BASE_URL = 'https://staging.cocoliving.in';
 
 // ---------------------------------------------------------
-//               APP NAVIGATOR (REPLACES DRAWER)
+// APP NAVIGATOR
 // ---------------------------------------------------------
-
 const AppNavigator = () => {
-  const { user } = useAuth();
+  const { user, authLoading } = useAuth();
   const token = user?.token;
 
   const [loadingInitial, setLoadingInitial] = useState(true);
   const [hasActiveBooking, setHasActiveBooking] = useState(false);
 
-  const checkBookingStatus = async () => {
-    if (!token) {
+  useEffect(() => {
+    if (!user) {
       setLoadingInitial(false);
       return;
     }
 
-    try {
-      const response = await axios.get(
-        `${API_BASE_URL}/api/book-room/getUserBookings?page=1&limit=10`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+    const checkBookingStatus = async () => {
+      try {
+        const response = await axios.get(
+          `${API_BASE_URL}/api/book-room/getUserBookings?page=1&limit=10`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
 
-      const bookings = response?.data?.bookings || [];
+        const bookings = response?.data?.bookings || [];
 
-      const active = bookings.find(
-        (b: any) =>
-          b.displayStatus?.toLowerCase() === "active" ||
-          b.displayStatus?.toLowerCase() === "approved"
-      );
+        const active = bookings.find(
+          (b) =>
+            b.displayStatus?.toLowerCase() === 'active' ||
+            b.displayStatus?.toLowerCase() === 'approved'
+        );
 
-      setHasActiveBooking(!!active);
-    } catch (error) {
-      console.log("Booking check error:", error);
-      setHasActiveBooking(false);
-    } finally {
-      setLoadingInitial(false);
-    }
-  };
+        setHasActiveBooking(!!active);
+      } catch (error) {
+        console.log('Booking check error:', error);
+        setHasActiveBooking(false);
+      } finally {
+        setLoadingInitial(false);
+      }
+    };
 
-  useEffect(() => {
-    if (user) checkBookingStatus();
-    else setLoadingInitial(false);
-  }, [user]);
+    checkBookingStatus();
+  }, [user, token]);
 
+  // Show splash while auth is restoring
+  if (authLoading) {
+    return null;
+  }
+
+  // Show loader while checking booking status
   if (user && loadingInitial) {
     return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
         <Text>Loading App...</Text>
       </View>
     );
@@ -116,18 +118,18 @@ const AppNavigator = () => {
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       {user ? (
         <>
-          {/* MAIN NAVIGATION NOW HANDLED BY BOTTOM TABS */}
-         <Stack.Screen name="HomeTabs">
-  {(props) => (
-    <BottomTabs 
-      key={hasActiveBooking ? "booked" : "notBooked"}  
-      {...props} 
-      hasBooking={hasActiveBooking} 
-    />
-  )}
-</Stack.Screen>
+          {/* Main bottom tabs – visible on all logged-in screens */}
+          <Stack.Screen name="HomeTabs">
+            {(props) => (
+              <BottomTabs
+                key={hasActiveBooking ? 'booked' : 'notBooked'}
+                {...props}
+                hasBooking={hasActiveBooking}
+              />
+            )}
+          </Stack.Screen>
 
-          {/* ALL OTHER SCREENS */}
+          {/* All other screens – bottom tab bar will remain visible */}
           <Stack.Screen name="RaiseComplaint" component={RaiseComplaint} />
           <Stack.Screen name="ComplaintStatus" component={ComplaintStatus} />
           <Stack.Screen name="ComplaintHistory" component={ComplaintHistory} />
@@ -136,25 +138,25 @@ const AppNavigator = () => {
           <Stack.Screen name="RoomDetails" component={RoomDetailsScreen} />
           <Stack.Screen name="SelectYourBed" component={SelectYourBedScreen} />
           <Stack.Screen name="PayableAmountScreen" component={PayableAmountScreen} />
-          <Stack.Screen name="Support" component={Support} />
           <Stack.Screen name="EventDetails" component={EventDetailsScreen} />
           <Stack.Screen name="Profile" component={Profile} />
           <Stack.Screen name="CommunityRules" component={CommunityRules} />
           <Stack.Screen name="TermsConditions" component={TermsConditions} />
           <Stack.Screen name="VerificationStatus" component={VerificationStatusScreen} />
-          <Stack.Screen name="MyBookings" component={MyBookings}/>
-          <Stack.Screen name="FoodMenu" component={FoodMenuScreen}/>
+          <Stack.Screen name="MyBookings" component={MyBookings} />
+          <Stack.Screen name="FoodMenu" component={FoodMenuScreen} />
           <Stack.Screen name="NoProfileScreen" component={NoBookingProfileScreen} />
-          <Stack.Screen name="BookingSuccessScreen" component={BookingSuccessScreen}/>
-          <Stack.Screen name="PaymentFailedScreen" component={PaymentFailedScreen}/>
+          <Stack.Screen name="BookingSuccessScreen" component={BookingSuccessScreen} />
+          <Stack.Screen name="PaymentFailedScreen" component={PaymentFailedScreen} />
           <Stack.Screen name="BookingDetails" component={BookingDetailsScreen} />
-          <Stack.Screen name="PaymentScreen" component={PaymentHistoryScreen}/>
-          <Stack.Screen name="GatePassScreen" component={GatepassScreen}/>
-          <Stack.Screen name="EditProfileScreen" component={EditProfileScreen}/>
-          <Stack.Screen name="AboutUsScreen" component={AboutUsScreen}/>
-           <Stack.Screen name="notificationListScreen" component={NotificationListScreen}/>
-          {/* <Stack.Screen name="notificationSettingScreen" component={NotificationSettingsScreen}/> */}
-          
+          <Stack.Screen name="PaymentScreen" component={PaymentHistoryScreen} />
+          <Stack.Screen name="GatePassScreen" component={GatepassScreen} />
+          <Stack.Screen name="EditProfileScreen" component={EditProfileScreen} />
+          <Stack.Screen name="AboutUsScreen" component={AboutUsScreen} />
+          <Stack.Screen name="notificationListScreen" component={NotificationListScreen} />
+          <Stack.Screen name="myVisit" component={Myvisit} />
+          <Stack.Screen name="GuestVisit" component={GuestVisit} />
+          <Stack.Screen name="Support" component ={SupportScreen}/>
         </>
       ) : (
         <Stack.Screen name="Auth" component={AuthStack} />
@@ -164,37 +166,29 @@ const AppNavigator = () => {
 };
 
 // ---------------------------------------------------------
-//                       MAIN APP
+// MAIN APP
 // ---------------------------------------------------------
-
 const App = () => {
   const [showSplash, setShowSplash] = useState(true);
-useEffect(() => {
-    // 🔔 Firebase Notification Setup
+  useEffect(() => {
+    // Notification setup
     requestNotificationPermission();
     createNotificationChannel();
     getFcmToken();
-
     const unsubscribe = listenForegroundNotifications();
     return unsubscribe;
   }, []);
 
   if (showSplash) {
-    return <AnimatedSplash onFinish={() => setShowSplash(false)} />;
+    return <VideoSplash onFinish={() => setShowSplash(false)} />;
   }
   return (
-    <SafeAreaProvider> {/* ✅ Provider अब सबसे बाहर है – splash के time भी active रहेगा */}
-      {showSplash ? (
-        <AnimatedSplash onFinish={() => setShowSplash(false)} />
-      ) : (
-        <AuthProvider>
-          <NavigationContainer>
-            <AppNavigator />
-          </NavigationContainer>
-        </AuthProvider>
-      )}
-
-      {/* Toast हमेशा top level पर रहेगा, splash के बाद भी visible */}
+    <SafeAreaProvider>
+      <AuthProvider>
+        <NavigationContainer>
+          <AppNavigator />
+        </NavigationContainer>
+      </AuthProvider>
       <Toast />
     </SafeAreaProvider>
   );

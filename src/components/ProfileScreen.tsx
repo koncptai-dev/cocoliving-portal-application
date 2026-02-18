@@ -130,6 +130,11 @@ const openWhatsApp = async () => {
         label="My Bookings"
         onPress={() => navigation.navigate("MyBookings")}
       />
+       <MenuItem
+        icon="home-outline"
+        label="Guest Booking"
+        onPress={() => navigation.navigate("GuestVisit")}
+      />
       <MenuItem
         icon="headset-outline"
         label="Support"
@@ -162,7 +167,8 @@ const openWhatsApp = async () => {
         label="Personal Information"
         onPress={() => navigation.navigate("Profile")}
       />
-      {/* <MenuItem icon="calendar-outline" label="Visit" /> */}
+      <MenuItem icon="calendar-outline" label="Visit"
+      onPress={()=> navigation.navigate("myVisit")} />
       <MenuItem
         icon="call-outline"
         label="Contact Us"

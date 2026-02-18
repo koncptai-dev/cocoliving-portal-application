@@ -150,69 +150,79 @@ export default function Profile() {
   const update = (key, val) => setProfile({ ...profile, [key]: val });
 
   // 🔥 Save Profile
-  const saveProfile = async () => {
-    const emailError = validateParentEmail(profile.parentEmail);
+const saveProfile = async () => {
+  const emailError = validateParentEmail(profile.parentEmail);
+  if (emailError) {
+    setErrors({ parentEmail: emailError });
+    Toast.show({ type: "error", text1: "Please fix error in parent email" });
+    return;
+  }
 
-    if (emailError) {
-      setErrors({ parentEmail: emailError });
-      Toast.show({ type: "error", text1: "Please fix error in parent email" });
-      return;
+  try {
+    const fullName = `${profile.firstName} ${profile.lastName}`.trim();
+    const form = new FormData();
+
+    form.append("fullName", fullName);
+    form.append("dateOfBirth", profile.dateOfBirth || "");
+    form.append("gender", profile.gender || "");
+    form.append("phone", profile.phone || "");
+    form.append("address", profile.address || "");
+    form.append("collegeName", profile.collegeName || "");
+    form.append("course", profile.course || "");
+    form.append("parentName", profile.parentName || "");
+    form.append("parentEmail", profile.parentEmail || "");
+    form.append("parentMobile", profile.parentMobile || "");
+    form.append("companyName", profile.companyName || "");
+    form.append("position", profile.position || "");
+    form.append("allergies", profile.allergies || "");
+
+    // 🔥 FIX HERE: Agar preference empty string hai, toh append hi mat karo 
+    // ya fir backend agar strict hai toh value check karke bhejo.
+    if (profile.foodPreference && profile.foodPreference !== "") {
+      form.append("foodPreference", profile.foodPreference);
+    }
+    // Note: Agar backend "null" string accept karta hai toh else mein 
+    // form.append("foodPreference", null) kar sakte ho, 
+    // par aksar append na karna hi sahi rehta hai.
+
+    // IMAGE UPLOAD logic same rahega
+    if (image && !image.startsWith("https://")) {
+      form.append("profileImage", {
+        uri: image,
+        type: "image/jpeg",
+        name: "profile.jpg",
+      } as any);
     }
 
-    try {
-      const fullName = `${profile.firstName} ${profile.lastName}`.trim();
+    // --- DEBUG: Payload check karne ke liye niche wala block add karein ---
+    console.log("SENDING FORM DATA...");
+    // FormData ko direct log nahi kar sakte, isliye aise check karein:
+    // @ts-ignore
+    for (let pair of form._parts) {
+      console.log(pair[0] + ': ' + pair[1]);
+    }
+    // --------------------------------------------------------------------
 
-      const form = new FormData();
-
-      form.append("fullName", fullName);
-      form.append("dateOfBirth", profile.dateOfBirth || "");
-      form.append("gender", profile.gender || "");
-      form.append("phone", profile.phone || "");
-      form.append("address", profile.address || "");
-      form.append("collegeName", profile.collegeName || "");
-      form.append("course", profile.course || "");
-      form.append("parentName", profile.parentName || "");
-      form.append("parentEmail", profile.parentEmail || "");     // ← NEW
-      form.append("parentMobile", profile.parentMobile || "");
-      form.append("companyName", profile.companyName || "");
-      form.append("position", profile.position || "");
-      form.append("allergies", profile.allergies || "");
-      form.append("foodPreference", profile.foodPreference || "");
-
-      // IMAGE UPLOAD (only if new photo taken)
-      if (image && !image.startsWith("https://")) {
-        form.append("profileImage", {
-          uri: image,
-          type: "image/jpeg",
-          name: "profile.jpg",
-        } as any);
+    await axios.put(
+      `${BASE_URL}/api/user/update-profile/${user.id}`,
+      form,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data",
+        },
       }
+    );
+    
+    await refreshUser();
+    Toast.show({ type: "success", text1: "Profile Updated Successfully!" });
 
-      await axios.put(
-        `${BASE_URL}/api/user/update-profile/${user.id}`,
-        form,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "multipart/form-data",
-          },
-        }
-      );
-      await refreshUser();
-
-      Toast.show({
-        type: "success",
-        text1: "Profile Updated Successfully!",
-      });
-    } catch (e: any) {
-      console.log("UPDATE ERROR:", e.response?.data);
-      const msg =
-        e.response?.data?.error ||
-        e.response?.data?.message ||
-        "Failed to update profile";
-      Toast.show({ type: "error", text1: msg });
-    }
-  };
+  } catch (e: any) {
+    console.log("UPDATE ERROR RESPONSE:", e.response?.data); // Isse enum error saaf dikhega
+    const msg = e.response?.data?.error || e.response?.data?.message || "Failed to update profile";
+    Toast.show({ type: "error", text1: msg });
+  }
+};
 
   return (
        <KeyboardAvoidingView

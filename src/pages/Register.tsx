@@ -513,13 +513,14 @@ avatarImg: {
   genderRow: {
     flexDirection: 'row',
     flex: 1,
-    marginTop: 6,
+    marginTop: 12,
+    // padding:7,
     gap: 10,
   },
 
   genderBtn: {
     flex: 1,
-    height: 40,
+    height: 35,
     borderRadius: 8,
     borderWidth: 1,
     borderColor: COLORS.border,
