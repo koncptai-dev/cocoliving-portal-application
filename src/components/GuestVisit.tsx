@@ -408,7 +408,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: -10,
     left: 20,
-    backgroundColor: '#fff',
+    backgroundColor: '#f5f5f5',
     paddingHorizontal: 6,
     fontSize: 14,
     color: '#000',

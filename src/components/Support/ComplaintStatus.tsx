@@ -1,7 +1,6 @@
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from "react-native";
+import { View, Text, ScrollView, StyleSheet } from "react-native";
 import React, { useEffect, useState } from "react";
 import HeaderGradient from "../HeaderGradient";
-import colors from "../../constants/color";
 import axios from "axios";
 import { useAuth } from "../../context/AuthContext";
 
@@ -20,6 +19,7 @@ const ComplaintStatus = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       setTickets(res.data.tickets || []);
+      console.log("Tickets Response:", res.data);   // ← Check this in console
     } catch (error) {
       console.log("❌ ERROR LOADING TICKETS:", error);
     }
@@ -77,7 +77,10 @@ const ComplaintStatus = () => {
         title="Help & Support"
       />
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scroll}
+      >
         {/* Tagline */}
         <Text style={styles.tagline}>
           Your comfort matters.{"\n"}
@@ -88,11 +91,10 @@ const ComplaintStatus = () => {
         <Text style={styles.mainTitle}>Complaint Status</Text>
 
         <Text style={styles.roomText}>
-          Room No:{" "}
-          {loadingRoom ? "Loading..." : roomNumber}
+          Room No: {loadingRoom ? "Loading..." : roomNumber}
         </Text>
 
-        {/* Ongoing */}
+        {/* ================= ONGOING ================= */}
         <Text style={styles.sectionTitle}>Ongoing complaint</Text>
 
         {ongoing.length === 0 && (
@@ -103,15 +105,23 @@ const ComplaintStatus = () => {
           <View style={styles.card} key={item.id}>
             <Text style={styles.code}>Complaint No: {item.supportCode}</Text>
             <Text style={styles.room}>ROOM NO: {item.roomNumber}</Text>
-            <Text style={styles.date}>Complaint Date: {item.date}</Text>
 
-            <TouchableOpacity style={styles.detailsBtn}>
-              <Text style={styles.detailsText}>Details</Text>
-            </TouchableOpacity>
+            <Text style={styles.infoText}>
+              Category: <Text style={styles.highlight}>
+                {item.category || item.complaintCategory || "N/A"}
+              </Text>
+            </Text>
+            <Text style={styles.infoText}>
+              Sub Category: <Text style={styles.highlight}>
+                {item.subCategory || item.subcategory || item.subCategoryName || "N/A"}
+              </Text>
+            </Text>
+
+            <Text style={styles.date}>Complaint Date: {item.date}</Text>
           </View>
         ))}
 
-        {/* Closed */}
+        {/* ================= CLOSED ================= */}
         <Text style={styles.sectionTitle}>Recently closed complaint</Text>
 
         {closed.length === 0 && (
@@ -122,14 +132,22 @@ const ComplaintStatus = () => {
           <View style={styles.card} key={item.id}>
             <Text style={styles.code}>Complaint No: {item.supportCode}</Text>
             <Text style={styles.room}>ROOM NO: {item.roomNumber}</Text>
+
+            <Text style={styles.infoText}>
+              Category: <Text style={styles.highlight}>
+                {item.category || item.complaintCategory || "N/A"}
+              </Text>
+            </Text>
+            <Text style={styles.infoText}>
+              Sub Category: <Text style={styles.highlight}>
+                {item.subCategory || item.subcategory || item.subCategoryName || "N/A"}
+              </Text>
+            </Text>
+
             <Text style={styles.date}>Complaint Date: {item.date}</Text>
             <Text style={styles.date}>
               Complaint Closed: {item.updatedAt?.split("T")[0]}
             </Text>
-
-            <TouchableOpacity style={styles.detailsBtn}>
-              <Text style={styles.detailsText}>Details</Text>
-            </TouchableOpacity>
           </View>
         ))}
       </ScrollView>
@@ -165,9 +183,8 @@ const styles = StyleSheet.create({
   },
   roomText: {
     textAlign: "left",
-    paddingHorizontal:20,
+    paddingHorizontal: 20,
     marginTop: 12,
-   
     fontSize: 16,
     fontFamily: "Quicksand-Bold",
     color: "#4f3421",
@@ -209,18 +226,14 @@ const styles = StyleSheet.create({
     marginTop: 8,
     color: "#444444",
   },
-  detailsBtn: {
-    position: "absolute",
-    right: 16,
-    bottom: 14,
-    backgroundColor: "#f1a85b",
-    paddingHorizontal: 16,
-    paddingVertical: 6,
-    borderRadius: 5,
+  infoText: {
+    fontFamily: "Quicksand-Bold",
+    fontSize: 13.5,
+    marginTop: 7,
+    color: "#4a3321",
   },
-  detailsText: {
+  highlight: {
     fontFamily: "Quicksand-SemiBold",
-    fontSize: 14,
-    color: "#fff",
+    color: "#e07a00",
   },
 });

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { Alert } from "react-native";
 import {
   SafeAreaView,
   View,
@@ -56,6 +57,12 @@ const fetchGatePasses = async () => {
       headers: { Authorization: `Bearer ${user.token}` },
     });
  
+
+// Toast.show({
+//       type: "pass",
+//       text1: "Successfully ",
+//     });
+
     console.log("✅ fetchGatePasses SUCCESS");
     console.log("📦 Response status:", res.status);
     console.log("📦 Response data:", res.data);
@@ -126,11 +133,18 @@ const fetchGatePasses = async () => {
         headers: { Authorization: `Bearer ${user.token}` },
       });
  
-      Toast.show({
-        type: "success",
-        text1: editingId ? "Gate pass updated" : "Gate pass created",
-      });
+      //new
+      //setShowListModal(false);
+
+      // Toast.show({
+      //   type: "success",
+      //   text1: editingId ? "Gate pass updated" : "Gate pass created",
+      // });
  
+      Alert.alert(
+  "Success",
+  editingId ? "Gate pass updated successfully\ncheck view gate passes section" : "Gate pass created successfully\ncheck view gate passes section"
+);
       setForm({ requestType: "", date: "", time: "", reason: "" });
       setEditingId(null);
       fetchGatePasses();
@@ -149,7 +163,10 @@ const fetchGatePasses = async () => {
         { status },
         { headers: { Authorization: `Bearer ${user.token}` } }
       );
-      Toast.show({ type: "success", text1: `Gate pass ${status}` });
+      //new 
+      //setShowListModal(false);
+      //Toast.show({ type: "success", text1: `Gate pass ${status}` });
+       Alert.alert("Updated", "Gate pass updated successfully");
       fetchGatePasses();
     } catch {
       Toast.show({ type: "error", text1: "Action failed" });

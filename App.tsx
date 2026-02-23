@@ -45,7 +45,7 @@ import NotificationListScreen from './src/components/notificationIcon';
 import Myvisit from './src/components/Myvisit';
 import GuestVisit from './src/components/GuestVisit';
 import VideoSplash from './src/components/AnimatedSplash';
-
+import ContractSignScreen from './src/components/contactsign';
 import {
   requestNotificationPermission,
   createNotificationChannel,
@@ -157,6 +157,7 @@ const AppNavigator = () => {
           <Stack.Screen name="myVisit" component={Myvisit} />
           <Stack.Screen name="GuestVisit" component={GuestVisit} />
           <Stack.Screen name="Support" component ={SupportScreen}/>
+          <Stack.Screen name="ContractSign" component={ContractSignScreen} />
         </>
       ) : (
         <Stack.Screen name="Auth" component={AuthStack} />
@@ -170,8 +171,8 @@ const AppNavigator = () => {
 // ---------------------------------------------------------
 const App = () => {
   const [showSplash, setShowSplash] = useState(true);
+
   useEffect(() => {
-    // Notification setup
     requestNotificationPermission();
     createNotificationChannel();
     getFcmToken();
@@ -179,18 +180,25 @@ const App = () => {
     return unsubscribe;
   }, []);
 
-  if (showSplash) {
-    return <VideoSplash onFinish={() => setShowSplash(false)} />;
-  }
   return (
-    <SafeAreaProvider>
-      <AuthProvider>
-        <NavigationContainer>
-          <AppNavigator />
-        </NavigationContainer>
-      </AuthProvider>
-      <Toast />
-    </SafeAreaProvider>
+    <View style={{ flex: 1 }}>
+
+      {/* MAIN APP ALWAYS MOUNTED */}
+      <SafeAreaProvider>
+        <AuthProvider>
+          <NavigationContainer>
+            <AppNavigator />
+          </NavigationContainer>
+        </AuthProvider>
+        <Toast />
+      </SafeAreaProvider>
+
+      {/* SPLASH OVERLAY */}
+      {showSplash && (
+        <VideoSplash onFinish={() => setShowSplash(false)} />
+      )}
+
+    </View>
   );
 };
 

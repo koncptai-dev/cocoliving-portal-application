@@ -111,9 +111,9 @@ const BrowsePropertiesScreen = ({ navigation }) => {
       .map((p) => ({
         ...p,
         rateCard: p.rateCard?.filter((r) => {
-          const typeOk =
-            !selectedRoomType ||
-            r.roomType.toLowerCase() === selectedRoomType.toLowerCase();
+         const typeOk =
+  !selectedRoomType ||
+  r.roomType.toLowerCase().includes(selectedRoomType.toLowerCase());
           const priceOk =
             !selectedPrice || Number(r.rent) <= Number(selectedPrice);
           return typeOk && priceOk;
@@ -385,15 +385,14 @@ const styles = StyleSheet.create({
     color: "#4B3426",
   },
 
-  card: {
-    height: 400,
-    backgroundColor: "#EFE8E2",
-    marginHorizontal: 16,
-    marginBottom: 18,
-    borderRadius: 20,
-    overflow: "hidden",
-    elevation: 4,
-  },
+ card: {
+  backgroundColor: "#EFE8E2",
+  marginHorizontal: 16,
+  marginBottom: 18,
+  borderRadius: 20,
+  overflow: "hidden",
+  elevation: 4,
+},
 
   image: {
     width: "100%",

@@ -37,6 +37,7 @@ const ComplaintHistory = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       setTickets(res.data.tickets || []);
+      console.log("History Tickets Response:", res.data); // ← Check console
     } catch (error) {
       console.log("❌ ERROR LOADING HISTORY:", error);
     }
@@ -98,7 +99,10 @@ const ComplaintHistory = () => {
         title="Help & Support"
       />
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 80 }}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 80 }}
+      >
         <Text style={styles.tagline}>
           Your comfort matters.{"\n"}Tell us what’s wrong, we’ll fix it soon.
         </Text>
@@ -174,40 +178,51 @@ const ComplaintHistory = () => {
         )}
 
         {/* LIST */}
-{filteredTickets.map((item) => (
-  <View style={styles.card} key={item.id}>
+        {filteredTickets.map((item) => (
+          <View style={styles.card} key={item.id}>
+            {/* Complaint No */}
+            <Text style={styles.code}>
+              Complaint No: {item.supportCode}
+            </Text>
 
-    {/* Complaint No – single row */}
-    <Text style={styles.code}>
-      Complaint No: {item.supportCode}
-    </Text>
+            {/* Room No + Status */}
+            <View style={styles.row}>
+              <Text style={styles.room}>
+                ROOM NO: {item.roomNumber}
+              </Text>
 
-    {/* Room No + Status – same row */}
-    <View style={styles.row}>
-      <Text style={styles.room}>
-        ROOM NO: {item.roomNumber}
-      </Text>
+              <Text style={styles.status}>
+                Status: {item.status === "open" ? "Pending" : "Closed"}
+              </Text>
+            </View>
 
-      <Text style={styles.status}>
-        Status: {item.status === "open" ? "Pending" : "Closed"}
-      </Text>
-    </View>
+            {/* NEW: Category & Sub Category */}
+            <Text style={styles.infoText}>
+              Category: <Text style={styles.highlight}>
+                {item.category || item.complaintCategory || "N/A"}
+              </Text>
+            </Text>
+            <Text style={styles.infoText}>
+              Sub Category: <Text style={styles.highlight}>
+                {item.subCategory || item.subcategory || item.subCategoryName || "N/A"}
+              </Text>
+            </Text>
 
-    <Text style={styles.date}>
-      Complaint Date: {item.date}
-    </Text>
+            <Text style={styles.date}>
+              Complaint Date: {item.date}
+            </Text>
 
-    {item.status === "closed" && (
-      <Text style={styles.date}>
-        Complaint Closed: {item.updatedAt?.split("T")[0]}
-      </Text>
-    )}
+            {item.status === "closed" && (
+              <Text style={styles.date}>
+                Complaint Closed: {item.updatedAt?.split("T")[0]}
+              </Text>
+            )}
 
-    <TouchableOpacity style={styles.detailsBtn}>
-      <Text style={styles.detailsText}>Details</Text>
-    </TouchableOpacity>
-  </View>
-))}
+            {/* <TouchableOpacity style={styles.detailsBtn}>
+              <Text style={styles.detailsText}>Details</Text>
+            </TouchableOpacity> */}
+          </View>
+        ))}
       </ScrollView>
     </View>
   );
@@ -237,9 +252,8 @@ const styles = StyleSheet.create({
   },
   roomText: {
     textAlign: "left",
-    paddingHorizontal:20,
+    paddingHorizontal: 20,
     marginTop: 12,
-   
     fontSize: 16,
     fontFamily: "Quicksand-Bold",
     color: "#4f3421",
@@ -340,11 +354,23 @@ const styles = StyleSheet.create({
     color: "#4a3321",
   },
 
- date: {
+  date: {
     fontFamily: "Quicksand-Bold",
     fontSize: 12,
     marginTop: 8,
     color: "#444444",
+  },
+
+  /* ================= NEW STYLES ================= */
+  infoText: {
+    fontFamily: "Quicksand-Bold",
+    fontSize: 13.5,
+    marginTop: 7,
+    color: "#4a3321",
+  },
+  highlight: {
+    fontFamily: "Quicksand-SemiBold",
+    color: "#e07a00",
   },
 
   detailsBtn: {

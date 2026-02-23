@@ -155,6 +155,11 @@ const openWhatsApp = async () => {
         label="Gate Approval"
         onPress={() => navigation.navigate("GatePassScreen")}
       />
+      <MenuItem
+  icon="finger-print-outline"
+  label="Sign Contract"
+  onPress={() => navigation.navigate("ContractSign")}
+/>
       <MenuItem icon="settings-outline" label="Settings" onPress={()=>navigation.navigate("notificationSettingScreen")} />
     </>
   );
@@ -192,60 +197,57 @@ const openWhatsApp = async () => {
     );
   }
 
-  return (
-    <ScrollView style={styles.container}>
-      {/* GRADIENT HEADER */}
-      <LinearGradient
-        colors={["#855838", "#4F3421"]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 0 }}
-        style={styles.gradientHeader}
-      >
-        <View style={styles.topRow}>
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Ionicons name="chevron-back" size={26} color="#fff" />
-          </TouchableOpacity>
+return (
+  <View style={styles.container}>
+    
+    {/* ================= STATIC HEADER ================= */}
+    <LinearGradient
+      colors={["#855838", "#4F3421"]}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 0 }}
+      style={styles.gradientHeader}
+    >
+      <View style={styles.topRow}>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <Ionicons name="chevron-back" size={26} color="#fff" />
+        </TouchableOpacity>
 
-          <Text style={styles.headerTitle}>Profile</Text>
+        <Text style={styles.headerTitle}>Profile</Text>
+        <View style={{ width: 26 }} />
+      </View>
 
-          <View style={{ width: 26 }} />
-        </View>
-
-        <View style={styles.profileRow}>
-          <View style={styles.avatarWrapper}>
-            {user?.profileImage ? (
-              <Image
-                source={{ uri: `${BASE_URL}${user.profileImage}` }}
-                style={styles.avatar}
-              />
-            ) : (
-              <View style={styles.avatar}>
-                <Text style={styles.avatarText}>{firstLetter}</Text>
-              </View>
-            )}
-
-            {/* <TouchableOpacity style={styles.editIcon}>
-              {/* <Ionicons name="pencil" size={14} color="#4F3421" /> */}
-            {/* </TouchableOpacity> * */}
-          </View>
-
-          <View style={{ marginLeft: 14 }}>
-            <Text style={styles.name}>{userName}</Text>
-            <View style={styles.roleRow}>
-              <Text style={styles.role}>{userType}</Text>
-              <TouchableOpacity>
-                {/* <Ionicons name="pencil" size={16} color="#fff" style={{ marginLeft: 8 }} /> */}
-              </TouchableOpacity>
+      <View style={styles.profileRow}>
+        <View style={styles.avatarWrapper}>
+          {user?.profileImage ? (
+            <Image
+              source={{ uri: `${BASE_URL}${user.profileImage}` }}
+              style={styles.avatar}
+            />
+          ) : (
+            <View style={styles.avatar}>
+              <Text style={styles.avatarText}>{firstLetter}</Text>
             </View>
+          )}
+        </View>
+
+        <View style={{ marginLeft: 14 }}>
+          <Text style={styles.name}>{userName}</Text>
+          <View style={styles.roleRow}>
+            <Text style={styles.role}>{userType}</Text>
           </View>
         </View>
-      </LinearGradient>
+      </View>
+    </LinearGradient>
 
-      {/* SINGLE CARD FOR ALL MENU ITEMS */}
+    {/* ================= SCROLLABLE SECTION ================= */}
+    <ScrollView
+      showsVerticalScrollIndicator={false}
+      contentContainerStyle={{ paddingBottom: 40 }}
+    >
+      {/* MENU CARD */}
       <View style={styles.mainCard}>
         {hasActiveBooking ? bookedMenu : nonBookedMenu}
 
-        {/* LOGOUT ALWAYS AT BOTTOM */}
         <MenuItem
           icon="log-out-outline"
           label="Logout"
@@ -253,96 +255,93 @@ const openWhatsApp = async () => {
         />
       </View>
 
-      {/* NON-BOOKED: SOCIAL + POWERED BY */}
-  
-        <View style={styles.footer}>
-          {/* White container with icons + vertical borders */}
-          <View style={styles.socialContainer}>
-            <TouchableOpacity
-              style={styles.socialItem}
-              onPress={() => Linking.openURL("https://facebook.com")}
-            >
-              <Image
-                source={require("../../assets/images/fb.png")}
-                style={styles.socialIcon}
-              />
-            </TouchableOpacity>
+      {/* FOOTER */}
+      <View style={styles.footer}>
+        <View style={styles.socialContainer}>
+          <TouchableOpacity
+            style={styles.socialItem}
+            onPress={() => Linking.openURL("https://facebook.com")}
+          >
+            <Image
+              source={require("../../assets/images/fb.png")}
+              style={styles.socialIcon}
+            />
+          </TouchableOpacity>
 
-            <View style={styles.verticalBorder} />
+          <View style={styles.verticalBorder} />
 
-            <TouchableOpacity
-              style={styles.socialItem}
-              onPress={() => Linking.openURL("https://instagram.com")}
-            >
-              <Image
-                source={require("../../assets/images/instagram.png")}
-                style={styles.socialIcon}
-              />
-            </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.socialItem}
+            onPress={() => Linking.openURL("https://instagram.com")}
+          >
+            <Image
+              source={require("../../assets/images/instagram.png")}
+              style={styles.socialIcon}
+            />
+          </TouchableOpacity>
 
-            <View style={styles.verticalBorder} />
+          <View style={styles.verticalBorder} />
 
+          <View style={styles.socialItem}>
+            <Image
+              source={require("../../assets/images/cocoLogo.png")}
+              style={styles.cocoLogo}
+            />
+          </View>
+
+          <View style={styles.verticalBorder} />
+
+          <TouchableOpacity onPress={openWhatsApp}>
             <View style={styles.socialItem}>
               <Image
-                source={require("../../assets/images/cocoLogo.png")}
+                source={require("../../assets/images/whatsapp.png")}
                 style={styles.cocoLogo}
               />
             </View>
-
-            <View style={styles.verticalBorder} />
-
-             <TouchableOpacity onPress={openWhatsApp}>
-  <View style={styles.socialItem}>
-    <Image
-      source={require("../../assets/images/whatsapp.png")}
-      style={styles.cocoLogo}
-    />
-  </View>
-</TouchableOpacity>
-          </View>
-
-          {/* Powered by KONCPT AI with image */}
-          <View style={styles.poweredRow}>
-            <Text style={styles.poweredBy}>Powered by </Text>
-            <Image
-              source={require("../../assets/images/koncpt.png")}
-              style={styles.koncptImage}
-            />
-          </View>
+          </TouchableOpacity>
         </View>
-      
 
-      {/* LOGOUT MODAL */}
-      <Modal transparent visible={showLogoutModal} animationType="fade">
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalBox}>
-            <Text style={styles.modalTitle}>Confirm Logout</Text>
-            <Text style={styles.modalMessage}>
-              Are you sure you want to logout?
-            </Text>
-
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={[styles.modalBtn, styles.cancelBtn]}
-                onPress={() => setShowLogoutModal(false)}
-              >
-                <Text style={styles.cancelText}>Cancel</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.modalBtn, styles.logoutBtn]}
-                onPress={performLogout}
-              >
-                <Text style={styles.logoutTextBtn}>Logout</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+        <View style={styles.poweredRow}>
+          <Text style={styles.poweredBy}>Powered by </Text>
+          <Image
+            source={require("../../assets/images/koncpt.png")}
+            style={styles.koncptImage}
+          />
         </View>
-      </Modal>
-
-      <Toast />
+      </View>
     </ScrollView>
-  );
+
+    {/* ================= LOGOUT MODAL ================= */}
+    <Modal transparent visible={showLogoutModal} animationType="fade">
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalBox}>
+          <Text style={styles.modalTitle}>Confirm Logout</Text>
+          <Text style={styles.modalMessage}>
+            Are you sure you want to logout?
+          </Text>
+
+          <View style={styles.modalButtons}>
+            <TouchableOpacity
+              style={[styles.modalBtn, styles.cancelBtn]}
+              onPress={() => setShowLogoutModal(false)}
+            >
+              <Text style={styles.cancelText}>Cancel</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.modalBtn, styles.logoutBtn]}
+              onPress={performLogout}
+            >
+              <Text style={styles.logoutTextBtn}>Logout</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+
+    <Toast />
+  </View>
+);
 };
 
 const styles = StyleSheet.create({

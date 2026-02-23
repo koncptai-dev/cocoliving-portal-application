@@ -523,7 +523,7 @@ const FloatingPhone = ({ label, value, onChangeText, verified }) => (
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#fff", padding: 15 },
 
-  header: { flexDirection: "row", alignItems: "center", gap: 20, marginBottom: 20 },
+  header: { flexDirection: "row", alignItems: "center", gap: 20, marginBottom: 20 , marginTop:20, },
   title: { fontSize: 26, fontWeight: "700", color: "#4C3D2A" },
 
   rowTop: { flexDirection: "row", alignItems: "center", marginBottom: 25 },

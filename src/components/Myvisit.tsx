@@ -13,6 +13,8 @@ import {
 import DateTimePicker from "@react-native-community/datetimepicker";
 import axios from "axios";
 import Toast from "react-native-toast-message";
+import Ionicons from "react-native-vector-icons/Ionicons";
+import { useNavigation } from "@react-navigation/native";
 
 const BASE_URL = "https://staging.cocoliving.in";
 
@@ -27,6 +29,8 @@ const MyVisit = () => {
 
   const [showPicker, setShowPicker] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  const navigation = useNavigation();
 
   const onDateChange = (event: any, selectedDate?: Date) => {
     setShowPicker(Platform.OS === "ios");
@@ -144,7 +148,11 @@ const MyVisit = () => {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-        <Text style={styles.heading}>Book a Visit</Text>
+           {/* HEADER */}
+                <View style={styles.header}>
+                  <Ionicons name="chevron-back" size={26} color="#4C3D2A" onPress={() => navigation.goBack()} />
+                  <Text style={styles.title}>My Visit</Text>
+                </View>
         <Text style={styles.subtitle}>
           Schedule your visit and experience COCO Living firsthand.
         </Text>
@@ -153,6 +161,7 @@ const MyVisit = () => {
           <TextInput
             style={styles.input}
             placeholder="Full Name"
+            placeholderTextColor="#616161"
             value={form.name}
             onChangeText={(t) => setForm({ ...form, name: t })}
             autoCapitalize="words"
@@ -162,6 +171,7 @@ const MyVisit = () => {
             style={styles.input}
             placeholder="Email Address"
             keyboardType="email-address"
+            placeholderTextColor="#616161"
             autoCapitalize="none"
             autoCorrect={false}
             value={form.email}
@@ -172,6 +182,7 @@ const MyVisit = () => {
             style={styles.input}
             placeholder="Phone Number (10 digits)"
             keyboardType="phone-pad"
+            placeholderTextColor="#616161"
             maxLength={10}
             value={form.phone}
             onChangeText={(t) => setForm({ ...form, phone: t })}
@@ -183,7 +194,7 @@ const MyVisit = () => {
             style={styles.datePickerContainer}
           >
             <View style={styles.dateInputDisplay}>
-              <Text style={{ color: form.visitDate ? "#3E2B24" : "#aaa", fontSize: 16 }}>
+              <Text style={{ color: form.visitDate ? "#3E2B24" : "#616161", fontSize: 16 }}>
                 {getDisplayDate()}
               </Text>
             </View>
@@ -231,10 +242,11 @@ const styles = StyleSheet.create({
   },
   heading: {
     fontSize: 28,
-    fontWeight: "bold",
+    fontFamily:'Quicksand-Bold',
     color: "#3E2B24",
     textAlign: "center",
     marginBottom: 8,
+    marginTop:20,
   },
   subtitle: {
     fontSize: 15,
@@ -242,6 +254,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: 32,
     lineHeight: 22,
+    fontFamily:'Quicksand-Bold'
   },
   card: {
     backgroundColor: "#FFFFFF",
@@ -291,6 +304,9 @@ const styles = StyleSheet.create({
   btnText: {
     color: "#FFFFFF",
     fontSize: 18,
-    fontWeight: "bold",
+    // fontWeight: "bold",
+    fontFamily:'Quicksand-Bold'
   },
+  header: { flexDirection: "row", alignItems: "center", gap: 20, marginBottom: 20 , marginTop:20, },
+  title: { fontSize: 26, fontWeight: "700", color: "#4C3D2A" },
 });

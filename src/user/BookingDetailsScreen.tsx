@@ -9,7 +9,8 @@ import {
   TextInput,
   Linking,
   KeyboardAvoidingView,
-  Platform
+  Platform,
+  
 } from "react-native";
 import axios from "axios";
 import Toast from "react-native-toast-message";
@@ -326,15 +327,21 @@ const BookingDetailsScreen = ({ route }) => {
      UI
   ===================== */
   return (
-    <KeyboardAvoidingView
+   <KeyboardAvoidingView
+   style={{ flex: 1 }}
+   behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+   keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 0}
+ >
+<ScrollView
   style={{ flex: 1 }}
-  behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-  keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 0}
->
-    <ScrollView
-  contentContainerStyle={styles.container}
-  keyboardShouldPersistTaps="handled"
   showsVerticalScrollIndicator={false}
+  keyboardShouldPersistTaps="handled"
+  contentContainerStyle={{
+    paddingHorizontal: 16,   // 👈 ADD THIS
+    paddingTop: 16,          // 👈 optional but recommended
+    paddingBottom: 120,
+    flexGrow: 1,
+  }}
 >
       <Text style={styles.title}>Booking Details</Text>
 
@@ -480,7 +487,7 @@ const DestructiveButton = ({ text, onPress, disabled }) => (
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F2F2F2", padding: 16 },
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
-  title: { fontSize: 22, fontFamily: "Quicksand-Bold", color: "#4B3426", marginBottom: 18 },
+  title: { fontSize: 22, fontFamily: "Quicksand-Bold", color: "#4B3426", marginBottom: 18 , marginTop:20 , textAlign:'center' },
   block: { backgroundColor: "#fff", borderRadius: 14, padding: 14, marginBottom: 10 },
   label: { fontSize: 12, fontFamily: "Quicksand-Medium", color: "#7A6658" },
   value: { fontSize: 15, fontFamily: "Quicksand-SemiBold", color: "#4B3426", marginTop: 4 },

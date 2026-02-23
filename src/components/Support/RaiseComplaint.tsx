@@ -241,7 +241,7 @@ const RaiseComplaint = () => {
 
           {/* SUB CATEGORY */}
           <TouchableOpacity
-            style={[styles.inputWrap, !category && { opacity: 0.6 }]}
+            style={[styles.inputWrap, !category && { opacity: 0.8 }]}
             onPress={() => {
               if (!category) return;
               setShowSubCategoryOptions(!showSubCategoryOptions);

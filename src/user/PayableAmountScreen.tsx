@@ -180,32 +180,50 @@ const PayableAmountScreen = ({ route, navigation }) => {
 
           stopped = true;
 
-          setTimeout(() => {
-            navigation.replace("BookingSuccessScreen", {
+         setTimeout(() => {
+      navigation.reset({
+        index: 0,
+        routes: [
+          {
+            name: "BookingSuccessScreen",
+            params: {
               bookingId: statusRes.data.bookingId || tx?.bookingId,
               amountPaid: finalPayable,
               transactionId: merchantOrderId,
               userEmail: user.email,
               userPhone: user.phone,
-                roomType: room.roomType,
-                checkInDate: isoDate,
-                duration: monthsNumber,
-            });
-          }, 2500);
-          return;
-        }
+              roomType: room.roomType,
+              checkInDate: isoDate,
+              duration: monthsNumber,
+            },
+          },
+        ],
+      });
+    }, 2500);
+
+    return;
+  }
 
         // FAILED
         if (state === "FAILED" || state === "DECLINED" || state === "TIMED_OUT") {
           console.log("[PhonePe] Payment FAILED confirmed");
           stopped = true;
-          navigation.replace("PaymentFailedScreen", {
+          navigation.reset({
+      index: 0,
+      routes: [
+        {
+          name: "PaymentFailedScreen",
+          params: {
             transactionId: merchantOrderId,
             amount: finalPayable,
             reason: "Payment Failed",
-          });
-          return;
-        }
+          },
+        },
+      ],
+    });
+
+    return;
+  }
 
         // Continue polling
         await new Promise(resolve => setTimeout(resolve, pollInterval));
@@ -221,7 +239,7 @@ const PayableAmountScreen = ({ route, navigation }) => {
         });
       }
 
-    } catch (err) {
+} catch (err: any) {
   console.log("[PhonePe] Exception:", err?.response?.data || err);
 
   const errorData = err?.response?.data;
