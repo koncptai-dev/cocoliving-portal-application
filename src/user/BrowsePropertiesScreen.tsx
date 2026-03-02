@@ -126,12 +126,6 @@ const BrowsePropertiesScreen = ({ navigation }) => {
 
   useEffect(() => {
   fetchProperties();
-
-  const interval = setInterval(() => {
-    fetchProperties();
-  }, 10000); // every 10 sec
-
-  return () => clearInterval(interval);
 }, [fetchProperties]);
 
   const clearFilters = () => {

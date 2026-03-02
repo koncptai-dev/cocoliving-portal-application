@@ -94,25 +94,35 @@ useEffect(() => {
     });
 }, [preferredRoomId]);
 
-  return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      {/* ================= HEADER ================= */}
-      <View style={styles.topRow}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-          <Ionicons name="chevron-back" size={26} color="#3C2A1E" />
-        </TouchableOpacity>
 
-        <Text style={styles.heading}>
-          {actionType === "PreBook" ? "Pre-book" : "Select your stay time"}
-        </Text>
+ return (
+  <View style={{ flex: 1, backgroundColor: "#F5F5F5" }}>
 
-        <View style={styles.rightSpacer} />
-      </View>
+    {/* 🔒 FIXED HEADER */}
+    <View style={styles.header}>
+      <TouchableOpacity onPress={() => navigation.goBack()}>
+        <Ionicons name="chevron-back" size={26} color="#3C2A1E" />
+      </TouchableOpacity>
+
+      <Text style={styles.headerTitle}>
+        {actionType === "PreBook" ? "Pre-book" : "Select your stay time"}
+      </Text>
+    </View>
+
+    {/* SCROLLABLE CONTENT */}
+    <ScrollView
+      showsVerticalScrollIndicator={false}
+      keyboardShouldPersistTaps="handled"
+      contentContainerStyle={{
+        paddingHorizontal: 20,
+        paddingBottom: 140,   // 👈 IMPORTANT for bottom button
+      }}
+    >
 
       {/* ================= PREBOOK DESCRIPTION ================= */}
       {actionType === "PreBook" && (
         <Text style={styles.prebookDesc}>
-          Lock in your preferred room with a small 10% deposit.{"\n"}
+          Lock in your preferred room with a small deposit.{"\n"}
           Complete your booking and final payment when{"\n"}
           you're ready to move in.{"\n"}
           Easy and flexible!
@@ -361,7 +371,7 @@ useEffect(() => {
 
           const securityDeposit = rent * 2;
           const netPayable = rent * monthsNumber + securityDeposit;
-          const preBookAmount = Math.round(netPayable * 0.1);
+          const preBookAmount = 5000;
 
           navigation.navigate("PayableAmountScreen", {
   room,
@@ -392,28 +402,34 @@ useEffect(() => {
       </TouchableOpacity>
 
       {/* ================= CALENDAR ================= */}
-      {showCalendar && (
-        <DateTimePicker
-          value={new Date()}
-          mode="date"
-          display={Platform.OS === "ios" ? "spinner" : "default"}
-          minimumDate={new Date()}
-          onChange={(event, date) => {
-            setShowCalendar(false);
-            if (date) {
-              const formattedUI = date.toLocaleDateString("en-IN", {
-                day: "numeric",
-                month: "long",
-                year: "numeric",
-              });
-              setStartDate(formattedUI);
-              setIsoDate(date.toISOString().split("T")[0]);
-              setDateSelected(true);
-            }
-          }}
-        />
-      )}
+    {showCalendar && (
+  <DateTimePicker
+    value={new Date()}
+    mode="date"
+    display={Platform.OS === "ios" ? "spinner" : "default"}
+    minimumDate={new Date()}
+    maximumDate={
+      new Date(
+        new Date().setMonth(new Date().getMonth() + 1)
+      )
+    }
+    onChange={(event, date) => {
+      setShowCalendar(false);
+      if (date) {
+        const formattedUI = date.toLocaleDateString("en-IN", {
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        });
+        setStartDate(formattedUI);
+        setIsoDate(date.toISOString().split("T")[0]);
+        setDateSelected(true);
+      }
+    }}
+  />
+)}
     </ScrollView>
+    </View>
   );
 };
 
@@ -427,6 +443,20 @@ const styles = StyleSheet.create({
     backgroundColor: "#F5F5F5",
     padding: 20,
   },
+  header: {
+  flexDirection: "row",
+  alignItems: "center",
+  gap: 20,
+  paddingHorizontal: 20,
+  marginTop: 30,
+  marginBottom: 10,
+},
+
+headerTitle: {
+  fontSize: 22,
+  fontFamily: "Quicksand-Bold",
+  color: "#4F3421",
+},
 
   topRow: {
     flexDirection: "row",
@@ -499,10 +529,10 @@ const styles = StyleSheet.create({
     top: -10,
     fontSize: 13,
     fontFamily: "Quicksand-Medium",
-    color: "#888888",
-    backgroundColor: "#FFF",
-    paddingHorizontal: 10,
-    zIndex: 2,
+    color: "#000000",
+    backgroundColor: "#F5F5F5",
+    // paddingHorizontal: 10,
+    zIndex: 1,
   },
   
 
@@ -537,12 +567,13 @@ const styles = StyleSheet.create({
     color: "#9E9E9E",
   },
 
-  continueBtn: {
-    backgroundColor: colors.nOrange,
-    borderRadius: 10,
-    marginTop: 60,
-    paddingVertical: 16,
-  },
+ continueBtn: {
+  backgroundColor: colors.nOrange,
+  borderRadius: 10,
+  marginTop: 40,
+  marginBottom: 20,   // 👈 add this
+  paddingVertical: 16,
+},
 
   continueText: {
     color: "#FFF",

@@ -225,18 +225,28 @@ const saveProfile = async () => {
 };
 
   return (
-       <KeyboardAvoidingView
-      style={{ flex: 1 }}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 0}
-    >
-    
-      <ScrollView style={styles.container}>
-        {/* HEADER */}
-        <View style={styles.header}>
-          <Ionicons name="chevron-back" size={26} color="#4C3D2A" onPress={() => navigation.goBack()} />
-          <Text style={styles.title}>Profile</Text>
-        </View>
+      <KeyboardAvoidingView
+  style={{ flex: 1 , backgroundColor:"#fff"}}
+  behavior={Platform.OS === "ios" ? "padding" : "height"}
+  keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0}
+>
+
+  {/* 🔒 Fixed Header */}
+  <View style={styles.header}>
+    <Ionicons
+      name="chevron-back"
+      size={26}
+      color="#4C3D2A"
+      onPress={() => navigation.goBack()}
+    />
+    <Text style={styles.title}>Profile</Text>
+  </View>
+
+  {/* 📜 Scrollable Content */}
+  <ScrollView
+    style={styles.container}
+    showsVerticalScrollIndicator={false}
+  >
 
         {/* IMAGE + USER TYPE */}
         <View style={styles.rowTop}>
@@ -303,7 +313,7 @@ const saveProfile = async () => {
               <Text style={styles.optionItem}>Female</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={() => { update("gender", "Other"); setShowGender(false); }}>
-              <Text style={styles.optionItem}>Other</Text>
+              {/* <Text style={styles.optionItem}>Other</Text> */}
             </TouchableOpacity>
           </View>
         )}
@@ -523,8 +533,17 @@ const FloatingPhone = ({ label, value, onChangeText, verified }) => (
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#fff", padding: 15 },
 
-  header: { flexDirection: "row", alignItems: "center", gap: 20, marginBottom: 20 , marginTop:20, },
-  title: { fontSize: 26, fontWeight: "700", color: "#4C3D2A" },
+header: {
+  flexDirection: "row",
+  alignItems: "center",
+  paddingHorizontal: 20,   // ✅ LEFT + RIGHT spacing
+  paddingTop: 20,          // ✅ clean top spacing
+  paddingBottom: 10,
+  marginTop:20,
+  gap:20,
+  backgroundColor: "#fff", // ✅ remove grey/shadow look
+},
+  title: { fontSize: 25, fontFamily:'Quicksand-Bold', color: "#4C3D2A" },
 
   rowTop: { flexDirection: "row", alignItems: "center", marginBottom: 25 },
 
@@ -593,7 +612,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 5,
     fontSize: 10,
     color: "#8A6C4A",
-    fontWeight: "700",
+    fontFamily:'Quicksand-Bold'
   },
 
   floatInput: {
@@ -645,5 +664,5 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 40,
   },
-  saveText: { color: "#fff", fontSize: 18, fontWeight: "700" },
+  saveText: { color: "#fff", fontSize: 18, fontFamily:'Quicksand-Bold' },
 });

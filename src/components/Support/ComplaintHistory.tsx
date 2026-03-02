@@ -107,7 +107,7 @@ const ComplaintHistory = () => {
           Your comfort matters.{"\n"}Tell us what’s wrong, we’ll fix it soon.
         </Text>
 
-        <Text style={styles.mainTitle}>Complaint History</Text>
+        <Text style={styles.mainTitle}>Request History</Text>
 
         <Text style={styles.roomText}>
           Room No: {loadingRoom ? "Loading..." : roomNumber}
@@ -182,7 +182,7 @@ const ComplaintHistory = () => {
           <View style={styles.card} key={item.id}>
             {/* Complaint No */}
             <Text style={styles.code}>
-              Complaint No: {item.supportCode}
+              Request No: {item.supportCode}
             </Text>
 
             {/* Room No + Status */}
@@ -209,12 +209,12 @@ const ComplaintHistory = () => {
             </Text>
 
             <Text style={styles.date}>
-              Complaint Date: {item.date}
+              Request Date: {item.date}
             </Text>
 
             {item.status === "closed" && (
               <Text style={styles.date}>
-                Complaint Closed: {item.updatedAt?.split("T")[0]}
+                Request Closed: {item.updatedAt?.split("T")[0]}
               </Text>
             )}
 

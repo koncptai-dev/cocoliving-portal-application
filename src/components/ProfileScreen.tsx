@@ -132,7 +132,7 @@ const openWhatsApp = async () => {
       />
        <MenuItem
         icon="home-outline"
-        label="Guest Booking"
+        label="Guest Pass"
         onPress={() => navigation.navigate("GuestVisit")}
       />
       <MenuItem
@@ -150,11 +150,11 @@ const openWhatsApp = async () => {
         label="Terms & Conditions"
         onPress={() => navigation.navigate("TermsConditions")}
       />
-      <MenuItem
+      {/* <MenuItem
         icon="car-outline"
-        label="Gate Approval"
+        label="Gate Pass"
         onPress={() => navigation.navigate("GatePassScreen")}
-      />
+      /> */}
       <MenuItem
   icon="finger-print-outline"
   label="Sign Contract"
@@ -207,14 +207,15 @@ return (
       end={{ x: 1, y: 0 }}
       style={styles.gradientHeader}
     >
-      <View style={styles.topRow}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="chevron-back" size={26} color="#fff" />
-        </TouchableOpacity>
+     <View style={styles.topRow}>
+  <TouchableOpacity onPress={() => navigation.goBack()}>
+    <Ionicons name="chevron-back" size={26} color="#fff" />
+  </TouchableOpacity>
 
-        <Text style={styles.headerTitle}>Profile</Text>
-        <View style={{ width: 26 }} />
-      </View>
+  <Text style={styles.headerTitle}>Profile</Text>
+
+  <View style={{ width: 26 }} />
+</View>
 
       <View style={styles.profileRow}>
         <View style={styles.avatarWrapper}>
@@ -260,7 +261,7 @@ return (
         <View style={styles.socialContainer}>
           <TouchableOpacity
             style={styles.socialItem}
-            onPress={() => Linking.openURL("https://facebook.com")}
+            onPress={() => Linking.openURL("https://www.facebook.com/share/1Ae125fc77/")}
           >
             <Image
               source={require("../../assets/images/fb.png")}
@@ -272,7 +273,7 @@ return (
 
           <TouchableOpacity
             style={styles.socialItem}
-            onPress={() => Linking.openURL("https://instagram.com")}
+            onPress={() => Linking.openURL("https://www.instagram.com/cocoliving.in?igsh=MWlxeDNxOTJ1ZTZ0bQ==")}
           >
             <Image
               source={require("../../assets/images/instagram.png")}
@@ -357,11 +358,12 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 40,
   },
 
-  topRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
+ topRow: {
+  flexDirection: "row",
+  alignItems: "center",
+  gap:20,
+  paddingHorizontal: 4,  // optional slight balance
+},
 
   headerTitle: {
     color: "#fff",

@@ -13,13 +13,13 @@ const AboutUsScreen = ({ navigation }) => {
   return (
     <View style={styles.container}>
       {/* Curved Brown Header */}
-            <View style={styles.header}>
-              <TouchableOpacity onPress={() => navigation.goBack()}>
-                <Ionicons name="arrow-back" size={28} color="#FFF" />
-              </TouchableOpacity>
-              <Text style={styles.headerTitle}>About Us</Text>
-              <View style={{ width: 28 }} />
-            </View>
+           <View style={styles.header}>
+  <TouchableOpacity onPress={() => navigation.goBack()}>
+    <Ionicons name="chevron-back" size={26} color="#4C3D2A" />
+  </TouchableOpacity>
+
+  <Text style={styles.headerTitle}>About Us</Text>
+</View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
         {/* Intro Card */}
@@ -229,26 +229,20 @@ const styles = StyleSheet.create({
     backgroundColor: "#F4F2EF",
   },
 
-  header: {
-    backgroundColor: "#4b3426",
-    height: 120,
-    paddingTop: 50,
-    paddingHorizontal: 20,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    borderBottomLeftRadius: 40,
-    borderBottomRightRadius: 40,
-  },
+ header: {
+  flexDirection: "row",
+  alignItems: "center",
+  paddingVertical: 18,
+  paddingHorizontal: 20,
+  gap: 20,        // 🔥 space between back & title
+  marginTop: 20,
+},
 
   headerTitle: {
-    fontSize: 24,
-    fontFamily: "Quicksand-Bold",
-    color: "#FFF",
-    flex: 1,
-    textAlign: "center",
-    marginRight: -28,
-  },
+  fontSize: 25,
+  fontFamily: "Quicksand-Bold",
+  color: "#4C3D2A",
+},
 
   content: {
     padding: 16,

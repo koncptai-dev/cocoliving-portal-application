@@ -12,12 +12,15 @@ import {
 } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import LinearGradient from "react-native-linear-gradient";
+import Toast from "react-native-toast-message";
+import { useAuth } from "../context/AuthContext";
 
 const { width } = Dimensions.get("window");
 const baseURL = "https://staging.cocoliving.in";
 
 const RoomDetailsScreen = ({ route, navigation }) => {
   const { room, property } = route.params;
+  const { user } = useAuth();
 
   const gallery =
     room.roomImages?.length > 0
@@ -26,14 +29,40 @@ const RoomDetailsScreen = ({ route, navigation }) => {
 
   const [activeIndex, setActiveIndex] = useState(0);
 
-  const handleAction = (actionType) => { // <-- यहाँ बदलाव
-    navigation.navigate("SelectYourBed", {
-      room,
-      property,
-      rent: room.rent,
-      actionType: actionType, // <-- नया पैरामीटर पास करें
+  const handleAction = (actionType) => {
+
+  // Fields check
+  const isParentNameFilled = user?.parentName;
+  const isParentMobileFilled = user?.parentMobile;
+  const isParentEmailFilled = user?.parentEmail;
+  const isFoodPreferenceFilled = user?.foodPreference;
+  const isAllergyFilled = user?.allergies;
+
+  if (
+    !isParentNameFilled ||
+    !isParentMobileFilled ||
+    !isParentEmailFilled ||
+    !isFoodPreferenceFilled ||
+    !isAllergyFilled
+  ) {
+    Toast.show({
+      type: "error",
+      text1: "Complete Your Profile",
+      text2: "Please fill parent details & food information before booking.",
     });
-  };
+
+    navigation.navigate("Profile"); // <-- apna exact profile screen name daalna
+    return;
+  }
+
+  // ✅ Agar sab filled hai to normal flow
+  navigation.navigate("SelectYourBed", {
+    room,
+    property,
+    rent: room.rent,
+    actionType: actionType,
+  });
+};
 
   return (
     <View style={styles.container}>
@@ -201,7 +230,7 @@ export default RoomDetailsScreen;
 /* ================= STYLES ================= */
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f2f2f2" },
+  container: { flex: 1, backgroundColor: "#f2f2f2"  },
 
   /* HEADER */
   header: {

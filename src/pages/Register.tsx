@@ -1,16 +1,19 @@
 import React, { useState } from 'react';
 import {
+  SafeAreaView,
   View,
   Text,
+  StyleSheet,
   TextInput,
   TouchableOpacity,
-  Image,
-  StyleSheet,
+  FlatList,
+  ActivityIndicator,
+  Platform,
+  Modal,
   KeyboardAvoidingView,
   ScrollView,
-  Platform,
-  ActivityIndicator,
-} from 'react-native';
+  Image
+} from "react-native";
 import Toast from 'react-native-toast-message';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -70,9 +73,9 @@ const RegisterProfileScreen = ({ navigation, route }) => {
   const [gender, setGender] = useState('');
   const [userType, setUserType] = useState<'student' | 'professional'>('student');
 
-  const [parentName, setParentName] = useState('');
-  const [parentEmail, setParentEmail] = useState('');
-  const [parentMobile, setParentMobile] = useState('');
+  // const [parentName, setParentName] = useState('');
+  // const [parentEmail, setParentEmail] = useState('');
+  // const [parentMobile, setParentMobile] = useState('');
 
   const [profileImage, setProfileImage] = useState<any>(null);
   const [profilePicUri, setProfilePicUri] = useState(AVATAR_PLACEHOLDER);
@@ -178,7 +181,7 @@ const RegisterProfileScreen = ({ navigation, route }) => {
     return `${year}-${month}-${day}`;
   };
 
-  const handleSubmitProfile = async () => {
+const handleSubmitProfile = async () => {
     if (!otp.trim()) {
       Toast.show({ type: 'error', text1: 'Enter OTP' });
       return;
@@ -194,16 +197,16 @@ const RegisterProfileScreen = ({ navigation, route }) => {
       return;
     }
 
-    if (userType === 'student') {
-      if (!parentName.trim()) {
-        Toast.show({ type: 'error', text1: 'Enter parent name' });
-        return;
-      }
-      if (!parentEmail.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(parentEmail.trim())) {
-        Toast.show({ type: 'error', text1: 'Enter valid parent email' });
-        return;
-      }
-    }
+    // if (userType === 'student') {
+    //   if (!parentName.trim()) {
+    //     Toast.show({ type: 'error', text1: 'Enter parent name' });
+    //     return;
+    //   }
+    //   if (!parentEmail.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(parentEmail.trim())) {
+    //     Toast.show({ type: 'error', text1: 'Enter valid parent email' });
+    //     return;
+    //   }
+    // }
 
     const fullName = `${firstName.trim()} ${lastName.trim()}`;
 
@@ -217,13 +220,13 @@ const RegisterProfileScreen = ({ navigation, route }) => {
     formData.append('otp', otp);
     formData.append('type', prefilledMedium!);
 
-    if (userType === 'student') {
-      formData.append('parentName', parentName.trim());
-      formData.append('parentEmail', parentEmail.trim());
-      if (parentMobile.trim()) {
-        formData.append('parentMobile', parentMobile);
-      }
-    }
+    // if (userType === 'student') {
+    //   formData.append('parentName', parentName.trim());
+    //   formData.append('parentEmail', parentEmail.trim());
+      // if (parentMobile.trim()) {
+      //   formData.append('parentMobile', parentMobile);
+      // }
+    
 
     if (profileImage) {
       formData.append('profileImage', profileImage as any);
@@ -242,27 +245,49 @@ const RegisterProfileScreen = ({ navigation, route }) => {
         Toast.show({ type: 'error', text1: res.data?.message || 'Registration failed' });
       }
     } catch (e: any) {
-      Toast.show({
-        type: 'error',
-        text1: e?.response?.data?.message || 'Registration failed',
-      });
-    } finally {
+  console.log("===== REGISTER ERROR START =====");
+
+  if (e.response) {
+    console.log("Status:", e.response.status);
+    console.log("Headers:", e.response.headers);
+    console.log("Data:", JSON.stringify(e.response.data, null, 2));
+  } else if (e.request) {
+    console.log("No response received:", e.request);
+  } else {
+    console.log("Error message:", e.message);
+  }
+
+  console.log("Full error object:", e);
+  console.log("===== REGISTER ERROR END =====");
+
+  Toast.show({
+    type: 'error',
+    text1: e?.response?.data?.message || e.message || 'Registration failed',
+  });
+} finally {
       setLoading(false);
     }
   };
 
-  return (
-    <KeyboardAvoidingView
-  style={{ flex: 1 }}
-  behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-  keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 0}
->
-<ScrollView
-  contentContainerStyle={styles.container}
-  keyboardShouldPersistTaps="handled"
-  showsVerticalScrollIndicator={false}
->
-        <Text style={styles.title}>Looks like you are new</Text>
+
+    return (
+  <KeyboardAvoidingView
+    style={{ flex: 1 }}
+    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 0}
+  >
+
+    {/* 🔒 FIXED TITLE */}
+    <View style={styles.header}>
+      <Text style={styles.title}>Looks like you are new</Text>
+    </View>
+
+    {/* 📜 SCROLLABLE CONTENT */}
+    <ScrollView
+      contentContainerStyle={styles.container}
+      keyboardShouldPersistTaps="handled"
+      showsVerticalScrollIndicator={false}
+    >
 
         <View style={styles.topRow}>
         <TouchableOpacity style={styles.avatar} onPress={takePhoto}>
@@ -346,7 +371,7 @@ const RegisterProfileScreen = ({ navigation, route }) => {
             ))}
           </View>
         </View>
-
+{/* 
         {userType === 'student' && (
           <>
             <Text style={styles.sectionHeading}>Parents Information</Text>
@@ -364,7 +389,7 @@ const RegisterProfileScreen = ({ navigation, route }) => {
               keyboardType="phone-pad"
             />
           </>
-        )}
+        )} */}
 
         {otpSent && (
           <FloatingInput
@@ -433,6 +458,12 @@ avatarImageWrapper: {
   height: '100%',
   borderRadius: 50,
   overflow: 'hidden',     // ✅ image yahin clip hogi
+},
+header: {
+  paddingTop: 24,
+  paddingBottom: 10,
+  backgroundColor: '#F5F5F5',
+  alignItems: 'center',
 },
 avatarImg: {
   width: '100%',

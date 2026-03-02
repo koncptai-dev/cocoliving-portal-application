@@ -29,7 +29,7 @@ const RaiseComplaint = () => {
   const urgencyOptions = ['Low', 'High', 'Priority'];
 
   const CATEGORY_MAP = {
-    "Booking & Maintenance": [
+    "Maintenance": [
       "Plumbing",
       "Electrical",
       "Appliance Issue",
@@ -42,6 +42,12 @@ const RaiseComplaint = () => {
       "Request Refund",
       "Remaining Payment Issue",
       "Other",
+    ],
+    "Food Issue": [
+      "Food Quality is not good",
+      "Food Taste not good",
+      "Other",
+
     ],
     "Other": [
       "Suggestion",
@@ -158,6 +164,7 @@ const RaiseComplaint = () => {
         },
         transformRequest: [(data) => data],
       });
+      console.log("Response of raising request: ",response)
 
       Toast.show({ type: "success", text1: "Ticket Raised Success" });
       navigation.goBack();
@@ -186,7 +193,7 @@ const RaiseComplaint = () => {
           Your comfort matters.{"\n"}Tell us what's wrong, we'll fix it soon.
         </Text>
 
-        <Text style={styles.screenTitle}>Raise New Complaint</Text>
+        <Text style={styles.screenTitle}>Raise New Request</Text>
 
         <View style={styles.body}>
 
@@ -278,6 +285,7 @@ const RaiseComplaint = () => {
             <Text style={styles.floatingLabel}>Issue</Text>
             <TextInput
               placeholder="Enter issue"
+              placeholderTextColor="#616161"
               style={styles.inputText}
               value={issue}
               onChangeText={setIssue}
@@ -291,6 +299,7 @@ const RaiseComplaint = () => {
               style={styles.textArea}
               multiline
               placeholder="Describe your issue here..."
+              placeholderTextColor="#616161"
               value={description}
               onChangeText={setDescription}
             />
@@ -336,7 +345,7 @@ const RaiseComplaint = () => {
           {/* ================================================================================== */}
 
           {/* URGENCY */}
-          <TouchableOpacity
+          {/* <TouchableOpacity
             style={styles.inputWrap}
             onPress={() => {
               setShowUrgencyOptions(!showUrgencyOptions);
@@ -363,7 +372,7 @@ const RaiseComplaint = () => {
                 </TouchableOpacity>
               ))}
             </View>
-          )}
+          )} */}
 
           {/* SUBMIT */}
           <TouchableOpacity style={styles.submitBtn} onPress={handleSubmit}>

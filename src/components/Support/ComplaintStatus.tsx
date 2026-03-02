@@ -88,22 +88,22 @@ const ComplaintStatus = () => {
         </Text>
 
         {/* Heading */}
-        <Text style={styles.mainTitle}>Complaint Status</Text>
+        <Text style={styles.mainTitle}>Request Status</Text>
 
         <Text style={styles.roomText}>
           Room No: {loadingRoom ? "Loading..." : roomNumber}
         </Text>
 
         {/* ================= ONGOING ================= */}
-        <Text style={styles.sectionTitle}>Ongoing complaint</Text>
+        <Text style={styles.sectionTitle}>Ongoing Request</Text>
 
         {ongoing.length === 0 && (
-          <Text style={styles.emptyText}>No ongoing complaint</Text>
+          <Text style={styles.emptyText}>No ongoing Request</Text>
         )}
 
         {ongoing.map((item) => (
           <View style={styles.card} key={item.id}>
-            <Text style={styles.code}>Complaint No: {item.supportCode}</Text>
+            <Text style={styles.code}>Request No: {item.supportCode}</Text>
             <Text style={styles.room}>ROOM NO: {item.roomNumber}</Text>
 
             <Text style={styles.infoText}>
@@ -117,20 +117,20 @@ const ComplaintStatus = () => {
               </Text>
             </Text>
 
-            <Text style={styles.date}>Complaint Date: {item.date}</Text>
+            <Text style={styles.date}>Request Date: {item.date}</Text>
           </View>
         ))}
 
         {/* ================= CLOSED ================= */}
-        <Text style={styles.sectionTitle}>Recently closed complaint</Text>
+        <Text style={styles.sectionTitle}>Recently closed Request</Text>
 
         {closed.length === 0 && (
-          <Text style={styles.emptyText}>No closed complaint</Text>
+          <Text style={styles.emptyText}>No closed Request</Text>
         )}
 
         {closed.map((item) => (
           <View style={styles.card} key={item.id}>
-            <Text style={styles.code}>Complaint No: {item.supportCode}</Text>
+            <Text style={styles.code}>Request No: {item.supportCode}</Text>
             <Text style={styles.room}>ROOM NO: {item.roomNumber}</Text>
 
             <Text style={styles.infoText}>
@@ -144,9 +144,9 @@ const ComplaintStatus = () => {
               </Text>
             </Text>
 
-            <Text style={styles.date}>Complaint Date: {item.date}</Text>
+            <Text style={styles.date}>Request Date: {item.date}</Text>
             <Text style={styles.date}>
-              Complaint Closed: {item.updatedAt?.split("T")[0]}
+              Request Closed: {item.updatedAt?.split("T")[0]}
             </Text>
           </View>
         ))}

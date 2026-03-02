@@ -205,13 +205,19 @@ export default function EventsScreen() {
     setFilteredEvents(events);
   };
 
-  return (
-    <>
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-        <HeaderGradient
-          image={require("../../assets/images/events.jpg")}
-          title="Community Events"
-        />
+ return (
+  <>
+    {/* 🔥 Header always fixed */}
+    <HeaderGradient
+      image={require("../../assets/images/events.jpg")}
+      title="Community Events"
+    />
+
+    {/* 🔥 Scroll only content */}
+    <ScrollView
+      style={styles.container}
+      showsVerticalScrollIndicator={false}
+    >
 
         {/* FILTERS */}
         <View style={styles.filterContainer}>

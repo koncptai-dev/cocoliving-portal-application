@@ -10,6 +10,8 @@ import {
   FlatList,
   ActivityIndicator,
   Platform,
+  KeyboardAvoidingView,
+  ScrollView,
   Modal,
 } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
@@ -17,6 +19,7 @@ import axios from "axios";
 import Toast from "react-native-toast-message";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { useAuth } from "../context/AuthContext";
+import { useNavigation } from "@react-navigation/native";
  
 const baseURL = "https://staging.cocoliving.in/api";
  
@@ -33,6 +36,8 @@ const GatepassScreen = () => {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [showListModal, setShowListModal] = useState(false);
+
+  const navigation = useNavigation();
  
   const [form, setForm] = useState({
     requestType: "",
@@ -148,8 +153,10 @@ const fetchGatePasses = async () => {
       setForm({ requestType: "", date: "", time: "", reason: "" });
       setEditingId(null);
       fetchGatePasses();
-    } catch {
-      Toast.show({ type: "error", text1: "Action failed" });
+   } catch (error) {
+  console.log("SUBMIT ERROR:", error.response?.data);
+  Toast.show({ type: "error", text1: "Action failed" });
+
     } finally {
       setSaving(false);
     }
@@ -247,80 +254,132 @@ const fetchGatePasses = async () => {
     );
   }
  
-  return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Gate Pass</Text>
-      </View>
- 
-      {!isParentLogin && (
-        <View style={styles.form}>
-          <Input label="Request Type" value={form.requestType} onChange={(v) => setForm({ ...form, requestType: v })} />
-          <PickerInput label="Visit Date" value={form.date} onPress={() => setShowDatePicker(true)} />
-          <PickerInput label="Visit Time" value={form.time} onPress={() => setShowTimePicker(true)} />
-          <Input label="Reason" value={form.reason} multiline onChange={(v) => setForm({ ...form, reason: v })} />
- 
-          <TouchableOpacity style={styles.saveBtn} onPress={handleSubmit}>
-            <Text style={styles.saveText}>{editingId ? "Update" : "Submit"}</Text>
+return (
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+    >
+      <SafeAreaView style={styles.container}>
+
+        {/* HEADER */}
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <Ionicons name="chevron-back" size={26} color="#4C3D2A" />
           </TouchableOpacity>
+          <Text style={styles.headerTitle}>Gate Pass</Text>
         </View>
-      )}
- 
-      <TouchableOpacity
-        style={[styles.viewBtn, isParentLogin && { marginTop: 24 }]}
-        onPress={() => setShowListModal(true)}
-      >
-        <Ionicons name="document-text-outline" size={20} color="#FFF" />
-        <Text style={styles.viewBtnText}>View Gate Passes</Text>
-      </TouchableOpacity>
- 
-      <Modal visible={showListModal} animationType="slide">
-        <SafeAreaView style={styles.container}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Gate Pass List</Text>
-            <TouchableOpacity onPress={() => setShowListModal(false)}>
-              <Ionicons name="close" size={26} color="#FFF" />
-            </TouchableOpacity>
-          </View>
- 
-          <FlatList
-            data={gatePasses}
-            keyExtractor={(item) => item.id.toString()}
-            renderItem={renderItem}
-            contentContainerStyle={{ padding: 16 }}
+
+        {/* CONTENT */}
+        <ScrollView
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={{ paddingBottom: 50 }}
+          showsVerticalScrollIndicator={false}
+        >
+          {!isParentLogin && (
+            <View style={styles.form}>
+              <Input
+                label="Request Type"
+                value={form.requestType}
+                onChange={(v) => setForm({ ...form, requestType: v })}
+              />
+
+              <PickerInput
+                label="Visit Date"
+                value={form.date}
+                onPress={() => setShowDatePicker(true)}
+              />
+
+              <PickerInput
+                label="Visit Time"
+                value={form.time}
+                onPress={() => setShowTimePicker(true)}
+              />
+
+              <Input
+                label="Reason"
+                value={form.reason}
+                multiline
+                onChange={(v) => setForm({ ...form, reason: v })}
+              />
+
+              <TouchableOpacity style={styles.saveBtn} onPress={handleSubmit}>
+                <Text style={styles.saveText}>
+                  {editingId ? "Update" : "Submit"}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          <TouchableOpacity
+            style={styles.viewBtn}
+            onPress={() => setShowListModal(true)}
+          >
+            <Ionicons name="document-text-outline" size={20} color="#FFF" />
+            <Text style={styles.viewBtnText}>View Gate Passes</Text>
+          </TouchableOpacity>
+        </ScrollView>
+
+        {/* MODAL */}
+        <Modal visible={showListModal} animationType="slide">
+          <SafeAreaView style={styles.container}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Gate Pass List</Text>
+              <TouchableOpacity onPress={() => setShowListModal(false)}>
+                <Ionicons name="close" size={26} color="#FFF" />
+              </TouchableOpacity>
+            </View>
+
+            <FlatList
+              data={gatePasses}
+              keyExtractor={(item) => item.id.toString()}
+              renderItem={renderItem}
+              contentContainerStyle={{ padding: 16 }}
+            />
+          </SafeAreaView>
+        </Modal>
+
+        {/* DATE PICKER */}
+        {showDatePicker && (
+          <DateTimePicker
+            value={new Date()}
+            mode="date"
+            minimumDate={new Date()}
+            display={Platform.OS === "ios" ? "spinner" : "default"}
+            onChange={(e, date) => {
+              setShowDatePicker(false);
+              if (date) {
+                const d = String(date.getDate()).padStart(2, "0");
+                const m = String(date.getMonth() + 1).padStart(2, "0");
+                const y = date.getFullYear();
+                setForm({
+  ...form,
+  date: `${y}-${m}-${d}`,  // ✅ Backend safe format
+});
+              }
+            }}
           />
-        </SafeAreaView>
-      </Modal>
- 
-      {showDatePicker && (
-        <DateTimePicker
-          value={new Date()}
-          mode="date"
-          onChange={(_, d) => {
-            setShowDatePicker(false);
-            if (d) setForm({ ...form, date: d.toISOString().split("T")[0] });
-          }}
-        />
-      )}
- 
-      {showTimePicker && (
-        <DateTimePicker
-          value={new Date()}
-          mode="time"
-          is24Hour
-          onChange={(_, t) => {
-            setShowTimePicker(false);
-            if (t)
-              setForm({
-                ...form,
-                time: `${String(t.getHours()).padStart(2, "0")}:${String(
-                  t.getMinutes()
-                ).padStart(2, "0")}`,
-              });
-          }}
-        />
-      )}
-    </SafeAreaView>
+        )}
+
+        {/* TIME PICKER */}
+        {showTimePicker && (
+          <DateTimePicker
+            value={new Date()}
+            mode="time"
+            is24Hour
+            display={Platform.OS === "ios" ? "spinner" : "default"}
+            onChange={(e, time) => {
+              setShowTimePicker(false);
+              if (time) {
+                const h = String(time.getHours()).padStart(2, "0");
+                const min = String(time.getMinutes()).padStart(2, "0");
+                setForm({ ...form, time: `${h}:${min}` });
+              }
+            }}
+          />
+        )}
+
+      </SafeAreaView>
+    </KeyboardAvoidingView>
   );
 };
  
@@ -354,33 +413,46 @@ const PickerInput = ({ label, value, onPress }) => (
 /* ---------------- STYLES ---------------- */
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#EEF0F2" },
- 
+
   header: {
-    backgroundColor: "#5B3A23",
-    paddingVertical: 22,
+    flexDirection: "row",
     alignItems: "center",
-    borderBottomLeftRadius: 28,
-    borderBottomRightRadius: 28,
+    paddingVertical: 22,
+    paddingHorizontal: 20,
+    marginTop: 20,
+    gap: 20,
   },
-  headerTitle: { color: "#FFF", fontSize: 24, fontFamily:'Quicksand-Bold'},
- 
+  headerTitle: {
+    color: "#4C3D2A",
+    fontSize: 24,
+    fontFamily: "Quicksand-Bold",
+  },
+
   form: {
     backgroundColor: "#F7EFE8",
     margin: 16,
     padding: 16,
     borderRadius: 14,
   },
- 
+
   inputWrap: { marginBottom: 14 },
-  label: { fontSize: 12, color: "#8A8A8A", marginBottom: 6 },
+
+  label: {
+    fontSize: 12,
+    color: "#8A8A8A",
+    marginBottom: 6,
+    fontFamily: "Quicksand-SemiBold",
+  },
+
   input: {
     backgroundColor: "#FFF",
     borderRadius: 10,
     padding: 12,
     borderWidth: 1,
     borderColor: "#E5E5E5",
+    fontFamily: "Quicksand-Regular",
   },
- 
+
   picker: {
     backgroundColor: "#FFF",
     borderRadius: 10,
@@ -391,7 +463,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
   },
- 
+
   saveBtn: {
     backgroundColor: "#F4A261",
     borderRadius: 10,
@@ -399,8 +471,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 10,
   },
-  saveText: { color: "#FFF", fontSize: 16, fontWeight: "600" },
- 
+  saveText: {
+    color: "#FFF",
+    fontSize: 16,
+    fontFamily: "Quicksand-Bold",
+  },
+
   viewBtn: {
     backgroundColor: "#5B3A23",
     marginHorizontal: 16,
@@ -415,10 +491,10 @@ const styles = StyleSheet.create({
   viewBtnText: {
     color: "#FFF",
     fontSize: 16,
-    fontWeight: "600",
+    fontFamily: "Quicksand-Bold",
     marginLeft: 10,
   },
- 
+
   modalHeader: {
     backgroundColor: "#5B3A23",
     padding: 16,
@@ -426,8 +502,12 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
   },
-  modalTitle: { color: "#FFF", fontSize: 16, fontWeight: "600" },
- 
+  modalTitle: {
+    color: "#FFF",
+    fontSize: 16,
+    fontFamily: "Quicksand-Bold",
+  },
+
   /* ----- CARD ----- */
   card: {
     flexDirection: "row",
@@ -446,31 +526,52 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 14,
   },
+
   cardTitle: {
     fontSize: 16,
-    fontWeight: "600",
     color: "#5B3A23",
+    fontFamily: "Quicksand-SemiBold",
   },
-  sub: { fontSize: 12, color: "#7A7A7A", marginVertical: 4 },
-  reason: { fontSize: 13, color: "#4A4A4A", marginVertical: 6 },
- 
+
+  sub: {
+    fontSize: 12,
+    color: "#7A7A7A",
+    marginVertical: 4,
+    fontFamily: "Quicksand-Regular",
+  },
+
+  reason: {
+    fontSize: 13,
+    color: "#4A4A4A",
+    marginVertical: 6,
+    fontFamily: "Quicksand-Regular",
+  },
+
   statusRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     marginTop: 6,
   },
+
   statusPill: {
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 20,
   },
-  statusText: { color: "#FFF", fontSize: 11, fontWeight: "600" },
+
+  statusText: {
+    color: "#FFF",
+    fontSize: 11,
+    fontFamily: "Quicksand-Bold",
+  },
+
   pending: { backgroundColor: "#F4A261" },
   approved: { backgroundColor: "#2E7D32" },
   rejected: { backgroundColor: "#C62828" },
- 
+
   actionRow: { flexDirection: "row", marginTop: 12 },
+
   approveBtn: {
     backgroundColor: "#2E7D32",
     padding: 12,
@@ -479,6 +580,7 @@ const styles = StyleSheet.create({
     marginRight: 8,
     alignItems: "center",
   },
+
   rejectBtn: {
     backgroundColor: "#C62828",
     padding: 12,
@@ -486,5 +588,9 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
   },
-  btnText: { color: "#FFF", fontWeight: "600" },
+
+  btnText: {
+    color: "#FFF",
+    fontFamily: "Quicksand-Bold",
+  },
 });

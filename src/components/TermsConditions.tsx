@@ -7,9 +7,11 @@ import {
   StyleSheet
 } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
+import { useNavigation } from "@react-navigation/native";
 
 export default function TermsConditions() {
   const scrollRef = useRef(null);
+  const navigation = useNavigation();
 
   const goToTop = () => {
     scrollRef.current?.scrollTo({ y: 0, animated: true });
@@ -19,12 +21,22 @@ export default function TermsConditions() {
     <View style={styles.container}>
       {/* HEADER */}
       <View style={styles.header}>
-        <Ionicons name="chevron-back" size={26} color="#4C3D2A" />
-        <Text style={styles.title}>Coco Living Terms & Conditions</Text>
-      </View>
+  <TouchableOpacity onPress={() => navigation.goBack()}>
+    <Ionicons name="chevron-back" size={26} color="#4C3D2A" />
+  </TouchableOpacity>
+
+  <Text style={styles.headerTitle}>Terms & Conditions</Text>
+</View>
 
       {/* CONTENT */}
-      <ScrollView ref={scrollRef} showsVerticalScrollIndicator={false}>
+      <ScrollView
+  ref={scrollRef}
+  showsVerticalScrollIndicator={false}
+  contentContainerStyle={{
+    paddingHorizontal: 18,
+    paddingBottom: 80,
+  }}
+>
         <Text style={styles.paragraph}>
           Welcome to Coco Living! These Terms & Conditions (the “Agreement”) 
           govern your residency and use of services provided by (“Your Company 
@@ -150,18 +162,29 @@ export default function TermsConditions() {
 /* -------------------------------- STYLES -------------------------------- */
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff", padding: 18 },
-
   header: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 20,
-    marginBottom: 15,
-  },
+  flexDirection: "row",
+  alignItems: "center",
+  paddingHorizontal: 18,
+  marginTop: 30,
+  marginBottom: 10,
+  gap: 20,
+},
+
+headerTitle: {
+  fontSize: 25,
+  fontFamily: "Quicksand-Bold",
+  color: "#4C3D2A",
+},
+
+container: {
+  flex: 1,
+  backgroundColor: "#fff",
+},
 
   title: {
-    fontSize: 20,
-    fontWeight: "700",
+    fontSize: 22,
+    fontFamily:'Quicksand-Bold',
     color: "#4C3D2A",
   },
 

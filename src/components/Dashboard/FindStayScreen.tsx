@@ -376,16 +376,8 @@ placeholderHighlight: {
   },
   highlight: { color: "#4F3421", fontFamily:'Quicksand-Bold' },
 
-  card: {
-    backgroundColor: "#EDE7DF",
-    marginHorizontal: 16,
-    marginBottom: 16,
-    borderRadius: 18,
-    overflow: "hidden",
-    elevation: 4,
-  },
-  card: {
-  height: 400,                // ✅ FIXED HEIGHT
+ 
+ card: {
   backgroundColor: "#EFE8E2",
   marginHorizontal: 16,
   marginBottom: 18,
@@ -480,8 +472,9 @@ amenityChip: {
 
 amenityText: {
   fontSize: 12,
-  fontWeight: "600",
-  color: "#000000",
+  // fontWeight: "600",
+  fontFamily:'Quicksand-Medium',
+    color: "#000000",
 },
 
   cardInfo: { padding: 12 },

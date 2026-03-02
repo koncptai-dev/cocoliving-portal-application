@@ -16,6 +16,7 @@ import Print from "react-native-print"; // ← New import (install: npm install 
 import Ionicons from "react-native-vector-icons/Ionicons";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
+import { useNavigation } from "@react-navigation/native";
 
 const API_BASE_URL = "https://staging.cocoliving.in";
 
@@ -91,6 +92,7 @@ const printableInvoiceHtml = (payment: any) => {
 const PaymentHistoryScreen = () => {
   const { user } = useAuth();
   const token = user?.token;
+  const navigation = useNavigation();
 
   const [payments, setPayments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -148,16 +150,26 @@ const PaymentHistoryScreen = () => {
   const htmlContent = selectedPayment ? printableInvoiceHtml(selectedPayment) : "";
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.heading}>Payment History</Text>
+
+       <View style={{ flex: 1, backgroundColor: "#F6F3EC" }}>
+    
+    {/* 🔒 FIXED HEADER */}
+    <View style={styles.header}>
+      <TouchableOpacity onPress={() => navigation.goBack()}>
+        <Ionicons name="chevron-back" size={26} color="#4b3426" />
+      </TouchableOpacity>
+
+      <Text style={styles.title}>Payment History</Text>
+    </View>
 
       {loading ? (
         <ActivityIndicator size="large" color="#6A4A3C" />
       ) : (
         <>
           <FlatList
-            data={payments}
-            keyExtractor={(item) => item.id.toString()}
+           data={payments}
+  keyExtractor={(item) => item.id.toString()}
+  contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 20 }}
             renderItem={({ item }) => (
               <View style={styles.card}>
                 <View style={styles.rowBetween}>
@@ -274,7 +286,22 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#F6F3EC",
     padding: 16,
+  paddingHorizontal:20,
   },
+  header: {
+  flexDirection: "row",
+  alignItems: "center",
+  paddingHorizontal: 10,
+  marginTop: 30,   // ✅ as you asked
+  marginBottom: 10,
+},
+
+title: {
+  fontSize: 25,
+  fontFamily: "Quicksand-Bold",
+  color: "#4b3426",
+  marginLeft: 12,
+},
   heading: {
     fontSize: 22,
     fontFamily: "Quicksand-Bold",
@@ -352,6 +379,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     marginTop: 16,
+     paddingHorizontal: 16,
   },
   pageBtn: {
     paddingHorizontal: 16,
@@ -370,13 +398,15 @@ const styles = StyleSheet.create({
     fontFamily: "Quicksand-SemiBold",
     color: "#4b3426",
   },
-  totalInfo: {
-    marginTop: 8,
-    textAlign: "center",
-    fontSize: 12,
-    fontFamily: "Quicksand-Regular",
-    color: "#6A4A3C",
-  },
+totalInfo: {
+  marginTop: 8,
+  textAlign: "center",
+  fontSize: 12,
+  marginBottom:15,
+  fontFamily: "Quicksand-Regular",
+  color: "#6A4A3C",
+  paddingHorizontal: 16, // 👈 optional for consistency
+},
   modalHeader: {
     flexDirection: "row",
     justifyContent: "space-between",

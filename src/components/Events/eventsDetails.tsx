@@ -136,19 +136,27 @@ const EventDetailsScreen = ({ route, navigation }) => {
     return `${displayHour}:${minute} ${ampm}`;
   };
 
-  return (
-    <>
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-        {/* Curved Brown Header */}
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Ionicons name="arrow-back" size={28} color="#FFF" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>{localEvent.title}</Text>
-          <View style={{ width: 28 }} />
-        </View>
+ return (
+  <>
+    <View style={{ flex: 1, backgroundColor: "#F6F3EC" }}>
+      
+      {/* 🔒 FIXED HEADER */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <Ionicons name="arrow-back" size={28} color="#FFF" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle} numberOfLines={1}>
+          {localEvent.title}
+        </Text>
+        <View style={{ width: 28 }} />
+      </View>
 
-        {/* Event Image - with padding, border radius */}
+      {/* 📜 SCROLLABLE CONTENT */}
+      <ScrollView
+        contentContainerStyle={{ paddingBottom: 60 }}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Event Image */}
         <View style={styles.imageWrapper}>
           <Image
             source={{
@@ -163,28 +171,28 @@ const EventDetailsScreen = ({ route, navigation }) => {
 
         {/* Main Content */}
         <View style={styles.content}>
-          {/* Title */}
           <Text style={styles.title}>{localEvent.title}</Text>
 
-          {/* Location */}
           <View style={styles.locationRow}>
             <Ionicons name="location-outline" size={18} color={colors.nOrange} />
-            <Text style={styles.locationText}>{localEvent.location || "TBD"}</Text>
+            <Text style={styles.locationText}>
+              {localEvent.location || "TBD"}
+            </Text>
           </View>
 
-          {/* Quick Peek + Description */}
           <Text style={styles.quickPeekTitle}>Quick Peek</Text>
           <Text style={styles.description}>
             {localEvent.description || "No description available."}
           </Text>
 
-          {/* Details Section */}
           <View style={styles.detailsSection}>
             <View style={styles.detailRow}>
               <Ionicons name="calendar-outline" size={18} color={colors.nOrange} />
               <View style={styles.detailContent}>
                 <Text style={styles.detailLabel}>Date</Text>
-                <Text style={styles.detailValue}>{formatDate(localEvent.eventDate)}</Text>
+                <Text style={styles.detailValue}>
+                  {formatDate(localEvent.eventDate)}
+                </Text>
               </View>
             </View>
 
@@ -192,7 +200,9 @@ const EventDetailsScreen = ({ route, navigation }) => {
               <Ionicons name="time-outline" size={18} color={colors.nOrange} />
               <View style={styles.detailContent}>
                 <Text style={styles.detailLabel}>Time</Text>
-                <Text style={styles.detailValue}>{formatTime(localEvent.eventTime)}</Text>
+                <Text style={styles.detailValue}>
+                  {formatTime(localEvent.eventTime)}
+                </Text>
               </View>
             </View>
 
@@ -201,31 +211,41 @@ const EventDetailsScreen = ({ route, navigation }) => {
               <View style={styles.detailContent}>
                 <Text style={styles.detailLabel}>Participants</Text>
                 <Text style={styles.detailValue}>
-                  {localEvent.attendingCount || 0} / {localEvent.maxParticipants} attending
+                  {localEvent.attendingCount || 0} /{" "}
+                  {localEvent.maxParticipants} attending
                 </Text>
               </View>
             </View>
           </View>
 
-          {/* Button - full width at bottom */}
+          {/* Button */}
           <TouchableOpacity
             style={[
               styles.joinButton,
-              isPast ? styles.completedButton : isAttending ? styles.greenButton : styles.brownButton,
+              isPast
+                ? styles.completedButton
+                : isAttending
+                ? styles.greenButton
+                : styles.brownButton,
             ]}
             onPress={handleJoinEvent}
             disabled={isPast}
           >
             <Text style={styles.joinText}>
-              {isPast ? "Completed" : isAttending ? "You're In!" : "I'm in !"}
+              {isPast
+                ? "Completed"
+                : isAttending
+                ? "You're In!"
+                : "I'm In!"}
             </Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
+    </View>
 
-      <Toast />
-    </>
-  );
+    <Toast />
+  </>
+);
 };
 
 const styles = StyleSheet.create({
@@ -333,13 +353,14 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
 
-  joinButton: {
-    width: "100%",
-    paddingVertical: 18,
-    borderRadius: 30,
-    alignItems: "center",
-    elevation:6
-  },
+ joinButton: {
+  width: "100%",
+  paddingVertical: 18,
+  borderRadius: 30,
+  alignItems: "center",
+  elevation: 6,
+  marginBottom: 40, // 👈 add this
+},
 
   brownButton: {
     backgroundColor: "#4b3426",

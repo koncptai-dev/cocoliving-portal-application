@@ -18,7 +18,7 @@ import axios from 'axios';
 const { width } = Dimensions.get('window');
 
 // 375x263 image → ratio = 0.7013
-const IMAGE_RATIO = 263 / 375;
+const IMAGE_RATIO = 200 / 375;
 const IMAGE_HEIGHT = width * IMAGE_RATIO;
 
 const baseURL = 'https://staging.cocoliving.in';
@@ -90,10 +90,10 @@ const HeaderGradient: React.FC<Props> = ({ title, image }) => {
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <TouchableOpacity
                 onPress={() => navigation.goBack()}
-                style={{ padding: 10 }}
-                activeOpacity={0.7}
+                style={{ padding: 5 }}
+                activeOpacity={0.3}
               >
-                {/* <Ionicons name="chevron-back" size={30} color="#fff" /> */}
+                <Ionicons name="chevron-back" size={25} color="#fff" />
               </TouchableOpacity>
 
               <View style={{ marginLeft: 8 }}>
@@ -155,8 +155,8 @@ const styles = StyleSheet.create({
   contentContainer: {
     flex: 1,
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingTop: 55,
+    paddingHorizontal: 15,
+    paddingTop: 40,
     paddingBottom: 20,
   },
 
@@ -167,8 +167,9 @@ const styles = StyleSheet.create({
   },
 
   hello: {
-    fontSize: 26,
-    fontWeight: '700',
+    fontSize: 23,
+    // fontWeight: '700',
+    fontFamily:'Quicksand-Bold',
     color: '#fff',
   },
 
@@ -179,13 +180,14 @@ const styles = StyleSheet.create({
   },
 
   profileCircle: {
-    width: 55,
-    height: 55,
+    width: 45,
+    height: 45,
     borderRadius: 28,
     backgroundColor: '#fff',
     justifyContent: 'center',
     alignItems: 'center',
     elevation: 5,
+    marginRight:10
   },
 
   profileImage: {
@@ -196,12 +198,13 @@ const styles = StyleSheet.create({
 
   profileLetter: {
     fontSize: 24,
-    fontWeight: '700',
+    // fontWeight: '700',
+    fontFamily:'Quicksand-Bold',
     color: '#4b3426',
   },
 
   title: {
-    fontSize: 32,
+    fontSize: 27,
     color: '#f7f7f7',
     textAlign: 'center',
     fontFamily: 'Quicksand-Bold',

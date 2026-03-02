@@ -6,11 +6,13 @@ import {
   StyleSheet,
   FlatList,
   ActivityIndicator,
+  TouchableOpacity
 } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import axios from "axios";
 import Toast from "react-native-toast-message";
 import { useAuth } from "../context/AuthContext";
+import { useNavigation } from "@react-navigation/native";
  
 const baseURL = "https://staging.cocoliving.in";
  
@@ -21,6 +23,7 @@ const NotificationListScreen = () => {
  
   const [loading, setLoading] = useState(true);
   const [notifications, setNotifications] = useState([]);
+  const navigation = useNavigation();
  
   /* ---------------- FETCH NOTIFICATIONS ---------------- */
   const fetchNotifications = async (silent = false) => {
@@ -112,9 +115,13 @@ const NotificationListScreen = () => {
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Notifications</Text>
-      </View>
+   <View style={styles.header}>
+  <TouchableOpacity onPress={() => navigation.goBack()}>
+    <Ionicons name="chevron-back" size={26} color="#4C3D2A" />
+  </TouchableOpacity>
+
+  <Text style={styles.headerTitle}>Notifications</Text>
+</View>
  
       {notifications.length === 0 ? (
         <View style={styles.emptyWrap}>
@@ -143,18 +150,19 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F6F7F9" },
  
   header: {
-    paddingVertical: 22,
-    alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
-    elevation: 3,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#333",
-  },
+  flexDirection: "row",
+  alignItems: "center",
+  paddingVertical: 20,
+  paddingHorizontal: 20,
+  gap: 20,
+  marginTop: 20,
+},
+
+headerTitle: {
+  fontSize: 22,
+  fontFamily: "Quicksand-Bold",
+  color: "#4C3D2A",
+},
  
   card: {
     flexDirection: "row",

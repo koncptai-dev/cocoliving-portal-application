@@ -33,7 +33,7 @@ const SupportScreen = () => {
                     <View style={styles.btnContent}>
                         <View style={styles.leftSection}>
                             
-                            <Text style={styles.btnText}>Raise New Complaint</Text>
+                            <Text style={styles.btnText}>Raise New Request</Text>
                         </View>
                         <Icon name="add" size={24} color="#fff" style={styles.plusIcon} />
                     </View>
@@ -43,7 +43,7 @@ const SupportScreen = () => {
                 <TouchableOpacity style={styles.btn}
                 onPress={() => navigation.navigate('ComplaintStatus')}>
                     <View style={styles.btnContent}>
-                        <Text style={styles.btnText}>Complaint Status</Text>
+                        <Text style={styles.btnText}>Request Status</Text>
                         <Icon name="arrow-forward" size={28} color={colors.nOrange} />
                     </View>
                 </TouchableOpacity>
@@ -52,7 +52,7 @@ const SupportScreen = () => {
                 <TouchableOpacity style={styles.btn}
                 onPress={() => navigation.navigate('ComplaintHistory')}>>
                     <View style={styles.btnContent}>
-                        <Text style={styles.btnText}>Complaint History</Text>
+                        <Text style={styles.btnText}>Request History</Text>
                         <Icon name="arrow-forward" size={28} color={colors.nOrange}  />
                     </View>
                 </TouchableOpacity>

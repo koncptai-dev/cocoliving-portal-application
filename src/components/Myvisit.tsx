@@ -142,17 +142,31 @@ const MyVisit = () => {
     return `${d}/${m}/${y}`;
   };
 
-  return (
-    <KeyboardAvoidingView
-      style={{ flex: 1 }}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-    >
-      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-           {/* HEADER */}
-                <View style={styles.header}>
-                  <Ionicons name="chevron-back" size={26} color="#4C3D2A" onPress={() => navigation.goBack()} />
-                  <Text style={styles.title}>My Visit</Text>
-                </View>
+return (
+  <KeyboardAvoidingView
+    style={{ flex: 1 }}
+    behavior={Platform.OS === "ios" ? "padding" : "height"}
+  >
+    <View style={{ flex: 1, backgroundColor: "#F7F7F7" }}>
+
+      {/* 🔒 FIXED HEADER (NOT SCROLLABLE) */}
+      <View style={styles.header}>
+        <Ionicons
+          name="chevron-back"
+          size={26}
+          color="#4C3D2A"
+          onPress={() => navigation.goBack()}
+        />
+        <Text style={styles.title}>My Visit</Text>
+      </View>
+
+      {/* 📜 SCROLLABLE CONTENT */}
+      <ScrollView
+        contentContainerStyle={styles.container}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+        
+      >
         <Text style={styles.subtitle}>
           Schedule your visit and experience COCO Living firsthand.
         </Text>
@@ -194,7 +208,12 @@ const MyVisit = () => {
             style={styles.datePickerContainer}
           >
             <View style={styles.dateInputDisplay}>
-              <Text style={{ color: form.visitDate ? "#3E2B24" : "#616161", fontSize: 16 }}>
+              <Text
+                style={{
+                  color: form.visitDate ? "#3E2B24" : "#616161",
+                  fontSize: 16,
+                }}
+              >
                 {getDisplayDate()}
               </Text>
             </View>
@@ -215,9 +234,14 @@ const MyVisit = () => {
         </View>
       </ScrollView>
 
+      {/* DATE PICKER */}
       {showPicker && (
         <DateTimePicker
-          value={form.visitDate ? new Date(form.visitDate + "T00:00:00") : new Date()}
+          value={
+            form.visitDate
+              ? new Date(form.visitDate + "T00:00:00")
+              : new Date()
+          }
           mode="date"
           display={Platform.OS === "ios" ? "spinner" : "default"}
           minimumDate={new Date()}
@@ -226,8 +250,9 @@ const MyVisit = () => {
       )}
 
       <Toast />
-    </KeyboardAvoidingView>
-  );
+    </View>
+  </KeyboardAvoidingView>
+);
 };
 
 export default MyVisit;
@@ -241,7 +266,7 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   heading: {
-    fontSize: 28,
+    fontSize: 25,
     fontFamily:'Quicksand-Bold',
     color: "#3E2B24",
     textAlign: "center",
@@ -307,6 +332,12 @@ const styles = StyleSheet.create({
     // fontWeight: "bold",
     fontFamily:'Quicksand-Bold'
   },
-  header: { flexDirection: "row", alignItems: "center", gap: 20, marginBottom: 20 , marginTop:20, },
-  title: { fontSize: 26, fontWeight: "700", color: "#4C3D2A" },
+header: {
+  flexDirection: "row",
+  alignItems: "center",
+  paddingHorizontal: 24,   // ✅ Add this
+  marginBottom: 20,
+  marginTop: 30,
+},
+  title: { fontSize: 25, fontFamily:'Quicksand-Bold', color: "#4C3D2A" },
 });

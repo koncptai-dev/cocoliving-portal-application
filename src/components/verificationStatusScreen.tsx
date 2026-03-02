@@ -137,7 +137,7 @@ useEffect(() => {
           Toast.show({
             type: 'success',
             text1: 'Aadhaar Verified Successfully!',
-            text2: 'DigiLocker se KYC complete',
+            text2: 'KYC is Completed',
           });
           refreshUser();
         } else {
@@ -447,8 +447,8 @@ if (res.data?.success || res.data?.panStatus === 'verified') {
     if (mobileToUse.length !== 10 || !/^[6-9]\d{9}$/.test(mobileToUse)) {
       Toast.show({
         type: 'error',
-        text1: 'Valid 10-digit mobile number daalo',
-        text2: 'Aadhaar se linked number hone chahiye',
+        text1: 'Please enter a valid 10-digit mobile number linked with Aadhaar',
+        text2: 'Mobile Number should be linked with Aadhaar',
       });
       return;
     }
@@ -832,13 +832,13 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     paddingHorizontal: 20,
   },
-  headerTitle: {
+   headerTitle: {
     flex: 1,
-    fontSize: 22,
-    // marginTop:20,
-    fontWeight: '700',
+    fontSize: 25,
+    fontFamily: 'Quicksand-Bold',
     color: '#4F3421',
-    textAlign: 'center',
+    textAlign: 'left',
+    marginLeft: 10,
   },
   subtitle: {
     fontSize: 15,
@@ -846,6 +846,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 24,
     lineHeight: 22,
+    fontFamily: 'Quicksand-Regular',
   },
   card: {
     backgroundColor: '#FFFFFF',
@@ -860,12 +861,13 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.06,
     shadowRadius: 4,
   },
+
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  iconContainer: {
+iconContainer: {
     width: 44,
     height: 44,
     borderRadius: 12,
@@ -877,7 +879,7 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 16,
     color: '#3E2B24',
-    fontWeight: '600',
+    fontFamily: 'Quicksand-SemiBold',
     flex: 1,
   },
   actionArea: {
@@ -896,6 +898,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#3E2B24',
     marginBottom: 12,
+    fontFamily: 'Quicksand-Regular',
   },
   actionButton: {
     backgroundColor: '#5A3F2E',
@@ -906,7 +909,7 @@ const styles = StyleSheet.create({
   btnText: {
     color: '#FFFFFF',
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: 'Quicksand-Bold',
   },
   uploadButton: {
     flexDirection: 'row',
@@ -932,28 +935,27 @@ const styles = StyleSheet.create({
     borderColor: '#E5D8CF',
   },
   uploadText: {
-    color: '#5A3F2E',
-    fontWeight: '600',
     marginLeft: 8,
+    fontSize: 14,
+    color: '#5A3F2E',
+    fontFamily: 'Quicksand-Medium',
   },
   uploadTextSmall: {
-    color: '#5A3F2E',
-    fontSize: 13,
-    fontWeight: '600',
     marginLeft: 6,
+    fontSize: 13,
+    color: '#5A3F2E',
+    fontFamily: 'Quicksand-Medium',
   },
   preview: {
     width: '100%',
-    height: 180,
-    borderRadius: 8,
-    marginVertical: 8,
-    backgroundColor: '#f9f9f9',
+    height: 120,
+    marginTop: 10,
+    borderRadius: 10,
   },
   previewSmall: {
-    flex: 1,
-    height: 120,
+    width: 70,
+    height: 50,
     borderRadius: 8,
-    backgroundColor: '#f9f9f9',
   },
 });
 

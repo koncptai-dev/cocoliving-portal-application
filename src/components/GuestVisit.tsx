@@ -91,7 +91,7 @@ useEffect(() => {
           Toast.show({
             type: 'error',
             text1: 'No Active Booking',
-            text2: 'Guest visit sirf active stay ke dauran ban sakti hai',
+            text2: 'Guest visit is only during active state',
           });
         }
       } catch (err: any) {
@@ -133,7 +133,7 @@ useEffect(() => {
     }
 
     if (!form.visitDate) {
-      Toast.show({ type: 'error', text1: 'Visit date select karo' });
+      Toast.show({ type: 'error', text1: 'please select visit date' });
       return;
     }
 
@@ -157,7 +157,7 @@ useEffect(() => {
       Toast.show({
         type: 'success',
         text1: 'Guest Visit Created!',
-        text2: 'QR code guest ke email pe bhej diya gaya hai.',
+        text2: 'QR code sent on Mail',
       });
 
       setForm({
@@ -195,7 +195,7 @@ useEffect(() => {
     return (
       <View style={styles.noBookingContainer}>
         <Text style={styles.noBookingText}>
-          No active booking found. Guest visit sirf stay ke dauran ban sakti hai.
+          No active booking found.
         </Text>
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
           <Text style={styles.backBtnText}>Go Back</Text>
@@ -212,7 +212,7 @@ useEffect(() => {
     >
       <HeaderGradient
         image={require('../../assets/images/a4.png')}
-        title="Create Guest Visit"
+        title="Create Guest Pass"
       />
 
       <ScrollView
@@ -220,7 +220,7 @@ useEffect(() => {
         contentContainerStyle={{ paddingBottom: 50 }}
       >
         <Text style={styles.tagline}>
-          Invite your guest with ease.{"\n"}QR code unke email pe jayega.
+          Invite your guest with ease.{"\n"}The QR code will be sent to their email.
         </Text>
 
         <View style={styles.formContainer}>
@@ -314,14 +314,14 @@ useEffect(() => {
             {submitting ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <Text style={styles.submitText}>Create Guest Visit</Text>
+              <Text style={styles.submitText}>Create Guest Pass</Text>
             )}
           </TouchableOpacity>
         </View>
 
         {/* Guest History - Horizontal Scroll (no extra package needed) */}
 <View style={styles.historySection}>
-  <Text style={styles.sectionTitle}>Your Guest Visits</Text>
+  <Text style={styles.sectionTitle}>Your Guest Passes</Text>
 
   {loadingVisits ? (
     <ActivityIndicator size="small" color={colors.nOrange} style={{ marginTop: 20 }} />

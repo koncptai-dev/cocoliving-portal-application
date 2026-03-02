@@ -299,20 +299,26 @@ const PayableAmountScreen = ({ route, navigation }) => {
   /* =====================
      UI (full detailed version)
   ===================== */
-  return (
-    <ScrollView
-      style={styles.container}
-      showsVerticalScrollIndicator={false}
-    >
-      {/* Back */}
-      <TouchableOpacity
-        style={styles.backBtn}
-        onPress={() => navigation.goBack()}
-      >
+return (
+  <View style={{ flex: 1, backgroundColor: "#fff" }}>
+
+    {/* 🔒 FIXED HEADER */}
+    <View style={styles.header}>
+      <TouchableOpacity onPress={() => navigation.goBack()}>
         <Ionicons name="chevron-back" size={26} color="#3C2A1E" />
       </TouchableOpacity>
 
-      <Text style={styles.heading}>Payable Amount</Text>
+      <Text style={styles.headerTitle}>Payable Amount</Text>
+    </View>
+
+    {/* SCROLLABLE CONTENT */}
+    <ScrollView
+      showsVerticalScrollIndicator={false}
+      contentContainerStyle={{
+        paddingHorizontal: 20,
+        paddingBottom: 120,   // 👈 extra space for bottom
+      }}
+    >
 
       {/* Room Card */}
     <View style={styles.roomCard}>
@@ -371,7 +377,7 @@ const PayableAmountScreen = ({ route, navigation }) => {
 />
             <View style={styles.dashedLine} />
             <Row
-  title="Pre-Book @ 10%"
+  title="Pre-Book "
   subtitle="Amount Payable Now"
   value={`₹ ${preBookAmount.toLocaleString()}`}
   bold
@@ -413,8 +419,9 @@ const PayableAmountScreen = ({ route, navigation }) => {
             : `${proceedBtnText} `}
         </Text>
       </TouchableOpacity>
-    </ScrollView>
-  );
+      </ScrollView>
+  </View>
+);
 };
 
 /* =====================
@@ -452,24 +459,29 @@ export default PayableAmountScreen;
    STYLES
 ===================== */
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#fff",
-    padding: 20,
-  },
 
-  backBtn: {
-    width: 34,
-    marginTop: 10,
-    marginBottom: 10,
-  },
+header: {
+  flexDirection: "row",
+  alignItems: "center",
+  paddingHorizontal: 20,
+  marginTop: 30,
+  marginBottom: 10,
+  gap: 20,
+},
 
-  heading: {
-    fontSize: 22,
-    fontFamily:'Quicksand-Bold',
-    color: "#4f3421",
-    marginBottom: 14,
-  },
+headerTitle: {
+  fontSize: 22,
+  fontFamily: "Quicksand-Bold",
+  color: "#4f3421",
+},
+
+proceedBtn: {
+  backgroundColor: "#f6a452",
+  borderRadius: 10,
+  paddingVertical: 14,
+  marginTop: 30,
+  marginBottom: 40,   // 👈 extra margin so it doesn't merge with nav
+},
 
   roomCard: {
     flexDirection: "row",

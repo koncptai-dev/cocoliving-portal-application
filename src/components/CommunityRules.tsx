@@ -8,10 +8,11 @@ import {
   Image,
 } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
+import { useNavigation } from "@react-navigation/native";
 
 export default function CommunityRules() {
   const scrollRef = useRef(null);
-
+  const navigation = useNavigation();
   const scrollToTop = () => {
     scrollRef.current?.scrollTo({ y: 0, animated: true });
   };
@@ -20,7 +21,7 @@ export default function CommunityRules() {
     <View style={styles.container}>
       {/* HEADER */}
       <View style={styles.header}>
-        <TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
           <Ionicons name="chevron-back" size={28} color="#4C3D2A" />
         </TouchableOpacity>
 
@@ -174,11 +175,13 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingVertical: 15,
-    justifyContent: "space-between",
+    gap:20,
+    marginTop:20,
+
   },
   headerTitle: {
-    fontSize: 20,
-    fontWeight: "700",
+    fontSize: 25,
+    fontFamily:'Quicksand-Bold',
     color: "#4C3D2A",
   },
 

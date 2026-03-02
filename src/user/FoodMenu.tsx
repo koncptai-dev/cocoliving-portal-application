@@ -84,7 +84,17 @@ export default function FoodMenuScreen() {
 
   const todayMenu = getMenus();
 
-  const join = (arr) => (arr?.length ? arr.join(", ") : "Not Available");
+  const renderFood = (arr) => {
+  if (!arr?.length) {
+    return <Text style={styles.foodText}>Not Available</Text>;
+  }
+
+  return arr.map((item, index) => (
+    <Text key={index} style={styles.foodText}>
+      • {item}
+    </Text>
+  ));
+};
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -133,7 +143,7 @@ export default function FoodMenuScreen() {
             <View style={styles.line} />
 
             <View style={styles.foodContainer}>
-              <Text style={styles.foodText}>{join(todayMenu.breakfast)}</Text>
+              {renderFood(todayMenu.breakfast)}
             </View>
           </View>
 
@@ -149,7 +159,7 @@ export default function FoodMenuScreen() {
             <View style={styles.line} />
 
             <View style={styles.foodContainer}>
-              <Text style={styles.foodText}>{join(todayMenu.lunch)}</Text>
+            {renderFood(todayMenu.lunch)}
             </View>
           </View>
 
@@ -165,7 +175,7 @@ export default function FoodMenuScreen() {
             <View style={styles.line} />
 
             <View style={styles.foodContainer}>
-              <Text style={styles.foodText}>{join(todayMenu.dinner)}</Text>
+               {renderFood(todayMenu.dinner)}
             </View>
           </View>
         </>
@@ -243,7 +253,7 @@ const styles = StyleSheet.create({
 
   cardTitle: { marginLeft: 10, fontSize: 15, fontWeight: "700", color: "#3C2A1E" },
 
-  time: { color: "#3C2A1E", marginBottom: 10 ,fontSize:12, textAlign: 'center'},
+  time: { color: "#3C2A1E", marginBottom: 10 ,fontSize:14, textAlign: 'center'},
 
   line: {
     borderBottomWidth: 1,
@@ -252,17 +262,20 @@ const styles = StyleSheet.create({
   },
 
   foodContainer: { 
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 10,
-  },
+  alignItems: 'center',
+  justifyContent: 'center',
+  paddingVertical: 10,
+  flexWrap: 'wrap',
+},
 
-  foodText: {
-    fontSize: 14,
-    color: "#FFFFFF",
-    textAlign: "center",
-    lineHeight: 18,
-  },
+foodText: {
+  fontSize: 16,
+  color: "#FFFFFF",
+  textAlign: "center",
+  lineHeight: 22,  // 🔥 18 → 22
+  fontFamily:'Quicksand-Bold',
+  
+},
 
   noData: {
     textAlign: "center",

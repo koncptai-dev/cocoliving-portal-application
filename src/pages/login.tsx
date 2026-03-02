@@ -19,6 +19,7 @@ import OTPTextInput from 'react-native-otp-textinput';
 import Toast from 'react-native-toast-message';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 
 export const API_BASE_URL = 'https://staging.cocoliving.in';
 const CHECK_IDENTIFIER_API = `${API_BASE_URL}/api/common/check-email`;
@@ -393,13 +394,8 @@ const startFiveSecLoader = () => {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
         >
-        <View style={styles.heroContainer}>
+        {/* <View style={styles.heroContainer}>
         
-
-
-
-      
-
 <Image
   source={require('../../assets/images/premium.png')}
   style={styles.heroImage}
@@ -407,18 +403,47 @@ const startFiveSecLoader = () => {
 />
 
 
-        {isOTPSent && (
-    <TouchableOpacity style={styles.backBtn} onPress={handleBackToLogin}>
-      <Icon name="arrow-back" size={26} color="#fff" />
-    </TouchableOpacity>
-  )}
+     {isOTPSent && (
+  <TouchableOpacity
+    onPress={handleBackToLogin}   // ⚠ use this instead of navigation.goBack()
+    style={styles.backBtn}
+    activeOpacity={0.8}
+  >
+    <Ionicons name="chevron-back" size={28} color="#fff" />
+  </TouchableOpacity>
+)}
 
   <Text style={styles.heroTitle}>
     {isOTPSent ? '' : 'Sign In'}
   </Text>
-          
-      
-        </View>
+               
+        </View> */}
+
+        <View style={styles.heroContainer}>
+  <Image
+    source={require('../../assets/images/premium.png')}
+    style={styles.heroImage}
+    resizeMode="cover"
+  />
+
+  {/* Overlay for softness */}
+  <View style={styles.heroOverlay} />
+
+  {/* Coco Logo */}
+  <View style={styles.logoWrapper}>
+    <Image
+      source={require('../../assets/images/cocoLogo.png')}
+      style={styles.logo}
+      resizeMode="contain"
+    />
+  </View>
+
+  {isOTPSent && (
+    <TouchableOpacity style={styles.backBtn} onPress={handleBackToLogin}>
+      <Icon name="arrow-back" size={26} color="#fff" />
+    </TouchableOpacity>
+  )}
+</View>
 
         <View style={styles.sheet}>
           {!isOTPSent && (
@@ -596,10 +621,10 @@ const startFiveSecLoader = () => {
   onPress={() => navigation.navigate('Signup')}
   style={{ marginTop: 18 }}
 >
-  <Text style={styles.signupText}>
+  {/* <Text style={styles.signupText}>
     Don’t have an account?{' '}
     <Text style={styles.signupLink}>Sign up</Text>
-  </Text>
+  </Text> */}
 </TouchableOpacity>
 )}
 
@@ -632,12 +657,12 @@ export default LoginScreen;
 const styles = StyleSheet.create({
   container: { flexGrow: 1, backgroundColor: '#fff' },
   sheet: { marginTop: -80, backgroundColor: '#fff', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, paddingTop: 24 },
-  inputBox: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#ccc', borderRadius: 12, height: 52, paddingHorizontal: 14, marginBottom: 4 },
+  inputBox: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#ccc', borderRadius: 12, height: 52, paddingHorizontal: 14, marginBottom: 4 ,fontFamily:'Quicksand-Bold'},
   code: { color: '#7A7A7A', fontSize: 16 },
   divider: { width: 1, height: 24, backgroundColor: '#616161', marginHorizontal: 10 },
   input: { flex: 1, fontSize: 18, color: '#000',includeFontPadding: false, textAlignVertical: 'center' },
   button: { backgroundColor: '#F6A452', height: 52, borderRadius: 14, justifyContent: 'center', alignItems: 'center', marginTop: 10 ,flexDirection: 'row'},
-  buttonText: { color: '#fff', fontSize: 20, fontWeight: '600' },
+  buttonText: { color: '#fff', fontSize: 20, fontFamily:'Quicksand-Bold' },
   error: { color: '#E94235', marginBottom: 8, marginTop: 4 },
   otpLabel: { marginBottom: 10 },
   otpRow: { justifyContent: 'space-between', marginBottom: 10 },
@@ -645,7 +670,7 @@ const styles = StyleSheet.create({
   timer: { textAlign: 'center', color: '#000', marginTop: 4 },
   orContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', alignSelf: 'center', marginVertical: 20 },
   orLine: { width: '30%', height: 1, backgroundColor: '#111' },
-  orText: { marginHorizontal: 12, color: '#111', fontWeight: '800' },
+  orText: { marginHorizontal: 12, color: '#111', fontFamily:'Quicksand-Bold' },
   heroContainer: { position: 'relative' },
   heroImage: { width: '100%', height: SCREEN_HEIGHT * 0.5 },
 //  heroTitle: { position: 'absolute', top: 10, left: 20, color: '#fff', fontSize: 28, fontWeight: '700' },
@@ -671,12 +696,13 @@ const styles = StyleSheet.create({
   lineHeight: 18,
   textAlign: 'left',
   paddingHorizontal: 4, // adjust 2–6 if needed
+  fontFamily:'Quicksand-Bold'
 },
 
 
 linkText: {
   color: '#E94235',
-  fontWeight: '600',
+  fontFamily:'Quicksand-Bold'
 },
 signupText: {
   textAlign: 'center',
@@ -688,7 +714,7 @@ backBtn: {
   top: 40,
   left: 16,
   zIndex: 10,
-  backgroundColor: 'rgba(0,0,0,0.35)',
+  // backgroundColor: 'rgba(0,0,0,0.35)',
   padding: 8,
   borderRadius: 20,
 },
@@ -699,6 +725,30 @@ signupLink: {
 },
 
   childName: { fontSize: 16, color: '#000', textAlign: 'center', paddingVertical: 12, borderBottomWidth: 1, borderColor: '#eee' },
+
+  logoWrapper: {
+  position: 'absolute',
+  top: '30%',
+  alignSelf: 'center',
+  backgroundColor: 'rgba(255,255,255,0.94)',
+  paddingHorizontal: 32,
+  paddingVertical: 16,
+  borderRadius: 22,
+  opacity: 0.9,
+},
+logo: {
+  width: 150,
+  height: 52,
+opacity: 0.85,
+},
+heroOverlay: {
+  position: 'absolute',
+  top: 0,
+  left: 0,
+  right: 0,
+  bottom: 0,
+  backgroundColor: 'rgba(0,0,0,0.18)', // softer
+},
 });
 
 

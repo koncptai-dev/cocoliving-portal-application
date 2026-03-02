@@ -16,6 +16,8 @@ import axios from "axios";
 import Toast from "react-native-toast-message";
 import PhonePePaymentSDK from "react-native-phonepe-pg";
 import { useAuth } from "../context/AuthContext";
+import Ionicons from "react-native-vector-icons/Ionicons";
+import { useNavigation } from "@react-navigation/native";
 
 /* =====================
    CONSTANTS
@@ -62,6 +64,8 @@ const BookingDetailsScreen = ({ route }) => {
   const [extension, setExtension] = useState(null);
   const [extendMonths, setExtendMonths] = useState("");
   const [cancelReason, setCancelReason] = useState("");
+
+  const navigation = useNavigation();
 
   /* =====================
      FETCH DETAILS
@@ -326,24 +330,34 @@ const BookingDetailsScreen = ({ route }) => {
   /* =====================
      UI
   ===================== */
-  return (
-   <KeyboardAvoidingView
-   style={{ flex: 1 }}
-   behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-   keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 0}
- >
-<ScrollView
-  style={{ flex: 1 }}
-  showsVerticalScrollIndicator={false}
-  keyboardShouldPersistTaps="handled"
-  contentContainerStyle={{
-    paddingHorizontal: 16,   // 👈 ADD THIS
-    paddingTop: 16,          // 👈 optional but recommended
-    paddingBottom: 120,
-    flexGrow: 1,
-  }}
->
-      <Text style={styles.title}>Booking Details</Text>
+return (
+  <KeyboardAvoidingView
+    style={{ flex: 1, backgroundColor: "#F2F2F2" }}
+    behavior={Platform.OS === "ios" ? "padding" : "height"}
+    keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0}
+  >
+
+    {/* 🔒 FIXED HEADER */}
+    <View style={styles.header}>
+      <TouchableOpacity onPress={() => navigation.goBack()}>
+        <Ionicons name="chevron-back" size={26} color="#4B3426" />
+      </TouchableOpacity>
+
+      <Text style={styles.headerTitle}>Booking Details</Text>
+    </View>
+
+    {/* 📜 SCROLLABLE CONTENT */}
+    <ScrollView
+      style={{ flex: 1 }}
+      showsVerticalScrollIndicator={false}
+      keyboardShouldPersistTaps="handled"
+      contentContainerStyle={{
+        paddingHorizontal: 16,
+        paddingTop: 10,
+        paddingBottom: 120,
+        flexGrow: 1,
+      }}
+    >
 
       <InfoCard label="Property" value={booking.rateCard?.property?.name} />
       <InfoCard label="Room Type" value={booking.rateCard?.roomType} />
@@ -488,6 +502,20 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F2F2F2", padding: 16 },
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
   title: { fontSize: 22, fontFamily: "Quicksand-Bold", color: "#4B3426", marginBottom: 18 , marginTop:20 , textAlign:'center' },
+  header: {
+  flexDirection: "row",
+  alignItems: "center",
+  marginTop: 30,
+  paddingHorizontal: 16,
+  marginBottom: 10,
+  gap: 20, // 👈 as requested
+},
+
+headerTitle: {
+  fontSize: 25,
+  fontFamily: "Quicksand-Bold",
+  color: "#4B3426",
+},
   block: { backgroundColor: "#fff", borderRadius: 14, padding: 14, marginBottom: 10 },
   label: { fontSize: 12, fontFamily: "Quicksand-Medium", color: "#7A6658" },
   value: { fontSize: 15, fontFamily: "Quicksand-SemiBold", color: "#4B3426", marginTop: 4 },
