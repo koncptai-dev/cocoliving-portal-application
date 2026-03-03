@@ -18,6 +18,13 @@ import axios from "axios";
 const SelectYourBedScreen = ({ route, navigation }) => {
   const baseURL = "https://staging.cocoliving.in";
 
+  const roomImages = {
+  "Single Sharing": require("../../assets/images/one.jpg.jpeg"),
+  "Double Sharing": require("../../assets/images/two.jpg.jpeg"),
+  "Triple Sharing": require("../../assets/images/three.jpg.jpeg"),
+  "Four Sharing": require("../../assets/images/four.jpeg"),
+};
+
   const { user } = useAuth();
 
   const { room, property, rent, actionType } = route.params;
@@ -43,6 +50,7 @@ const [bedsInRoom, setBedsInRoom] = useState([]);
 const [showFloorDD, setShowFloorDD] = useState(false);
 const [showRoomDD, setShowRoomDD] = useState(false);
 const [showBedDD, setShowBedDD] = useState(false);
+const [selectedRoom, setSelectedRoom] = useState("");
 
 const [preferredBedInventoryId, setPreferredBedInventoryId] = useState(null);
 
@@ -270,6 +278,16 @@ useEffect(() => {
       </TouchableOpacity>
     ))}
   </View>
+)}
+
+
+{/* ================= ROOM TYPE IMAGE ================= */}
+{room?.roomType && roomImages[room.roomType] && (
+  <Image
+    source={roomImages[room.roomType]}
+    style={styles.roomTypeImage}
+    resizeMode="cover"
+  />
 )}
 
 
@@ -606,4 +624,11 @@ headerTitle: {
     color: "#3C2A1E",
     fontFamily: "Quicksand-SemiBold",
   },
+  roomTypeImage: {
+  width: "100%",
+  height: 200,
+  borderRadius: 14,
+  marginTop: 15,
+  marginBottom: 10,
+},
 });

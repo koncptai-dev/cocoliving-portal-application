@@ -29,33 +29,56 @@ const RoomDetailsScreen = ({ route, navigation }) => {
 
   const [activeIndex, setActiveIndex] = useState(0);
 
-  const handleAction = (actionType) => {
+const handleAction = (actionType) => {
 
-  // Fields check
-  const isParentNameFilled = user?.parentName;
-  const isParentMobileFilled = user?.parentMobile;
-  const isParentEmailFilled = user?.parentEmail;
-  const isFoodPreferenceFilled = user?.foodPreference;
-  const isAllergyFilled = user?.allergies;
+  if (!user) return;
 
-  if (
-    !isParentNameFilled ||
-    !isParentMobileFilled ||
-    !isParentEmailFilled ||
-    !isFoodPreferenceFilled ||
-    !isAllergyFilled
-  ) {
-    Toast.show({
-      type: "error",
-      text1: "Complete Your Profile",
-      text2: "Please fill parent details & food information before booking.",
-    });
+  const { 
+    userType, 
+    parentName, 
+    parentMobile, 
+    parentEmail, 
+    foodPreference, 
+    allergies 
+  } = user;
 
-    navigation.navigate("Profile"); // <-- apna exact profile screen name daalna
-    return;
+  // ---------------- STUDENT CHECK ----------------
+  if (userType === "student") {
+
+    if (
+      !parentName ||
+      !parentMobile ||
+      !parentEmail ||
+      !foodPreference ||
+      !allergies
+    ) {
+      Toast.show({
+        type: "error",
+        text1: "Complete Student Profile",
+        text2: "Please fill parent details & food information before booking.",
+      });
+
+      navigation.navigate("Profile"); // apna profile screen name confirm kar lena
+      return;
+    }
   }
 
-  // ✅ Agar sab filled hai to normal flow
+  // ---------------- PROFESSIONAL CHECK ----------------
+  if (userType === "professional") {
+
+    if (!foodPreference || !allergies) {
+      Toast.show({
+        type: "error",
+        text1: "Complete Profile",
+        text2: "Please fill food preference & allergy details before booking.",
+      });
+
+      navigation.navigate("Profile");
+      return;
+    }
+  }
+
+  // ---------------- SUCCESS FLOW ----------------
   navigation.navigate("SelectYourBed", {
     room,
     property,
@@ -63,7 +86,6 @@ const RoomDetailsScreen = ({ route, navigation }) => {
     actionType: actionType,
   });
 };
-
   return (
     <View style={styles.container}>
       {/* ================= HEADER ================= */}

@@ -44,6 +44,7 @@ export default function Profile() {
     address: "",
     collegeName: "",
     course: "",
+    studyingYear:"",
     parentName: "",
     parentEmail: "",     // ← NEW: matches web
     parentMobile: "",
@@ -57,6 +58,7 @@ export default function Profile() {
   const [showDOB, setShowDOB] = useState(false);
   const [showGender, setShowGender] = useState(false);   // ← NEW
   const [showFood, setShowFood] = useState(false);
+  const [showYear , setShowYear] = useState(false);
 
   const [errors, setErrors] = useState({
     parentMobile: "",
@@ -95,6 +97,7 @@ export default function Profile() {
         address: u.address || "",
         collegeName: u.collegeName || "",
         course: u.course || "",
+        studyingYear : u.studyingYear || "",
         parentName: u.parentName || "",
         parentEmail: u.parentEmail || "",      // ← NEW
         parentMobile: u.parentMobile || "",
@@ -169,6 +172,7 @@ const saveProfile = async () => {
     form.append("address", profile.address || "");
     form.append("collegeName", profile.collegeName || "");
     form.append("course", profile.course || "");
+    form.append("studyingYear",profile.studyingYear || "");
     form.append("parentName", profile.parentName || "");
     form.append("parentEmail", profile.parentEmail || "");
     form.append("parentMobile", profile.parentMobile || "");
@@ -356,6 +360,36 @@ const saveProfile = async () => {
             <FloatingInputFull label="School/College" value={profile.collegeName} onChangeText={(v) => update("collegeName", v)} />
 
             <FloatingInputFull label="Course" value={profile.course} onChangeText={(v) => update("course", v)} />
+
+            <FloatingDropdown label="Year of Study" value={profile.studyingYear || "Select Year"} onPress={()=>setShowYear(!showYear)}/>
+
+              {showYear && (
+  <View style={styles.optionList}>
+    <TouchableOpacity onPress={() => { update("studyingYear", "Precollege"); setShowYear(false); }}>
+      <Text style={styles.optionItem}>Precollege</Text>
+    </TouchableOpacity>
+
+    <TouchableOpacity onPress={() => { update("studyingYear", "First Year"); setShowYear(false); }}>
+      <Text style={styles.optionItem}>First Year</Text>
+    </TouchableOpacity>
+
+    <TouchableOpacity onPress={() => { update("studyingYear", "Second Year"); setShowYear(false); }}>
+      <Text style={styles.optionItem}>Second Year</Text>
+    </TouchableOpacity>
+
+    <TouchableOpacity onPress={() => { update("studyingYear", "Third Year"); setShowYear(false); }}>
+      <Text style={styles.optionItem}>Third Year</Text>
+    </TouchableOpacity>
+
+    <TouchableOpacity onPress={() => { update("studyingYear", "Fourth Year"); setShowYear(false); }}>
+      <Text style={styles.optionItem}>Fourth Year</Text>
+    </TouchableOpacity>
+
+    <TouchableOpacity onPress={() => { update("studyingYear", "Fifth Year"); setShowYear(false); }}>
+      <Text style={styles.optionItem}>Fifth Year</Text>
+    </TouchableOpacity>
+  </View>
+)}
 
             <Text style={styles.sectionTitle}>Emergency Contact</Text>
 
