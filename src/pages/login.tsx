@@ -19,7 +19,6 @@ import OTPTextInput from 'react-native-otp-textinput';
 import Toast from 'react-native-toast-message';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
-import Ionicons from 'react-native-vector-icons/Ionicons';
 
 export const API_BASE_URL = 'https://staging.cocoliving.in';
 const CHECK_IDENTIFIER_API = `${API_BASE_URL}/api/common/check-email`;
@@ -47,6 +46,9 @@ const LoginScreen = () => {
 
 const [fakeLoading, setFakeLoading] = useState(false);
 
+
+const [appHash, setAppHash] = useState<string | null>(null);
+
 const handleBackToLogin = () => {
   setIsOTPSent(false);
   setOtp('');
@@ -55,6 +57,8 @@ const handleBackToLogin = () => {
   setCanResend(false);
 };
 
+
+const [allowAutoOtp, setAllowAutoOtp] = useState<boolean | null>(null);
 
 
 
@@ -84,22 +88,6 @@ const handleBackToLogin = () => {
 const autoOtpRef = useRef(false);
 
 
-// 👇 ADD THIS useEffect HERE
-  // useEffect(() => {
-  //   if (otp.length === 6) {
-  //     Keyboard.dismiss();
-  //   }
-  // }, [otp]);
-
-  // TIMER
-  // useEffect(() => {
-  //   let interval: any;
-  //   if (isOTPSent && timer > 0) {
-  //     interval = setInterval(() => setTimer(t => t - 1), 1000);
-  //   }
-  //   if (timer === 0) setCanResend(true);
-  //   return () => interval && clearInterval(interval);
-  // }, [timer, isOTPSent]);
 
   
 
@@ -121,50 +109,90 @@ useEffect(() => {
 
 
   
+// useEffect(() => {
+//   RNOtpVerify.getHash()
+//     .then(hash => console.log("APP HASH:", hash))
+//     .catch(console.log);
+// }, []);
+
+
 useEffect(() => {
-  RNOtpVerify.getHash()
-    .then(hash => console.log("APP HASH:", hash))
-    .catch(console.log);
+  const getAppHash = async () => {
+    try {
+      const hash = await RNOtpVerify.getHash();
+      // Usually backend needs the FIRST hash
+      setAppHash(hash[0]);
+      console.log('APP HASH:', hash[0]);
+    } catch (e) {
+      console.log('Hash error', e);
+    }
+  };
+
+  getAppHash();
 }, []);
 
 
 useEffect(() => {
   if (!isOTPSent || medium !== 'phone') return;
+  if (allowAutoOtp !== true) return; // 🔒 user did not consent
 
   const startOtpListener = async () => {
     try {
-      await RNOtpVerify.getOtp(); // starts SMS Retriever
+      await RNOtpVerify.getOtp();
 
-   
-
-
-     RNOtpVerify.addListener(message => {
-  const otpMatch = message.match(/\b\d{6}\b/);
-  if (otpMatch) {
-    const code = otpMatch[0];
-
-    autoOtpRef.current = true; // 🔒 lock source
-    setIsAutoOtp(true);
-    setOtp(code);
-
-    RNOtpVerify.removeListener();
-  }
-});
-
-
-
-
-
-
+      RNOtpVerify.addListener(message => {
+        const otpMatch = message.match(/\b\d{6}\b/);
+        if (otpMatch) {
+          autoOtpRef.current = true;
+          setIsAutoOtp(true);
+          setOtp(otpMatch[0]);
+          RNOtpVerify.removeListener();
+        }
+      });
     } catch (e) {
-      console.log("OTP Listener error:", e);
+      console.log('OTP listener error:', e);
     }
   };
 
   startOtpListener();
-
   return () => RNOtpVerify.removeListener();
-}, [isOTPSent]);
+}, [isOTPSent, allowAutoOtp]);
+
+// useEffect(() => {
+//   if (!isOTPSent || medium !== 'phone') return;
+
+//   const startOtpListener = async () => {
+//     try {
+//       await RNOtpVerify.getOtp(); // starts SMS Retriever
+
+
+//      RNOtpVerify.addListener(message => {
+//   const otpMatch = message.match(/\b\d{6}\b/);
+//   if (otpMatch) {
+//     const code = otpMatch[0];
+
+//     autoOtpRef.current = true; // 🔒 lock source
+//     setIsAutoOtp(true);
+//     setOtp(code);
+
+//     RNOtpVerify.removeListener();
+//   }
+// });
+
+
+
+
+
+
+//     } catch (e) {
+//       console.log("OTP Listener error:", e);
+//     }
+//   };
+
+//   startOtpListener();
+
+//   return () => RNOtpVerify.removeListener();
+// }, [isOTPSent]);
 
 
 useEffect(() => {
@@ -198,19 +226,7 @@ useEffect(() => {
   }
 }, [otp, isAutoOtp, isOTPSent]);
 
-// const handleOtpChange = (value: string) => {
-//   setIsAutoOtp(false);   // 👈 manual typing
-//   setOtp(value);
-// };
 
-// const handleOtpChange = (value: string) => {
-//   setOtp(value);
-
-//   // ❗ only mark manual typing if NOT auto-filled
-//   if (!isAutoOtp) {
-//     setIsAutoOtp(false);
-//   }
-// };
 
 
 
@@ -315,28 +331,68 @@ const startFiveSecLoader = () => {
   };
 
   // ---------------- SEND OTP ----------------
-  const sendOTP = async (identifier: string, mediumType: 'email' | 'phone', selectedChildId: number | null) => {
-   // setLoading(true);
-    setOtp('');
-    try {
-      await axios.post(LOGIN_SEND_OTP, {
-        identifier,
-        ...(selectedChildId !== null && { childId: selectedChildId }),
-      });
+  // const sendOTP = async (identifier: string, mediumType: 'email' | 'phone', selectedChildId: number | null) => {
+  //  // setLoading(true);
+  //   setOtp('');
+  //   try {
+  //     await axios.post(LOGIN_SEND_OTP, {
+  //       identifier,
+  //       ...(selectedChildId !== null && { childId: selectedChildId }),
+  //     });
 
-      setChildId(selectedChildId);
-      setIsOTPSent(true);
-      setShowChildModal(false);
-      resetTimer();
+  //     setChildId(selectedChildId);
+  //     setIsOTPSent(true);
+  //     setShowChildModal(false);
+  //     resetTimer();
 
-      Toast.show({ type: 'success', text1: `OTP sent to your ${mediumType === 'phone' ? 'mobile' : 'email'}` });
-    } catch (err: any) {
-      Toast.show({ type: 'error', text1: err?.response?.data?.message || 'Failed to send OTP' });
-    } finally {
-     // setLoading(false);
-    }
+  //     Toast.show({ type: 'success', text1: `OTP sent to your ${mediumType === 'phone' ? 'mobile' : 'email'}` });
+  //   } catch (err: any) {
+  //     Toast.show({ type: 'error', text1: err?.response?.data?.message || 'Failed to send OTP' });
+  //   } finally {
+  //    // setLoading(false);
+  //   }
+  // };
+
+ const sendOTP = async (
+  identifier: string,
+  mediumType: 'email' | 'phone',
+  selectedChildId: number | null
+) => {
+  setOtp('');
+
+  // 👇 build payload first
+  const payload: any = {
+    identifier,
+    ...(mediumType === 'phone' && Platform.OS === 'android' && {
+      appHash,
+      platform: 'android',
+    }),
+    ...(selectedChildId !== null && { childId: selectedChildId }),
   };
 
+  // 🔍 LOG REQUEST PAYLOAD
+  console.log('📤 SEND OTP REQUEST PAYLOAD:', JSON.stringify(payload, null, 2));
+
+  try {
+    await axios.post(LOGIN_SEND_OTP, payload);
+
+    setChildId(selectedChildId);
+    setIsOTPSent(true);
+    setShowChildModal(false);
+    resetTimer();
+
+    Toast.show({
+      type: 'success',
+      text1: `OTP sent to your ${mediumType === 'phone' ? 'mobile' : 'email'}`,
+    });
+  } catch (err: any) {
+    console.log('❌ SEND OTP ERROR:', err?.response?.data || err);
+    Toast.show({
+      type: 'error',
+      text1: err?.response?.data?.message || 'Failed to send OTP',
+    });
+  }
+};
   // ---------------- VERIFY OTP ----------------
   const verifyOTP = async () => {
     if (!otp.trim()) {
@@ -394,34 +450,10 @@ const startFiveSecLoader = () => {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
         >
-        {/* <View style={styles.heroContainer}>
-        
-<Image
-  source={require('../../assets/images/premium.png')}
-  style={styles.heroImage}
-  resizeMode="cover"
-/>
 
-
-     {isOTPSent && (
-  <TouchableOpacity
-    onPress={handleBackToLogin}   // ⚠ use this instead of navigation.goBack()
-    style={styles.backBtn}
-    activeOpacity={0.8}
-  >
-    <Ionicons name="chevron-back" size={28} color="#fff" />
-  </TouchableOpacity>
-)}
-
-  <Text style={styles.heroTitle}>
-    {isOTPSent ? '' : 'Sign In'}
-  </Text>
-               
-        </View> */}
-
-        <View style={styles.heroContainer}>
+      <View style={styles.heroContainer}>
   <Image
-    source={require('../../assets/images/premium.png')}
+    source={require('../../assets/images/mainImage.jpeg')}
     style={styles.heroImage}
     resizeMode="cover"
   />
@@ -429,14 +461,7 @@ const startFiveSecLoader = () => {
   {/* Overlay for softness */}
   <View style={styles.heroOverlay} />
 
-  {/* Coco Logo */}
-  <View style={styles.logoWrapper}>
-    <Image
-      source={require('../../assets/images/cocoLogo.png')}
-      style={styles.logo}
-      resizeMode="contain"
-    />
-  </View>
+ 
 
   {isOTPSent && (
     <TouchableOpacity style={styles.backBtn} onPress={handleBackToLogin}>
@@ -445,6 +470,29 @@ const startFiveSecLoader = () => {
   )}
 </View>
 
+        {/* <View style={styles.heroContainer}>
+        <Image
+  source={require('../../assets/images/premium.png')}
+  style={styles.heroImage}
+  resizeMode="cover"
+/>
+
+
+        {isOTPSent && (
+    <TouchableOpacity style={styles.backBtn} onPress={handleBackToLogin}>
+      <Icon name="arrow-back" size={26} color="#fff" />
+    </TouchableOpacity>
+  )}
+  <Text style={styles.heroTitle}>
+    {isOTPSent ? '' : 'Sign In'}
+  </Text>
+              
+        </View> */}
+
+    
+    
+    
+    
         <View style={styles.sheet}>
           {!isOTPSent && (
             <>
@@ -533,15 +581,7 @@ const startFiveSecLoader = () => {
   blurOnSubmit={false}
 />
 
-      {/* <OTPTextInput
-        // key={otp}
-
-        inputCount={6}
-        handleTextChange={setOtp}
-        defaultValue={otp}
-        containerStyle={styles.otpRow}
-        textInputStyle={styles.otpBox}
-      /> */}
+     
     </Animated.View>
 
     {errors.otp && <Text style={styles.error}>{errors.otp}</Text>}
@@ -591,42 +631,52 @@ const startFiveSecLoader = () => {
 </TouchableOpacity>
 
 
-{/* 
-<TouchableOpacity
-  style={[
-    styles.button,
-    isButtonLoading && { opacity: 0.7 }   // fade effect while loading
-  ]}
-  onPress={isOTPSent ? verifyOTP : checkAndProceed}
-  disabled={isButtonLoading}
-  activeOpacity={0.8}
->
-  {isButtonLoading ? (
-    <ActivityIndicator size="small" color="#fff" />
-  ) : (
-    <Text style={styles.buttonText}>
-      {isOTPSent ? 'Verify' : 'Login'}
-    </Text>
-  )}
-</TouchableOpacity> */}
-
-
-          {/* <TouchableOpacity style={styles.button} onPress={isOTPSent ? verifyOTP : checkAndProceed} disabled={loading || verifying}>
-            {(loading || verifying) ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>{isOTPSent ? 'Verify' : 'Login'}</Text>}
-          </TouchableOpacity> */}
-
 
 {!isOTPSent && (
 <TouchableOpacity
   onPress={() => navigation.navigate('Signup')}
   style={{ marginTop: 18 }}
 >
-  {/* <Text style={styles.signupText}>
+  <Text style={styles.signupText}>
     Don’t have an account?{' '}
     <Text style={styles.signupLink}>Sign up</Text>
-  </Text> */}
+  </Text>
 </TouchableOpacity>
 )}
+
+
+
+
+{isOTPSent && medium === 'phone' && allowAutoOtp === null && (
+  <Modal transparent animationType="fade">
+    <View style={styles.modalOverlay}>
+      <View style={styles.modalBox}>
+        <Text style={styles.modalTitle}>Auto-detect OTP?</Text>
+
+        <Text style={{ textAlign: 'center', marginBottom: 16 }}>
+          We can automatically read the OTP from SMS to speed up login.
+        </Text>
+
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => setAllowAutoOtp(true)}
+        >
+          <Text style={styles.buttonText}>Allow</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          onPress={() => setAllowAutoOtp(false)}
+          style={{ marginTop: 12 }}
+        >
+          <Text style={{ textAlign: 'center', color: '#555' }}>
+            I’ll enter manually
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  </Modal>
+)}
+
 
 
         </View>
@@ -656,13 +706,22 @@ export default LoginScreen;
 // ---------- STYLES ----------
 const styles = StyleSheet.create({
   container: { flexGrow: 1, backgroundColor: '#fff' },
-  sheet: { marginTop: -80, backgroundColor: '#fff', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, paddingTop: 24 },
-  inputBox: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#ccc', borderRadius: 12, height: 52, paddingHorizontal: 14, marginBottom: 4 ,fontFamily:'Quicksand-Bold'},
+//  sheet: { marginTop: -80, backgroundColor: '#fff', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, paddingTop: 24 },
+sheet: {
+  marginTop: -64,
+  backgroundColor: '#fff',
+  borderTopLeftRadius: 28,
+  borderTopRightRadius: 28,
+  paddingHorizontal: 22,
+  paddingTop: 28,
+  paddingBottom: 24,
+},  
+inputBox: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#ccc', borderRadius: 12, height: 52, paddingHorizontal: 14, marginBottom: 4 },
   code: { color: '#7A7A7A', fontSize: 16 },
   divider: { width: 1, height: 24, backgroundColor: '#616161', marginHorizontal: 10 },
   input: { flex: 1, fontSize: 18, color: '#000',includeFontPadding: false, textAlignVertical: 'center' },
   button: { backgroundColor: '#F6A452', height: 52, borderRadius: 14, justifyContent: 'center', alignItems: 'center', marginTop: 10 ,flexDirection: 'row'},
-  buttonText: { color: '#fff', fontSize: 20, fontFamily:'Quicksand-Bold' },
+  buttonText: { color: '#fff', fontSize: 20, fontWeight: '600' },
   error: { color: '#E94235', marginBottom: 8, marginTop: 4 },
   otpLabel: { marginBottom: 10 },
   otpRow: { justifyContent: 'space-between', marginBottom: 10 },
@@ -670,9 +729,9 @@ const styles = StyleSheet.create({
   timer: { textAlign: 'center', color: '#000', marginTop: 4 },
   orContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', alignSelf: 'center', marginVertical: 20 },
   orLine: { width: '30%', height: 1, backgroundColor: '#111' },
-  orText: { marginHorizontal: 12, color: '#111', fontFamily:'Quicksand-Bold' },
+  orText: { marginHorizontal: 12, color: '#111', fontWeight: '800' },
   heroContainer: { position: 'relative' },
-  heroImage: { width: '100%', height: SCREEN_HEIGHT * 0.5 },
+ // heroImage: { width: '100%', height: SCREEN_HEIGHT * 0.5 },
 //  heroTitle: { position: 'absolute', top: 10, left: 20, color: '#fff', fontSize: 28, fontWeight: '700' },
  heroTitle: {
   position: 'absolute',
@@ -682,7 +741,29 @@ const styles = StyleSheet.create({
   fontSize: 28,
   fontWeight: '700',
 },
+// heroOverlay: {
+//   position: 'absolute',
+//   top: 0,
+//   left: 0,
+//   right: 0,
+//   bottom: 0,
+//   backgroundColor: 'rgba(0,0,0,0.25)', // soft dark overlay
+// },
 
+// logoWrapper: {
+//   position: 'absolute',
+//   top: '35%',
+//   alignSelf: 'center',
+//   backgroundColor: 'rgba(255,255,255,0.85)',
+//   paddingHorizontal: 28,
+//   paddingVertical: 18,
+//   borderRadius: 24,
+// },
+
+// logo: {
+//   width: 160,
+//   height: 60,
+// },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'center', alignItems: 'center' },
   modalBox: { width: '85%', backgroundColor: '#fff', borderRadius: 16, padding: 20 },
   modalTitle: { fontSize: 18, fontWeight: '700', marginBottom: 12, textAlign: 'center' },
@@ -696,13 +777,12 @@ const styles = StyleSheet.create({
   lineHeight: 18,
   textAlign: 'left',
   paddingHorizontal: 4, // adjust 2–6 if needed
-  fontFamily:'Quicksand-Bold'
 },
 
 
 linkText: {
   color: '#E94235',
-  fontFamily:'Quicksand-Bold'
+  fontWeight: '600',
 },
 signupText: {
   textAlign: 'center',
@@ -714,19 +794,36 @@ backBtn: {
   top: 40,
   left: 16,
   zIndex: 10,
-  // backgroundColor: 'rgba(0,0,0,0.35)',
+  backgroundColor: 'rgba(0,0,0,0.35)',
   padding: 8,
   borderRadius: 20,
 },
 
-signupLink: {
-  fontWeight: '700',
-  color: '#000',
+
+heroImage: {
+  width: '100%',
+  height: SCREEN_HEIGHT * 0.42, // ↓ slightly smaller
 },
 
-  childName: { fontSize: 16, color: '#000', textAlign: 'center', paddingVertical: 12, borderBottomWidth: 1, borderColor: '#eee' },
+heroOverlay: {
+  position: 'absolute',
+  top: 0,
+  left: 0,
+  right: 0,
+  bottom: 0,
+  backgroundColor: 'rgba(0,0,0,0.18)', // softer
+},
 
-  logoWrapper: {
+// logoWrapper: {
+//   position: 'absolute',
+//   top: '30%', // ↑ feels more premium
+//   alignSelf: 'center',
+//   backgroundColor: 'rgba(255,255,255,0.92)', // cleaner
+//   paddingHorizontal: 32,
+//   paddingVertical: 16,
+//   borderRadius: 22,
+// },
+logoWrapper: {
   position: 'absolute',
   top: '30%',
   alignSelf: 'center',
@@ -741,14 +838,13 @@ logo: {
   height: 52,
 opacity: 0.85,
 },
-heroOverlay: {
-  position: 'absolute',
-  top: 0,
-  left: 0,
-  right: 0,
-  bottom: 0,
-  backgroundColor: 'rgba(0,0,0,0.18)', // softer
+
+signupLink: {
+  fontWeight: '700',
+  color: '#000',
 },
+
+  childName: { fontSize: 16, color: '#000', textAlign: 'center', paddingVertical: 12, borderBottomWidth: 1, borderColor: '#eee' },
 });
 
 

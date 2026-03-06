@@ -83,7 +83,7 @@ android {
         applicationId "com.mycoco"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 14
+        versionCode 18
         versionName "1.0"
     }
     // signingConfigs {

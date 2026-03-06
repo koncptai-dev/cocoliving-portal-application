@@ -96,39 +96,51 @@ const MyBookings = ({ navigation }: any) => {
               </View>
 
               {/* ACTION BUTTONS */}
-              <View style={styles.actionRow}>
-                {currentBooking.bookingType === "PREBOOK" &&
-                  currentBooking.paymentStatus === "PARTIAL" && (
-                    <PrimaryBtn
-                      title="Pay Remaining"
-                      onPress={() =>
-                        navigation.navigate("BookingDetails", {
-                          booking: currentBooking,
-                        })
-                      }
-                    />
-                  )}
+<View style={styles.actionRow}>
+  {currentBooking.bookingType === "PREBOOK" &&
+    currentBooking.paymentStatus === "PARTIAL" && (
+      <PrimaryBtn
+        title="Pay Remaining"
+        onPress={() =>
+          navigation.navigate("BookingDetails", {
+            booking: currentBooking,
+          })
+        }
+      />
+    )}
 
-                {currentBooking.bookingType === "BOOK" && (
-                  <PrimaryBtn
-                    title="Extend Stay"
-                    onPress={() =>
-                      navigation.navigate("BookingDetails", {
-                        booking: currentBooking,
-                      })
-                    }
-                  />
-                )}
+  {currentBooking.bookingType === "BOOK" && (
+    <PrimaryBtn
+      title="Extend Stay"
+      onPress={() =>
+        navigation.navigate("BookingDetails", {
+          booking: currentBooking,
+        })
+      }
+    />
+  )}
 
-                <OutlineBtn
-                  title="Cancel"
-                  onPress={() =>
-                    navigation.navigate("BookingDetails", {
-                      booking: currentBooking,
-                    })
-                  }
-                />
-              </View>
+  {/* SIGN CONTRACT BUTTON */}
+  {currentBooking?.contractStatus !== "SIGNED" && (
+    <PrimaryBtn
+      title="Sign Contract"
+      onPress={() =>
+        navigation.navigate("ContractSign", {
+          bookingId: currentBooking.id,
+        })
+      }
+    />
+  )}
+
+  <OutlineBtn
+    title="Cancel"
+    onPress={() =>
+      navigation.navigate("BookingDetails", {
+        booking: currentBooking,
+      })
+    }
+  />
+</View>
             </View>
           </View>
         )}

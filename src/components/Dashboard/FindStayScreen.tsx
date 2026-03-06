@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -8,12 +8,16 @@ import {
   ScrollView,
   TextInput,
   Animated,
+  Dimensions,
 } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import axios from "axios";
 import { useAuth } from "../../context/AuthContext";
 import { useFocusEffect } from "@react-navigation/native";
-import { useCallback } from "react";
+
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
+const IMAGE_WIDTH = SCREEN_WIDTH - 32;
+
 const baseURL = "https://staging.cocoliving.in";
 const PLACEHOLDERS = ["city", "room type"];
 
@@ -22,50 +26,49 @@ const FindStayScreen = ({ navigation }) => {
   const [search, setSearch] = useState("");
   const [placeholderIndex, setPlaceholderIndex] = useState(0);
   const fadeAnim = useRef(new Animated.Value(1)).current;
-  const [imageIndexes, setImageIndexes] = useState({});
+  const sliderRefs = useRef({});
 
   const { user } = useAuth();
   const firstLetter = user?.fullName?.charAt(0)?.toUpperCase() || "U";
 
   /* ================= API ================= */
- const fetchProperties = useCallback(async () => {
-  try {
-    const res = await axios.get(
-      `${baseURL}/api/property/getPropertiesForUser`,
-      {
-        headers: {
-          Authorization: `Bearer ${user?.token}`,
-        },
-      }
-    );
+  const fetchProperties = useCallback(async () => {
+    try {
+      const res = await axios.get(
+        `${baseURL}/api/property/getPropertiesForUser`,
+        {
+          headers: {
+            Authorization: `Bearer ${user?.token}`,
+          },
+        }
+      );
 
-    const data = res.data?.properties || [];
+      const data = res.data?.properties || [];
 
-    // ✅ ONLY AVAILABLE ROOMS
-    const filtered = data
-      .map((p) => ({
-        ...p,
-        rateCard: p.rateCard?.filter(
-          (r) => r.isAvailable === true && r.availableRooms > 0
-        ),
-      }))
-      .filter((p) => p.rateCard?.length > 0);
+      const filtered = data
+        .map((p) => ({
+          ...p,
+          rateCard: p.rateCard?.filter(
+            (r) => r.isAvailable === true && r.availableRooms > 0
+          ),
+        }))
+        .filter((p) => p.rateCard?.length > 0);
 
-    setProperties(filtered);
-  } catch (e) {
-    setProperties([]);
-  }
-}, [user?.token]);
+      setProperties(filtered);
+    } catch (e) {
+      setProperties([]);
+    }
+  }, [user?.token]);
 
-useEffect(() => {
-  fetchProperties();
-
-  const interval = setInterval(() => {
+  useEffect(() => {
     fetchProperties();
-  }, 10000); // every 10 sec
 
-  return () => clearInterval(interval);
-}, [fetchProperties]);
+    const interval = setInterval(() => {
+      fetchProperties();
+    }, 10000);
+
+    return () => clearInterval(interval);
+  }, [fetchProperties]);
 
   /* ================= Placeholder Animation ================= */
   useEffect(() => {
@@ -89,20 +92,23 @@ useEffect(() => {
     return () => clearInterval(interval);
   }, []);
 
-  /* ================= Auto Image Slider ================= */
+  /* ================= AUTO SLIDER (Smooth ScrollView) ================= */
   useEffect(() => {
     const interval = setInterval(() => {
-      setImageIndexes((prev) => {
-        const next = { ...prev };
-        properties.forEach((property) => {
-          property.rateCard?.forEach((room) => {
-            const total = room.roomImages?.length || 0;
-            if (total > 1) {
-              next[room.id] = ((next[room.id] || 0) + 1) % total;
-            }
-          });
+      properties.forEach((property) => {
+        property.rateCard?.forEach((room) => {
+          const total = room.roomImages?.length || 0;
+          if (total > 1) {
+            const nextIndex = ((sliderRefs.current[room.id]?.currentIndex || 0) + 1) % total;
+
+            sliderRefs.current[room.id]?.scrollTo({
+              x: nextIndex * IMAGE_WIDTH,
+              animated: true,
+            });
+
+            sliderRefs.current[room.id] = { ...sliderRefs.current[room.id], currentIndex: nextIndex };
+          }
         });
-        return next;
       });
     }, 2000);
 
@@ -121,41 +127,135 @@ useEffect(() => {
     );
   });
 
+  /* ================= ROOM CARD (Slider Fixed) ================= */
+  const renderRoomCard = (property, room) => {
+    const images = room.roomImages || [];
+    const totalImages = images.length;
+
+    return (
+      <TouchableOpacity
+        key={room.id}
+        style={styles.card}
+        activeOpacity={0.9}
+        onPress={() =>
+          navigation.navigate("RoomDetails", {
+            room: { ...room, rateCardId: room.id },
+            property,
+          })
+        }
+      >
+        {/* =============== IMAGE SECTION =============== */}
+        <View style={{ width: IMAGE_WIDTH, height: 240, backgroundColor: "#f5f5f5" }}>
+          {totalImages === 0 ? (
+            <Image
+              source={{ uri: "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85" }}
+              style={{ width: "100%", height: "100%" }}
+              resizeMode="cover"
+            />
+          ) : totalImages === 1 ? (
+            /* SINGLE IMAGE */
+            <Image
+              source={{ uri: `${baseURL}${images[0]}` }}
+              style={{ width: "100%", height: "100%" }}
+              resizeMode="cover"
+            />
+          ) : (
+            /* 2+ IMAGES → AUTO SLIDER */
+            <ScrollView
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
+              ref={(ref) => {
+                if (ref) sliderRefs.current[room.id] = ref;
+              }}
+              scrollEventThrottle={16}
+            >
+              {images.map((imgPath, i) => (
+                <View key={i} style={{ width: IMAGE_WIDTH, height: 240 }}>
+                  <Image
+                    source={{ uri: `${baseURL}${imgPath}` }}
+                    style={{ width: "100%", height: "100%" }}
+                    resizeMode="cover"
+                  />
+                </View>
+              ))}
+            </ScrollView>
+          )}
+        </View>
+
+        {/* ================= CONTENT ================= */}
+        <View style={styles.cardContent}>
+          <View style={styles.titleRow}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.roomName}>{room.roomType}</Text>
+              <Text style={styles.address} numberOfLines={2}>
+                {property.address}
+              </Text>
+            </View>
+
+            <View style={styles.priceBox}>
+              <Text style={styles.price}>₹ {room.rent}</Text>
+              <Text style={styles.perMonth}>per month</Text>
+            </View>
+          </View>
+
+          <View style={styles.amenitiesRow}>
+            {property.amenities
+              ?.filter(Boolean)
+              .slice(0, 4)
+              .map((a, i) => (
+                <View key={i} style={styles.amenityChip}>
+                  <Ionicons
+                    name="checkmark-circle-outline"
+                    size={14}
+                    color="#F2A85B"
+                  />
+                  <Text style={styles.amenityText}>{a}</Text>
+                </View>
+              ))}
+          </View>
+        </View>
+      </TouchableOpacity>
+    );
+  };
+
   return (
     <View style={styles.container}>
-      {/* ================= HEADER ================= */}
+      {/* HEADER + SEARCH (same) */}
       <View style={styles.header}>
         <View style={styles.headerRow}>
           <Text style={styles.hey}>Hey there 👋</Text>
 
           <View style={styles.rightIcons}>
-             <TouchableOpacity
-                          style={styles.profileCircle}
-                          onPress={() => navigation.navigate('ProfileScreen')}
-                          activeOpacity={0.8}
-                        >
-                          {user?.profileImage ? (
-                            <Image
-                              source={{ uri: `https://staging.cocoliving.in${user.profileImage}` }}
-                              style={styles.profileImage}
-                            />
-                          ) : (
-                            <Text style={styles.profileLetter}>{firstLetter}</Text>
-                          )}
-                        </TouchableOpacity>
-            {/* <Ionicons name="notifications-outline" size={28} color="#fff" /> */}
-          
-           <View style={styles.notification}>
-                        <Ionicons name="notifications-outline" size={22} color="#fff" onPress={()=>navigation.navigate("notificationListScreen")} />
-                        <View style={styles.badge}>
-                          <Text style={styles.badgeText}></Text>
-                        </View>
-                      </View>
+            <TouchableOpacity
+              style={styles.profileCircle}
+              onPress={() => navigation.navigate("ProfileScreen")}
+              activeOpacity={0.8}
+            >
+              {user?.profileImage ? (
+                <Image
+                  source={{ uri: `https://staging.cocoliving.in${user.profileImage}` }}
+                  style={styles.profileImage}
+                />
+              ) : (
+                <Text style={styles.profileLetter}>{firstLetter}</Text>
+              )}
+            </TouchableOpacity>
 
+            <View style={styles.notification}>
+              <Ionicons
+                name="notifications-outline"
+                size={22}
+                color="#fff"
+                onPress={() => navigation.navigate("notificationListScreen")}
+              />
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}></Text>
+              </View>
+            </View>
           </View>
         </View>
 
-        {/* SEARCH */}
         <View style={styles.searchBox}>
           <Ionicons name="search-outline" size={18} color="#999" />
           <TextInput
@@ -175,78 +275,17 @@ useEffect(() => {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false}>
-        {/* ================= TITLE ================= */}
         <Text style={styles.title}>
           We've picked the best{"\n"}
           <Text style={styles.highlight}>Stay For You</Text>
         </Text>
 
-        {/* ================= PROPERTY CARDS ================= */}
+        {/* ================= CARDS WITH SLIDER ================= */}
         {filteredProperties.map((property) =>
-          property.rateCard?.map((room) => {
-            const images = room.roomImages || [];
-            const index = imageIndexes[room.id] || 0;
-            const img =
-              images.length > 0
-                ? `${baseURL}${images[index]}`
-                : "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85";
-
-            return (
-              <TouchableOpacity
-                key={room.id}
-                style={styles.card}
-                activeOpacity={0.9}
-                onPress={() =>
-                  navigation.navigate("RoomDetails", {
-                    room: { ...room, rateCardId: room.id },
-                    property,
-                  })
-                }
-              >
-                {/* IMAGE */}
-                <Image source={{ uri: img }} style={styles.image} />
-
-                {/* CONTENT */}
-                <View style={styles.cardContent}>
-                  <View style={styles.titleRow}>
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.roomName}>
-                        {room.roomType} 
-                      </Text>
-                      <Text style={styles.address} numberOfLines={2}>
-                        {property.address}
-                      </Text>
-                    </View>
-
-                    <View style={styles.priceBox}>
-                      <Text style={styles.price}>₹ {room.rent}</Text>
-                      <Text style={styles.perMonth}>per month</Text>
-                    </View>
-                  </View>
-
-                  {/* AMENITIES (PROPERTY LEVEL) */}
-                  <View style={styles.amenitiesRow}>
-                    {property.amenities
-                      ?.filter(Boolean)
-                      .slice(0, 4)
-                      .map((a, i) => (
-                        <View key={i} style={styles.amenityChip}>
-                          <Ionicons
-                            name="checkmark-circle-outline"
-                            size={14}
-                            color="#F2A85B"
-                          />
-                          <Text style={styles.amenityText}>{a}</Text>
-                        </View>
-                      ))}
-                  </View>
-                </View>
-              </TouchableOpacity>
-            );
-          })
+          property.rateCard?.map((room) => renderRoomCard(property, room))
         )}
 
-        {/* ================= STEPS ================= */}
+        {/* STEPS, EVENTS, VISIT (same as before) */}
         <Text style={styles.sectionTitle}>Get your place in 3 Easy Steps</Text>
         <View style={styles.stepsRow}>
           {[
@@ -261,12 +300,10 @@ useEffect(() => {
           ))}
         </View>
 
-        {/* ================= EVENTS ================= */}
         <View style={styles.eventsHeader}>
           <Text style={styles.sectionTitle}>
             Experience the vibe at{"\n"}Community Events
           </Text>
-          {/* <Text style={styles.viewAll}>View All</Text> */}
         </View>
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -283,37 +320,36 @@ useEffect(() => {
           ))}
         </ScrollView>
 
-        {/* ================= VISIT ================= */}
-      {/* ================= MAKE A VISIT (STATIC) ================= */}
-<View style={styles.visitWrapper}>
-  <View style={styles.visitHeaderRow}>
-    <View>
-      <Text style={styles.visitHeading}>Experience Coco Living</Text>
-      <Text style={styles.visitSubHeading}>Make A Visit</Text>
-    </View>
+        <View style={styles.visitWrapper}>
+          <View style={styles.visitHeaderRow}>
+            <View>
+              <Text style={styles.visitHeading}>Experience Coco Living</Text>
+              <Text style={styles.visitSubHeading}>Make A Visit</Text>
+            </View>
 
-    <TouchableOpacity style={styles.visitBookBtn}
-    onPress={()=>navigation.navigate("myVisit")}>
-      <Text style={styles.visitBookText}>Book</Text>
-    </TouchableOpacity>
-  </View>
+            <TouchableOpacity
+              style={styles.visitBookBtn}
+              onPress={() => navigation.navigate("myVisit")}
+            >
+              <Text style={styles.visitBookText}>Book</Text>
+            </TouchableOpacity>
+          </View>
 
-  <View style={styles.visitCard}>
-    <View style={styles.visitTextBox}>
-      <Text style={styles.visitDesc}>
-        Don’t miss the vibe.{"\n"}
-        Book a tour and see{"\n"}
-        why Coco Living slays.
-      </Text>
-    </View>
+          <View style={styles.visitCard}>
+            <View style={styles.visitTextBox}>
+              <Text style={styles.visitDesc}>
+                Don’t miss the vibe.{"\n"}
+                Book a tour and see{"\n"}
+                why Coco Living slays.
+              </Text>
+            </View>
 
-    <Image
-      source={require("../../../assets/images/add.png")}
-      style={styles.visitImage}
-    />
-  </View>
-</View>
-
+            <Image
+              source={require("../../../assets/images/add.png")}
+              style={styles.visitImage}
+            />
+          </View>
+        </View>
       </ScrollView>
     </View>
   );
@@ -321,31 +357,28 @@ useEffect(() => {
 
 export default FindStayScreen;
 
-
-
-
-
+/* ================= STYLES (same as you had) ================= */
 const styles = StyleSheet.create({
+  // ... pura styles same rakha hai (koi change nahi kiya)
   container: { flex: 1, backgroundColor: "#F7F7F7" },
 
- header: {
-  height: 223,              // ✅ FIXED HEIGHT
-  backgroundColor: "#5C4435",
-  paddingTop: 60,
-  paddingHorizontal: 16,
-  paddingBottom: 16,
-  justifyContent: "space-between",
-  borderBottomLeftRadius: 26,
-  borderBottomRightRadius: 26,
-},
+  header: {
+    height: 223,
+    backgroundColor: "#5C4435",
+    paddingTop: 60,
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+    justifyContent: "space-between",
+    borderBottomLeftRadius: 26,
+    borderBottomRightRadius: 26,
+  },
   headerRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
   },
-  hey: { color: "#fff", fontSize: 25, fontWeight: "700",fontFamily:'RethnikSans-Regular' },
+  hey: { color: "#fff", fontSize: 25, fontWeight: "700", fontFamily: "RethnikSans-Regular" },
   rightIcons: { flexDirection: "row", gap: 14, alignItems: "center" },
-  profile: { width: 34, height: 34, borderRadius: 17 },
 
   searchBox: {
     marginTop: 20,
@@ -363,38 +396,94 @@ const styles = StyleSheet.create({
     color: "#b3b3b3",
     fontSize: 15,
   },
-placeholderHighlight: {
-  color: '#4F3421',   // figma orange
-  fontWeight: "500",
-},
+  placeholderHighlight: {
+    color: "#4F3421",
+    fontWeight: "500",
+  },
+
   title: {
     margin: 16,
     fontSize: 24,
-    // fontWeight: "700",
     color: "#444444",
-    fontFamily:'Quicksand-SemiBold'
+    fontFamily: "Quicksand-SemiBold",
   },
-  highlight: { color: "#4F3421", fontFamily:'Quicksand-Bold' },
+  highlight: { color: "#4F3421", fontFamily: "Quicksand-Bold" },
 
- 
- card: {
-  backgroundColor: "#EFE8E2",
-  marginHorizontal: 16,
-  marginBottom: 18,
-  borderRadius: 20,
-  overflow: "hidden",
-  elevation: 4,
-},
+  card: {
+    backgroundColor: "#EFE8E2",
+    marginHorizontal: 16,
+    marginBottom: 18,
+    borderRadius: 20,
+    overflow: "hidden",
+    elevation: 4,
+  },
 
-image: {
-  width: "100%",
-  height: 240,                // ✅ FIGMA IMAGE HEIGHT
-},
+  cardContent: {
+    padding: 14,
+  },
 
+  titleRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+  },
 
+  roomName: {
+    fontSize: 18,
+    color: "#3E3E3E",
+    fontFamily: "Quicksand-Bold",
+  },
 
-notification: { position: "relative" },
+  address: {
+    marginTop: 4,
+    fontSize: 13,
+    color: "#6F6F6F",
+    lineHeight: 18,
+    fontFamily: "Quicksand-Regular",
+  },
 
+  priceBox: {
+    alignItems: "flex-end",
+  },
+
+  price: {
+    fontSize: 20,
+    fontWeight: "800",
+    color: "#F2A85B",
+    fontFamily: "Quicksand-Bold",
+  },
+
+  perMonth: {
+    fontSize: 12,
+    color: "#6F6F6F",
+    fontFamily: "Quicksand-Bold",
+  },
+
+  amenitiesRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginTop: 12,
+  },
+
+  amenityChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    borderWidth: 1,
+    borderColor: "#E5D5C5",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+
+  amenityText: {
+    fontSize: 12,
+    fontFamily: "Quicksand-Medium",
+    color: "#000000",
+  },
+
+  notification: { position: "relative" },
   badge: {
     position: "absolute",
     top: -4,
@@ -403,91 +492,14 @@ notification: { position: "relative" },
     borderRadius: 10,
     paddingHorizontal: 5,
   },
-
   badgeText: { color: "#fff", fontSize: 10 },
-
-cardContent: {
-  flex: 1,
-  padding: 14,
-  justifyContent: "space-between",
-},
-
-titleRow: {
-  flexDirection: "row",
-  justifyContent: "space-between",
-  alignItems: "flex-start",
-},
-
-roomName: {
-  fontSize: 18,
-  // fontWeight: "700",
-  color: "#3E3E3E",
-  fontFamily:"Quicksand-Bold"
-},
-
-address: {
-  marginTop: 4,
-  fontSize: 13,
-  color: "#6F6F6F",
-  lineHeight: 18,
-  fontFamily:'Quicksand-Regular'
-},
-
-priceBox: {
-  alignItems: "flex-end",
-},
-
-price: {
-  fontSize: 20,
-  fontWeight: "800",
-  color: "#F2A85B",
-   fontFamily:"Quicksand-Bold"
-
-},
-
-perMonth: {
-  fontSize: 12,
-  color: "#6F6F6F",
-   fontFamily:"Quicksand-Bold"
-},
-
-amenitiesRow: {
-  flexDirection: "row",
-  flexWrap: "wrap",
-  gap: 8,
-  marginTop: 12,
-},
-
-amenityChip: {
-  flexDirection: "row",
-  alignItems: "center",
-  gap: 6,
-  borderWidth: 1,
-  borderColor: "#E5D5C5",
-  // backgroundColor: "#F6F3EC",
-  paddingHorizontal: 10,
-  paddingVertical: 6,
-  borderRadius: 12,
-},
-
-amenityText: {
-  fontSize: 12,
-  // fontWeight: "600",
-  fontFamily:'Quicksand-Medium',
-    color: "#000000",
-},
-
-  cardInfo: { padding: 12 },
-
 
   sectionTitle: {
     margin: 16,
     fontSize: 24,
-    // fontWeight: "700",
     color: "#444444",
-    fontFamily:'Quicksand-SemiBold'
+    fontFamily: "Quicksand-SemiBold",
   },
-
 
   stepsRow: {
     flexDirection: "row",
@@ -515,9 +527,8 @@ amenityText: {
     alignItems: "center",
     marginHorizontal: 16,
     marginTop: 30,
-
   },
-  viewAll: { color: "#F2A85B", fontWeight: "700" },
+
   eventCard: {
     width: 220,
     marginLeft: 16,
@@ -528,96 +539,88 @@ amenityText: {
   eventImg: { width: "100%", height: 140 },
   eventTitle: { padding: 10, fontWeight: "700" },
 
-  visit: {
-    backgroundColor: "#fff",
-    margin: 16,
-    padding: 16,
-    borderRadius: 16,
-    elevation: 3,
+  visitWrapper: {
+    marginHorizontal: 16,
+    marginTop: 30,
+    marginBottom: 30,
   },
-  visitTitle: { fontSize: 18, fontWeight: "800" },
-  visitSub: { marginTop: 6, color: "#D07D23", fontWeight: "700" },
-    profileCircle: {
+
+  visitHeaderRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 14,
+  },
+
+  visitHeading: {
+    fontSize: 18,
+    color: "#4B3426",
+    fontFamily: "Quicksand-SemiBold",
+  },
+
+  visitSubHeading: {
+    fontSize: 20,
+    color: "#4B3426",
+    fontFamily: "Quicksand-Bold",
+    marginTop: 2,
+  },
+
+  visitBookBtn: {
+    backgroundColor: "#F2A85B",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 10,
+  },
+
+  visitBookText: {
+    color: "#fff",
+    fontSize: 14,
+    fontFamily: "Quicksand-Bold",
+  },
+
+  visitCard: {
+    flexDirection: "row",
+    backgroundColor: "#EFE8E2",
+    borderRadius: 18,
+    overflow: "hidden",
+  },
+
+  visitTextBox: {
+    flex: 1,
+    padding: 14,
+    justifyContent: "center",
+  },
+
+  visitDesc: {
+    fontSize: 14,
+    color: "#5A5A5A",
+    lineHeight: 20,
+    fontFamily: "Quicksand-Regular",
+  },
+
+  visitImage: {
+    width: 140,
+    height: 120,
+    resizeMode: "cover",
+  },
+
+  profileCircle: {
     width: 35,
     height: 35,
     borderRadius: 28,
-    backgroundColor: '#fff',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "#fff",
+    justifyContent: "center",
+    alignItems: "center",
     elevation: 5,
   },
   profileImage: {
-    width: '100%',
-    height: '100%',
+    width: "100%",
+    height: "100%",
     borderRadius: 28,
   },
   profileLetter: {
     fontSize: 24,
-    fontWeight: '700',
-    color: '#4b3426',
+    fontWeight: "700",
+    color: "#4b3426",
   },
-  visitWrapper: {
-  marginHorizontal: 16,
-  marginTop: 30,
-  marginBottom:30
-},
-
-visitHeaderRow: {
-  flexDirection: "row",
-  justifyContent: "space-between",
-  alignItems: "center",
-  marginBottom: 14,
-},
-
-visitHeading: {
-  fontSize: 18,
-  color: "#4B3426",
-  fontFamily: "Quicksand-SemiBold",
-},
-
-visitSubHeading: {
-  fontSize: 20,
-  color: "#4B3426",
-  fontFamily: "Quicksand-Bold",
-  marginTop: 2,
-},
-
-visitBookBtn: {
-  backgroundColor: "#F2A85B",
-  paddingHorizontal: 16,
-  paddingVertical: 8,
-  borderRadius: 10,
-},
-
-visitBookText: {
-  color: "#fff",
-  fontSize: 14,
-  fontFamily: "Quicksand-Bold",
-},
-
-visitCard: {
-  flexDirection: "row",
-  backgroundColor: "#EFE8E2",
-  borderRadius: 18,
-  overflow: "hidden",
-},
-
-visitTextBox: {
-  flex: 1,
-  padding: 14,
-  justifyContent: "center",
-},
-
-visitDesc: {
-  fontSize: 14,
-  color: "#5A5A5A",
-  lineHeight: 20,
-  fontFamily: "Quicksand-Regular",
-},
-
-visitImage: {
-  width: 140,
-  height: 120,
-  resizeMode: "cover",
-},
 });

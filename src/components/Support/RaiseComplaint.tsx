@@ -166,8 +166,14 @@ const RaiseComplaint = () => {
       });
       console.log("Response of raising request: ",response)
 
-      Toast.show({ type: "success", text1: "Ticket Raised Success" });
-      navigation.goBack();
+      Toast.show({
+  type: "success",
+  text1: "Ticket Raised Successfully",
+});
+
+setTimeout(() => {
+  navigation.goBack();
+}, 800);
     } catch (error: any) {
       const message = error?.response?.data?.message || error?.message || "Unknown server error";
       Toast.show({ type: "error", text1: "Failed", text2: message });

@@ -155,11 +155,11 @@ const openWhatsApp = async () => {
         label="Gate Pass"
         onPress={() => navigation.navigate("GatePassScreen")}
       /> */}
-      <MenuItem
+      {/* <MenuItem
   icon="finger-print-outline"
   label="Sign Contract"
   onPress={() => navigation.navigate("ContractSign")}
-/>
+/> */}
       <MenuItem icon="settings-outline" label="Settings" onPress={()=>navigation.navigate("notificationSettingScreen")} />
     </>
   );
@@ -234,8 +234,10 @@ return (
         <View style={{ marginLeft: 14 }}>
           <Text style={styles.name}>{userName}</Text>
           <View style={styles.roleRow}>
-            <Text style={styles.role}>{userType}</Text>
-          </View>
+  <Text style={styles.role}>
+    {userType ? userType.charAt(0).toUpperCase() + userType.slice(1) : ""}
+  </Text>
+</View>
         </View>
       </View>
     </LinearGradient>

@@ -192,7 +192,7 @@ const ComplaintHistory = () => {
               </Text>
 
               <Text style={styles.status}>
-                Status: {item.status === "open" ? "Pending" : "Closed"}
+                Status: {item.status === "open" ? "Open" : "Closed"}
               </Text>
             </View>
 

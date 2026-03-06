@@ -29,63 +29,63 @@ const RoomDetailsScreen = ({ route, navigation }) => {
 
   const [activeIndex, setActiveIndex] = useState(0);
 
-const handleAction = (actionType) => {
+  const totalImages = gallery.length;
 
-  if (!user) return;
+  const handleAction = (actionType) => {
+    if (!user) return;
 
-  const { 
-    userType, 
-    parentName, 
-    parentMobile, 
-    parentEmail, 
-    foodPreference, 
-    allergies 
-  } = user;
+    const { 
+      userType, 
+      parentName, 
+      parentMobile, 
+      parentEmail, 
+      foodPreference, 
+      allergies 
+    } = user;
 
-  // ---------------- STUDENT CHECK ----------------
-  if (userType === "student") {
+    // ---------------- STUDENT CHECK ----------------
+    if (userType === "student") {
+      if (
+        !parentName ||
+        !parentMobile ||
+        !parentEmail ||
+        !foodPreference ||
+        !allergies
+      ) {
+        Toast.show({
+          type: "error",
+          text1: "Complete Student Profile",
+          text2: "Please fill parent details & food information before booking.",
+        });
 
-    if (
-      !parentName ||
-      !parentMobile ||
-      !parentEmail ||
-      !foodPreference ||
-      !allergies
-    ) {
-      Toast.show({
-        type: "error",
-        text1: "Complete Student Profile",
-        text2: "Please fill parent details & food information before booking.",
-      });
-
-      navigation.navigate("Profile"); // apna profile screen name confirm kar lena
-      return;
+        navigation.navigate("Profile");
+        return;
+      }
     }
-  }
 
-  // ---------------- PROFESSIONAL CHECK ----------------
-  if (userType === "professional") {
+    // ---------------- PROFESSIONAL CHECK ----------------
+    if (userType === "professional") {
+      if (!foodPreference || !allergies) {
+        Toast.show({
+          type: "error",
+          text1: "Complete Profile",
+          text2: "Please fill food preference & allergy details before booking.",
+        });
 
-    if (!foodPreference || !allergies) {
-      Toast.show({
-        type: "error",
-        text1: "Complete Profile",
-        text2: "Please fill food preference & allergy details before booking.",
-      });
-
-      navigation.navigate("Profile");
-      return;
+        navigation.navigate("Profile");
+        return;
+      }
     }
-  }
 
-  // ---------------- SUCCESS FLOW ----------------
-  navigation.navigate("SelectYourBed", {
-    room,
-    property,
-    rent: room.rent,
-    actionType: actionType,
-  });
-};
+    // ---------------- SUCCESS FLOW ----------------
+    navigation.navigate("SelectYourBed", {
+      room,
+      property,
+      rent: room.rent,
+      actionType: actionType,
+    });
+  };
+
   return (
     <View style={styles.container}>
       {/* ================= HEADER ================= */}
@@ -102,78 +102,91 @@ const handleAction = (actionType) => {
           <Ionicons name="chevron-back" size={26} color="#fff" />
         </TouchableOpacity>
 
-        <Text style={styles.headerTitle}>
-          {room.roomType} 
-        </Text>
+        <Text style={styles.headerTitle}>{room.roomType}</Text>
       </LinearGradient>
 
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 180 }}
       >
-        {/* ================= IMAGE SLIDER ================= */}
-       <View style={styles.sliderOuter}>
-           <View style={styles.sliderWrapper}>
-          <FlatList
-            data={gallery}
-            horizontal
-            pagingEnabled
-            showsHorizontalScrollIndicator={false}
-            keyExtractor={(_, i) => i.toString()}
-            onMomentumScrollEnd={(e) =>
-              setActiveIndex(
-                Math.round(e.nativeEvent.contentOffset.x / width)
-              )
-            }
-            renderItem={({ item }) => (
-              <Image source={{ uri: item }} style={styles.sliderImg} />
-            )}
-          />
-
-          <View style={styles.dotsRow}>
-            {gallery.map((_, i) => (
-              <View
-                key={i}
-                style={[styles.dot, i === activeIndex && styles.dotActive]}
+        {/* ================= IMAGE SLIDER (FIXED - Single + Multiple) ================= */}
+        <View style={styles.sliderOuter}>
+          <View style={styles.sliderWrapper}>
+            {totalImages === 0 ? (
+              /* No image - fallback */
+              <Image
+                source={{ uri: "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85" }}
+                style={styles.sliderImg}
+                resizeMode="cover"
               />
-            ))}
+            ) : totalImages === 1 ? (
+              /* SINGLE IMAGE - Normal Image */
+              <Image
+                source={{ uri: gallery[0] }}
+                style={styles.sliderImg}
+                resizeMode="cover"
+              />
+            ) : (
+              /* 2+ IMAGES - FlatList Slider + Dots */
+              <>
+                <FlatList
+                  data={gallery}
+                  horizontal
+                  pagingEnabled
+                  showsHorizontalScrollIndicator={false}
+                  keyExtractor={(_, i) => i.toString()}
+                  onMomentumScrollEnd={(e) =>
+                    setActiveIndex(
+                      Math.round(e.nativeEvent.contentOffset.x / width)
+                    )
+                  }
+                  renderItem={({ item }) => (
+                    <Image
+                      source={{ uri: item }}
+                      style={styles.sliderImg}
+                      resizeMode="cover"
+                    />
+                  )}
+                />
+
+                <View style={styles.dotsRow}>
+                  {gallery.map((_, i) => (
+                    <View
+                      key={i}
+                      style={[styles.dot, i === activeIndex && styles.dotActive]}
+                    />
+                  ))}
+                </View>
+              </>
+            )}
           </View>
         </View>
-        </View>
-       
 
         {/* ================= TITLE + PRICE ================= */}
         <View style={styles.infoRow}>
           <View style={styles.infoLeft}>
             <Text style={styles.title}>{room.roomType} Sharing Space</Text>
-          
 
-<TouchableOpacity
-  onPress={() => {
-    console.log("Address clicked:", property.address);
-
-    const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-      property.address
-    )}`;
-
-    Linking.openURL(url).catch(err =>
-      console.log("Map open error:", err)
-    );
-  }}
->
-  <Text
-    style={[
-      styles.address,
-      { color: "#2E86DE", textDecorationLine: "underline" },
-    ]}
-    numberOfLines={2}
-  >
-    <Ionicons name="location" size={12} /> {property.address}
-  </Text>
-</TouchableOpacity>
-
-
-
+            <TouchableOpacity
+              onPress={() => {
+                const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                  property.address
+                )}`;
+                Linking.openURL(url).catch((err) =>
+                  console.log("Map open error:", err)
+                );
+              }}
+            >
+              <Text
+                style={[
+                  styles.address,
+                  { color: "#2E86DE", textDecorationLine: "underline" },
+                ]}
+                numberOfLines={2}
+              >
+                <Ionicons name="location" size={12} /> {property.address}
+              </Text>
+            </TouchableOpacity>
           </View>
 
           <View style={styles.infoRight}>
@@ -195,7 +208,6 @@ const handleAction = (actionType) => {
         <View style={styles.servicesSection}>
           <View style={styles.servicesHeader}>
             <Text style={styles.servicesTitle}>Services</Text>
-            {/* <Text style={styles.viewAll}>View All</Text> */}
           </View>
 
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -213,12 +225,10 @@ const handleAction = (actionType) => {
         </View>
 
         {/* ================= LINKS ================= */}
-        {/* <TouchableOpacity style={styles.linkRow} onPress={()=>navigation.navigate("FoodMenu")}>
-          <Text style={styles.linkText}>Food Menu</Text>
-          <Ionicons name="chevron-forward" size={18} />
-        </TouchableOpacity> */}
-
-        <TouchableOpacity style={styles.linkRow} onPress={()=>navigation.navigate("CommunityRules")}>
+        <TouchableOpacity
+          style={styles.linkRow}
+          onPress={() => navigation.navigate("CommunityRules")}
+        >
           <Text style={styles.linkText}>Policies & House rules</Text>
           <Ionicons name="chevron-forward" size={18} />
         </TouchableOpacity>
@@ -234,11 +244,11 @@ const handleAction = (actionType) => {
         </View>
 
         <View style={{ gap: 10 }}>
-          <TouchableOpacity style={styles.bookBtn} onPress={() => handleAction('Book')}>
+          <TouchableOpacity style={styles.bookBtn} onPress={() => handleAction("Book")}>
             <Text style={styles.bookText}>Book</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.preBtn} onPress={() => handleAction('PreBook')}>
+          <TouchableOpacity style={styles.preBtn} onPress={() => handleAction("PreBook")}>
             <Text style={styles.preText}>Pre-book</Text>
           </TouchableOpacity>
         </View>
@@ -249,10 +259,10 @@ const handleAction = (actionType) => {
 
 export default RoomDetailsScreen;
 
-/* ================= STYLES ================= */
+/* ================= STYLES (same as before) ================= */
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f2f2f2"  },
+  container: { flex: 1, backgroundColor: "#f2f2f2" },
 
   /* HEADER */
   header: {
@@ -268,21 +278,21 @@ const styles = StyleSheet.create({
   headerTitle: {
     marginLeft: 10,
     fontSize: 18,
-   fontFamily:'Quicksand-Bold',
+    fontFamily: "Quicksand-Bold",
     color: "#fff",
-    textAlign:'center'
+    textAlign: "center",
   },
-sliderOuter: {
-  paddingHorizontal: 10,
-  marginTop: 10,
-},
+  sliderOuter: {
+    paddingHorizontal: 10,
+    marginTop: 10,
+  },
   /* SLIDER */
   sliderWrapper: {
-    // marginTop: -18,
-    borderRadius:10,
+    borderRadius: 10,
     overflow: "hidden",
   },
   sliderImg: { width, height: 300 },
+
   dotsRow: {
     position: "absolute",
     bottom: 10,
@@ -306,10 +316,15 @@ sliderOuter: {
   },
   infoLeft: { flex: 1, paddingRight: 10 },
   infoRight: { alignItems: "flex-end" },
-  title: { fontSize: 20, fontFamily:'Quicksand-Bold' , color:'#000000' },
-  address: { fontSize: 12, color: "#ac9478", marginTop: 6,fontFamily: "Quicksand-Medium", },
-  price: { fontSize: 20, fontFamily:'Quicksand-Bold',color:'#4f3421'},
-  perMonth: { fontSize: 14, color: "#616161",fontFamily:"Quicksand-Medium" },
+  title: { fontSize: 20, fontFamily: "Quicksand-Bold", color: "#000000" },
+  address: {
+    fontSize: 12,
+    color: "#ac9478",
+    marginTop: 6,
+    fontFamily: "Quicksand-Medium",
+  },
+  price: { fontSize: 20, fontFamily: "Quicksand-Bold", color: "#4f3421" },
+  perMonth: { fontSize: 14, color: "#616161", fontFamily: "Quicksand-Medium" },
 
   /* FACILITIES */
   facilityBox: {
@@ -329,7 +344,7 @@ sliderOuter: {
     paddingVertical: 6,
     borderRadius: 10,
   },
-  facilityText: { fontSize: 12, fontFamily:"Inter-Regular", color: "#000000" },
+  facilityText: { fontSize: 12, fontFamily: "Inter-Regular", color: "#000000" },
 
   /* SERVICES */
   servicesSection: { marginTop: 20 },
@@ -338,13 +353,11 @@ sliderOuter: {
     justifyContent: "space-between",
     paddingHorizontal: 16,
   },
-  servicesTitle: { fontSize: 16, fontFamily:'Quicksand-Bold'},
-  viewAll: { color: "#F4A85E" },
-
+  servicesTitle: { fontSize: 16, fontFamily: "Quicksand-Bold" },
   servicesRow: {
     flexDirection: "row",
-    gap:5,
-    paddingHorizontal:16 ,
+    gap: 5,
+    paddingHorizontal: 16,
     marginTop: 12,
   },
   serviceItem: { alignItems: "center", width: 80 },
@@ -363,7 +376,7 @@ sliderOuter: {
     marginTop: 6,
     textAlign: "center",
     color: "#3C2A1E",
-    fontFamily:"Quicksand-Bold"
+    fontFamily: "Quicksand-Bold",
   },
 
   /* LINKS */
@@ -392,8 +405,8 @@ sliderOuter: {
     borderColor: "#E8DCC6",
     backgroundColor: "#fff",
   },
-  bottomPrice: { fontSize: 24, fontFamily:"RethinkSans-Bold" },
-  deposit: { fontSize: 13, color: "#8c8c8c",fontFamily:"RethinkSans-Medium" },
+  bottomPrice: { fontSize: 24, fontFamily: "RethinkSans-Bold" },
+  deposit: { fontSize: 13, color: "#8c8c8c", fontFamily: "RethinkSans-Medium" },
 
   bookBtn: {
     backgroundColor: "#3C2A1E",
@@ -401,14 +414,23 @@ sliderOuter: {
     paddingVertical: 12,
     borderRadius: 30,
   },
-  bookText: { color: "#fff", fontFamily:"RethinkSans-ExtraBold",textAlign:'center',fontSize:16 },
+  bookText: {
+    color: "#fff",
+    fontFamily: "RethinkSans-ExtraBold",
+    textAlign: "center",
+    fontSize: 16,
+  },
 
   preBtn: {
     backgroundColor: "#F4A85E",
     paddingHorizontal: 24,
     paddingVertical: 10,
     borderRadius: 30,
-  
   },
-  preText: { color: "#fff", fontFamily:"RethinkSans-ExtraBold",textAlign:'center',fontSize:16 },
+  preText: {
+    color: "#fff",
+    fontFamily: "RethinkSans-ExtraBold",
+    textAlign: "center",
+    fontSize: 16,
+  },
 });
