@@ -82,27 +82,90 @@ const NotificationListScreen = () => {
  
     return () => clearInterval(interval);
   }, []);
+
+
+  // ReDirection
+const handleNotificationPress = async (notification) => {
+
+  if (notification.notificationKey === "booking") {
+
+    try {
+
+      const res = await axios.get(
+        `${baseURL}/api/book-room/getUserBookings?page=1&limit=20`,
+        {
+          headers: {
+            Authorization: `Bearer ${user.token}`,
+          },
+        }
+      );
+
+      const bookings = res.data?.bookings || [];
+
+      const today = new Date();
+
+      const currentBooking = bookings.find((b) => {
+        const status = b.displayStatus?.toLowerCase();
+        const checkIn = new Date(b.checkInDate);
+        const checkOut = b.checkOutDate ? new Date(b.checkOutDate) : null;
+
+        return (
+          ["approved", "active"].includes(status) &&
+          today >= checkIn &&
+          (checkOut ? today <= checkOut : true)
+        );
+      });
+
+      if (!currentBooking) {
+        Toast.show({
+          type: "info",
+          text1: "No active booking found",
+        });
+        return;
+      }
+
+      if (currentBooking.contractStatus === "SIGNED") {
+        Toast.show({
+          type: "info",
+          text1: "Contract already signed",
+        });
+        return;
+      }
+
+      navigation.navigate("ContractSign", {
+        bookingId: currentBooking.id,
+      });
+
+    } catch (error) {
+      console.log("Booking check failed:", error);
+    }
+  }
+};
  
   /* ---------------- RENDER ITEM ---------------- */
-  const renderItem = ({ item }) => (
-    <View style={styles.card}>
-      <View style={styles.iconWrap}>
-        <Ionicons
-          name="notifications-outline"
-          size={22}
-          color="#F4A261"
-        />
-      </View>
- 
-      <View style={styles.cardContent}>
-        <Text style={styles.title}>{item.title}</Text>
-        <Text style={styles.message}>{item.message}</Text>
-        <Text style={styles.date}>
-          {new Date(item.createdAt).toLocaleString()}
-        </Text>
-      </View>
+const renderItem = ({ item }) => (
+  <TouchableOpacity
+    style={styles.card}
+    activeOpacity={0.8}
+    onPress={() => handleNotificationPress(item)}
+  >
+    <View style={styles.iconWrap}>
+      <Ionicons
+        name="notifications-outline"
+        size={22}
+        color="#F4A261"
+      />
     </View>
-  );
+
+    <View style={styles.cardContent}>
+      <Text style={styles.title}>{item.title}</Text>
+      <Text style={styles.message}>{item.message}</Text>
+      <Text style={styles.date}>
+        {new Date(item.createdAt).toLocaleString()}
+      </Text>
+    </View>
+  </TouchableOpacity>
+);
  
   if (loading) {
     return (

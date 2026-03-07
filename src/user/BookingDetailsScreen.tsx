@@ -26,6 +26,31 @@ const BASE_URL = "https://staging.cocoliving.in";
 const MERCHANT_ID = "M23E2LC5I15OA_2511281216";
 const ENVIRONMENT = "SANDBOX";
 
+
+const getNextRentDueDate = (checkInDate, installmentsPaid) => {
+
+  const start = new Date(checkInDate);
+
+  const nextDue = new Date(start);
+  nextDue.setMonth(start.getMonth() + installmentsPaid);
+  nextDue.setDate(1);
+
+  return nextDue.toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "long",
+    year: "numeric"
+  });
+
+};
+
+const isPaymentWindowOpen = () => {
+
+  const today = new Date().getDate();
+
+  return today >= 1 && today <= 7;
+
+};
+
 /* =====================
    HELPERS
 ===================== */
@@ -50,7 +75,7 @@ const getQueryParam = (url: string, param: string) => {
 };
 
 const BookingDetailsScreen = ({ route }) => {
-  const booking = route?.params?.booking;
+  const [bookingData, setBookingData] = useState(route?.params?.booking);
   const { user } = useAuth();
   const token = user?.token;
 
@@ -65,24 +90,78 @@ const BookingDetailsScreen = ({ route }) => {
   const [extendMonths, setExtendMonths] = useState("");
   const [cancelReason, setCancelReason] = useState("");
 
+  const [depositLoading, setDepositLoading] = useState(false);
+const [monthlyPlanLoading, setMonthlyPlanLoading] = useState(false);
+const [monthlyRentLoading, setMonthlyRentLoading] = useState(false);
+
+
   const navigation = useNavigation();
+
+
+ //calculation of Installment progress
+const totalInstallments = bookingData.duration;
+const paidInstallments = bookingData.installmentsPaid;
+
+const nextRentDue = getNextRentDueDate(
+  bookingData.checkInDate,
+  paidInstallments
+);
+
+const paymentWindowOpen = isPaymentWindowOpen();
+
+// 🔥 IMPROVED NEXT RENT DUE + UNPAID MONTHS
+const today = new Date();
+const checkIn = new Date(bookingData.checkInDate);
+const monthsElapsed = Math.floor((today - checkIn) / (1000 * 60 * 60 * 24 * 30)) + 1;
+const unpaidMonths = monthsElapsed - bookingData.installmentsPaid;
+
+const canPayRent =
+  bookingData.monthlyPlanSelected &&
+  paymentWindowOpen &&
+  unpaidMonths > 0;
+
+// 🔥 LATE FEE CALCULATION (backend exact same)
+const calculateLateFeeAndTotal = () => {
+  if (!bookingData.monthlyPlanSelected) return { lateFee: 0, totalPayable: 0 };
+
+  const lastPaidMonth = bookingData.installmentsPaid;
+  const dueDate = new Date(checkIn);
+  dueDate.setMonth(dueDate.getMonth() + lastPaidMonth);
+  dueDate.setDate(7);
+
+  let lateFee = 0;
+  if (today > dueDate) {
+    const lateDays = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
+    const lateFeePerDay = bookingData.rateCard?.property?.lateFeePerDay || 100;
+    lateFee = lateDays * lateFeePerDay;
+  }
+
+  const monthlyRent = bookingData.monthlyRent || 0;
+  const totalPayable = monthlyRent + lateFee;
+
+  return { lateFee, totalPayable };
+};
+
+const { lateFee, totalPayable } = calculateLateFeeAndTotal();
+
+
 
   /* =====================
      FETCH DETAILS
   ===================== */
   useEffect(() => {
-    if (booking?.id) fetchDetails();
-  }, [booking]);
+    if (bookingData?.id) fetchDetails();
+  }, [bookingData]);
 
   const fetchDetails = async () => {
     try {
       const [paymentRes, extensionRes] = await Promise.all([
         axios.get(
-          `${BASE_URL}/api/booking-payments/${booking.id}/summary`,
+          `${BASE_URL}/api/booking-payments/${bookingData.id}/summary`,
           { headers: { Authorization: `Bearer ${token}` } }
         ),
         axios.get(
-          `${BASE_URL}/api/admin-booking/getExtension/${booking.id}`,
+          `${BASE_URL}/api/admin-booking/getExtension/${bookingData.id}`,
           { headers: { Authorization: `Bearer ${token}` } }
         ),
       ]);
@@ -135,6 +214,16 @@ const BookingDetailsScreen = ({ route }) => {
         }
       );
       console.log("✅ Initiate Response:", JSON.stringify(res.data, null, 2));
+
+    if (!res.data?.success) {
+
+  Toast.show({
+    type: "info",
+    text1: res.data?.message || "Payment cannot be initiated"
+  });
+  console.log("Response of failure payment: ",res.data?.message);
+  return;
+}
 
       // Extract base data
       merchantOrderId = res.data?.merchantOrderId;
@@ -221,11 +310,33 @@ const BookingDetailsScreen = ({ route }) => {
 
         console.log("Status:", state);
 
-        if (state === "SUCCESS" || state === "COMPLETED") {
-          Toast.show({ type: "success", text1: "Payment Successful" });
-          fetchDetails();
-          return;
-        }
+if (state === "SUCCESS" || state === "COMPLETED") {
+
+  Toast.show({ 
+    type: "success", 
+    text1: flowType === "Security Deposit" 
+      ? "Security Deposit Paid Successfully" 
+      : "Payment Successful" 
+  });
+
+  // 🔥 Security Deposit ke liye special update
+  if (flowType === "Security Deposit") {
+    setBookingData(prev => ({
+      ...prev,
+      securityDepositPaid: true
+    }));
+  } 
+  // Monthly Rent ke liye
+  else {
+    setBookingData(prev => ({
+      ...prev,
+      installmentsPaid: prev.installmentsPaid + 1
+    }));
+  }
+
+  fetchDetails();   // fresh data laao
+  return;
+}
 
         if (["FAILED", "DECLINED", "TIMED_OUT"].includes(state)) {
           Toast.show({ type: "error", text1: "Payment Failed" });
@@ -250,20 +361,132 @@ const BookingDetailsScreen = ({ route }) => {
   /* =====================
      ACTIONS
   ===================== */
-  const payRemaining = async () => {
-    console.log("\n=== Pay Remaining Pressed ===");
-    try {
-      setRemainingLoading(true);
-      await startPhonePeFlow(
-        "/api/booking-payments/initiate-remaining",
-        { bookingId: booking.id },
-        "Pay Remaining"
-      );
-    } catch {
-    } finally {
-      setRemainingLoading(false);
-    }
-  };
+ const payRemaining = async () => {
+  console.log("\n=== Pay Remaining Pressed ===");
+
+  try {
+
+    setRemainingLoading(true);
+
+    await startPhonePeFlow(
+      "/api/booking-payments/initiate-remaining",
+      { bookingId: bookingData.id },
+      "Pay Remaining"
+    );
+
+  } catch (err) {
+
+    console.log("❌ Pay Remaining Error:", err?.response?.data);
+
+    Toast.show({
+      type: "error",
+      text1: err?.response?.data?.message || "Failed to initiate remaining payment"
+    });
+
+  } finally {
+    setRemainingLoading(false);
+  }
+};
+
+  //pay security deposte
+const paySecurityDeposit = async () => {
+  try {
+    setDepositLoading(true);
+
+    await startPhonePeFlow(
+      "/api/booking-payments/initiate-security-deposit",
+      { bookingId: bookingData.id },
+      "Security Deposit"
+    );
+
+  } catch (err) {
+    console.log("❌ Security Deposit Error:", err?.response?.data);
+    Toast.show({
+      type: "error",
+      text1: err?.response?.data?.message || "Failed to initiate security deposit payment"
+    });
+  } finally {
+    setDepositLoading(false);
+  }
+};
+
+//monthly plan activate function
+const activateMonthlyPlan = async () => {
+
+  try {
+
+    setMonthlyPlanLoading(true);
+
+    const res = await axios.post(
+      `${BASE_URL}/api/booking-payments/initiate-remaining`,
+      {
+        bookingId: bookingData.id,
+        paymentMode: "MONTHLY"
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "x-client": "mobile"
+        }
+      }
+    );
+
+    console.log("Monthly plan response:", res.data);
+
+    Toast.show({
+      type: "success",
+      text1: res.data?.message || "Monthly plan activated"
+    });
+
+    // UI update
+    setBookingData(prev => ({
+      ...prev,
+      monthlyPlanSelected: true,
+      monthlyInstallment: prev.monthlyRent
+    }));
+
+  } catch (err) {
+
+    console.log("❌ Activate Monthly Plan Error:", err?.response?.data);
+
+    Toast.show({
+      type: "error",
+      text1: err?.response?.data?.message || "Failed to activate monthly plan"
+    });
+
+  } finally {
+    setMonthlyPlanLoading(false);
+  }
+
+};
+
+//pay monthky rent function 
+const payMonthlyRent = async () => {
+
+  try {
+
+    setMonthlyRentLoading(true);
+
+    await startPhonePeFlow(
+      "/api/booking-payments/initiate-monthly-rent",
+      { bookingId: bookingData.id },
+      "Monthly Rent"
+    );
+
+  } catch (err) {
+
+    console.log("❌ Monthly Rent Error:", err?.response?.data);
+
+    Toast.show({
+      type: "error",
+      text1: err?.response?.data?.message || "Failed to initiate monthly rent payment"
+    });
+
+  } finally {
+    setMonthlyRentLoading(false);
+  }
+
+};
 
   const requestExtension = async () => {
     console.log("\n=== Extend Pressed ===");
@@ -279,7 +502,7 @@ const BookingDetailsScreen = ({ route }) => {
       await startPhonePeFlow(
         "/api/booking-payments/initiate-extension",
         {
-          bookingId: booking.id,
+          bookingId: bookingData.id,
           months: Number(extendMonths),
         },
         "Extension"
@@ -294,7 +517,7 @@ const BookingDetailsScreen = ({ route }) => {
     try {
       setCancelLoading(true);
       await axios.post(
-        `${BASE_URL}/api/book-room/requestCancellation/${booking.id}`,
+        `${BASE_URL}/api/book-room/requestCancellation/${bookingData.id}`,
         { reason: cancelReason.trim() || null },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -318,13 +541,13 @@ const BookingDetailsScreen = ({ route }) => {
 
   const isExtendValid = extendMonths !== "" && /^\d+$/.test(extendMonths) && Number(extendMonths) >= 1;
 
-  const cancelRequestStatus = booking?.cancelRequestStatus || "NONE";
-  const canRequestCancel = booking?.status?.toLowerCase() === "approved" && ["NONE", "REJECTED"].includes(cancelRequestStatus);
+  const cancelRequestStatus = bookingData?.cancelRequestStatus || "NONE";
+  const canRequestCancel =bookingData?.status?.toLowerCase() === "approved" && ["NONE", "REJECTED"].includes(cancelRequestStatus);
 
   /* =====================
      UI SAFETY
   ===================== */
-  if (!booking) return <View style={styles.center}><Text>No booking data</Text></View>;
+  if (!bookingData) return <View style={styles.center}><Text>No booking data</Text></View>;
   if (loading) return <View style={styles.center}><ActivityIndicator size="large" color="#C97B63" /></View>;
 
   /* =====================
@@ -359,31 +582,194 @@ return (
       }}
     >
 
-      <InfoCard label="Property" value={booking.rateCard?.property?.name} />
-      <InfoCard label="Room Type" value={booking.rateCard?.roomType} />
-      <InfoCard label="Status" value={booking.displayStatus} />
+      <InfoCard label="Property" value={bookingData.rateCard?.property?.name} />
+      <InfoCard label="Room Type" value={bookingData.rateCard?.roomType} />
+      <InfoCard label="Status" value={bookingData.displayStatus} />
 
-      {paymentSummary && (
-        <View style={styles.card}>
-          <Text style={styles.section}>Payments</Text>
-          <Row
-            label="Remaining"
-            value={`₹${paymentSummary.totals?.remainingRupees}`}
-          />
-        </View>
-      )}
+     {paymentSummary && (
+  <View style={styles.card}>
+    <Text style={styles.section}>Payments</Text>
 
-      {/* PAY REMAINING */}
-      {booking.bookingType === "PREBOOK" && booking.paymentStatus === "PARTIAL" && (
-        <PrimaryButton
-          text={remainingLoading ? "Processing..." : "Pay Remaining Amount"}
-          onPress={payRemaining}
-          disabled={remainingLoading}
+    <Row
+  label="Installment Progress"
+  value={`${paidInstallments} / ${totalInstallments}`}
+/>
+<View style={styles.progressBarContainer}>
+
+  <View
+    style={[
+      styles.progressBarFill,
+      {
+        width: `${(paidInstallments / totalInstallments) * 100}%`
+      }
+    ]}
+  />
+
+</View>
+
+{/* <Row
+  label="Next Rent Due"
+  value={nextRentDue}
+/> */}
+
+    <Row
+      label="Remaining"
+      value={`₹${paymentSummary.totals?.remainingRupees}`}
+    />
+
+    <Row
+      label="Monthly Rent"
+      value={`₹${bookingData.monthlyRent}`}
+    />
+
+    <Row
+      label="Security Deposit"
+      value={bookingData.securityDepositPaid ? "Paid" : "Pending"}
+    />
+
+   {/* 🔥 Sirf tab dikhao jab Monthly Plan ACTIVE ho */}
+    {bookingData.monthlyPlanSelected && (
+      <>
+       <Row
+      label="Monthly Rent"
+      value={`₹${bookingData.monthlyRent}`}
+    />
+        <Row
+          label="Monthly Plan"
+          value="Active"
         />
-      )}
+        <Row
+          label="Installments Paid"
+          value={`${bookingData.installmentsPaid}`}
+        />
+
+      </>
+    )}
+
+  
+
+{/* <Row
+      label="Monthly Rent"
+      value={`₹${bookingData.monthlyRent}`}
+    /> */}
+
+    {/* Sirf late fee hone par dikhao */}
+    {lateFee > 0 && (
+      <>
+        <Row 
+          label="Late Fee (Penalty)" 
+          value={`₹${lateFee}`} 
+        />
+        <Row 
+          label="Total to Pay" 
+          value={`₹${totalPayable}`} 
+          style={{ fontFamily: "Quicksand-Bold", color: "#d32f2f" }} 
+        />
+      </>
+    )}
+
+    {bookingData.monthlyInstallment && (
+      <Row
+        label="Monthly Installment"
+        value={`₹${bookingData.monthlyInstallment}`}
+      />
+    )}
+
+    {bookingData.monthlyPlanSelected && (
+
+  <View style={styles.paymentWindow}>
+
+    {paymentWindowOpen ? (
+
+      <Text style={styles.windowOpen}>
+        Rent payment window is open (1st – 7th)
+      </Text>
+
+    ) : (
+
+      <Text style={styles.windowClosed}>
+        Rent payment window opens on 1st of next month
+      </Text>
+
+    )}
+
+  </View>
+
+  
+
+)}
+
+  </View>
+
+  
+)}
+
+
+{bookingData.monthlyPlanSelected &&
+ paymentWindowOpen === false &&
+ hasPendingInstallment && (
+
+  <Text style={styles.lateFeeWarning}>
+    Late fee may apply if payment is delayed.
+  </Text>
+
+)}
+      {/* PAY REMAINING */}
+     {bookingData.bookingType === "PREBOOK" && bookingData.contractStatus==="SIGNED" && (
+
+  <>
+  
+  {/* SECURITY DEPOSIT */}
+  {!bookingData.securityDepositPaid && (
+
+    <PrimaryButton
+      text={depositLoading ? "Processing..." : "Pay Security Deposit"}
+      onPress={paySecurityDeposit}
+      disabled={depositLoading}
+    />
+
+  )}
+
+  {/* AFTER DEPOSIT PAID */}
+  {bookingData.securityDepositPaid && !bookingData.monthlyPlanSelected && (
+
+    <>
+      <PrimaryButton
+        text={remainingLoading ? "Processing..." : "Pay Remaining Amount"}
+        onPress={payRemaining}
+        disabled={remainingLoading}
+      />
+        <Text style={styles.or}>OR</Text>
+      <PrimaryButton
+        text={monthlyPlanLoading ? "Processing..." : "Activate Monthly Plan"}
+        onPress={activateMonthlyPlan}
+        disabled={monthlyPlanLoading}
+      />
+    </>
+
+  )}
+
+  {/* MONTHLY PLAN ACTIVE */}
+{canPayRent && (
+
+  <PrimaryButton
+    text={monthlyRentLoading ? "Processing..." : "Pay Monthly Rent"}
+    onPress={payMonthlyRent}
+    disabled={monthlyRentLoading}
+  />
+
+)}
+
+  </>
+
+  
+
+)}
+
+
 
       {/* CANCELLATION REQUEST */}
-      {booking.status && ["approved", "cancelled"].includes(booking.status.toLowerCase()) && (
+      {bookingData.status && ["approved", "cancelled"].includes(bookingData.status.toLowerCase()) && (
         <View style={styles.card}>
           <Text style={styles.section}>Cancellation Request</Text>
 
@@ -417,7 +803,7 @@ return (
               Cancellation request approved.
               {"\n"}
               <Text style={{ fontFamily: "Quicksand-Bold" }}>
-                New checkout date: {booking.cancelEffectiveCheckOutDate || "N/A"}
+                New checkout date: {bookingData.cancelEffectiveCheckOutDate || "N/A"}
               </Text>
             </Text>
           )}
@@ -528,4 +914,37 @@ headerTitle: {
   input: { borderWidth: 1, borderColor: "#C9B297", borderRadius: 10, padding: 12, fontFamily: "Quicksand-Medium", marginBottom: 12 },
   btn: { backgroundColor: "#F6A452", paddingVertical: 14, borderRadius: 12, alignItems: "center" },
   btnText: { color: "#fff", fontFamily: "Quicksand-Bold", fontSize: 15 },
+  or:{textAlign:'center',padding:10,fontFamily:'Quicksand-Bold'},
+  progressBarContainer: {
+  height: 8,
+  backgroundColor: "#E0E0E0",
+  borderRadius: 10,
+  marginTop: 8,
+  overflow: "hidden"
+},
+
+progressBarFill: {
+  height: "100%",
+  backgroundColor: "#F6A452"
+},
+
+paymentWindow: {
+  marginTop: 10
+},
+
+windowOpen: {
+  color: "#2e7d32",
+  fontFamily: "Quicksand-Bold"
+},
+
+windowClosed: {
+  color: "#d32f2f",
+  fontFamily: "Quicksand-Bold"
+},
+
+lateFeeWarning: {
+  marginTop: 6,
+  color: "#ff6f00",
+  fontFamily: "Quicksand-Bold"
+},
 });
