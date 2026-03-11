@@ -18,6 +18,9 @@ import { useAuth } from '../context/AuthContext';
 import { WebView } from 'react-native-webview';
 import { useRoute } from "@react-navigation/native";
 import { Image, ScrollView } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import Toast from "react-native-toast-message";
+import Ionicons from 'react-native-vector-icons/Ionicons';
 
 
 /* ================== CONFIG ================== */
@@ -34,20 +37,30 @@ const buildPdfUrl = (path?: string | null) => {
 
 // Agreement:
 const AgreementScreen = ({ onAccept }: { onAccept: () => void }) => {
+  const navigation = useNavigation();
   return (
     <View style={styles.agreementContainer}>
       
-      <ScrollView
-        contentContainerStyle={styles.agreementContent}
-        showsVerticalScrollIndicator={false}
-      >
+    <View style={styles.logoRow}>
+  <TouchableOpacity
+    onPress={() => navigation.goBack()}
+    style={styles.backBtn}
+    activeOpacity={0.3}
+  >
+    <Ionicons name="chevron-back" size={25} color="#4b3426" />
+  </TouchableOpacity>
 
-        {/* LOGO */}
-        <Image
-          source={require('../../assets/images/cocoLogo.png')} // default path (tum baad me change kar dena)
-          style={styles.logo}
-          resizeMode="contain"
-        />
+  <Image
+    source={require('../../assets/images/cocoLogo.png')}
+    style={styles.logo}
+    resizeMode="contain"
+  />
+</View>
+
+<ScrollView
+  contentContainerStyle={styles.agreementContent}
+  showsVerticalScrollIndicator={false}
+>
 
         {/* TITLE */}
         <Text style={styles.agreementTitle}>
@@ -221,7 +234,7 @@ with courts in Ahmedabad having exclusive jurisdiction.
 
 const ContractSignScreen = () => {
   const { user } = useAuth();
-
+  const navigation = useNavigation();
   const tenantSignatureRef = useRef<any>(null);
   const guardianSignatureRef = useRef<any>(null);
   const route = useRoute();
@@ -242,7 +255,10 @@ const bookingIdFromRoute = route?.params?.bookingId;
   /* ================== FETCH CONTRACT ================== */
   const fetchContract = async () => {
     if (!bookingId) {
-      Alert.alert('Please enter booking ID');
+      Toast.show({
+  type: "error",
+  text1: "Booking ID required",
+});
       return;
     }
 
@@ -284,8 +300,13 @@ const saveSignature = async (signature: string, type: 'tenant' | 'guardian') => 
   }
 
   if (type === 'guardian') {
-    setGuardianSignaturePath(path);
-  }
+  setGuardianSignaturePath(path);
+
+  // guardian sign hone ke baad contract sign karo
+  setTimeout(() => {
+    signContract();
+  }, 300);
+}
 };
 
 
@@ -300,56 +321,85 @@ const saveSignature = async (signature: string, type: 'tenant' | 'guardian') => 
 // Agreement screen: 
 
   /* ================== SIGN CONTRACT ================== */
-  const signContract = async () => {
-   if (!tenantSignaturePath) {
-  Alert.alert("User signature required");
+const signContract = async (tenantPath = tenantSignaturePath) => {
+ if (!tenantPath) {
+  Toast.show({
+  type: "error",
+  text1: "User signature required",
+});
   return;
 }
 
 if (isStudent && !guardianSignaturePath) {
-  Alert.alert("Guardian signature required");
+Toast.show({
+  type: "error",
+  text1: "Guardian signature required",
+});
   return;
 }
 
     const formData = new FormData();
 
     formData.append('tenantSignature', {
-      uri: `file://${tenantSignaturePath}`,
+  uri: `file://${tenantPath}`,
       type: 'image/png',
       name: 'tenant_signature.png',
     } as any);
 
-  if (isStudent) {
+if (isStudent && guardianSignaturePath) {
   formData.append('guardianSignature', {
     uri: `file://${guardianSignaturePath}`,
     type: 'image/png',
     name: 'guardian_signature.png',
-  } as any);
+  });
 }
 
-    try {
-      setLoading(true);
+   try {
+  setLoading(true);
 
-      const res = await axios.post(
-        `${API_BASE}/contracts/${bookingId}/sign`,
-        formData,
-        {
-          headers: {
-            Authorization: `Bearer ${user?.token}`,
-            'Content-Type': 'multipart/form-data',
-          },
-        }
-      );
-
-      Alert.alert('Success', 'Contract signed successfully\nCheck your Email');
-
-      setSigned(true);
-      setContractUrl(buildPdfUrl(res.data?.fileUrl));
-    } catch (err: any) {
-      Alert.alert('Error', err?.response?.data?.message || 'Failed to sign contract');
-    } finally {
-      setLoading(false);
+  const res = await axios.post(
+    `${API_BASE}/contracts/${bookingId}/sign`,
+    formData,
+    {
+      headers: {
+        Authorization: `Bearer ${user?.token}`,
+        'Content-Type': 'multipart/form-data',
+      },
     }
+  );
+
+  Toast.show({
+  type: "success",
+  text1: "Contract signed successfully",
+  text2: "Check your email for the PDF",
+  visibilityTime: 4000,   // 4 seconds
+});
+
+setSigned(true);
+setContractUrl(buildPdfUrl(res.data?.fileUrl));
+
+setTimeout(() => {
+  navigation.reset({
+    index: 0,
+    routes: [{ name: "HomeTabs" }],
+  });
+}, 2000);
+
+} catch (err: any) {
+
+  console.log("SIGN CONTRACT ERROR:", err.response?.data || err.message);
+
+ Toast.show({
+  type: "error",
+  text1:
+    err?.response?.data?.message ||
+    err?.message ||
+    "Failed to sign contract",
+});
+
+} finally {
+  setLoading(false);
+}
   };
 
   /* ================== PDF VIEW ================== */
@@ -423,13 +473,15 @@ if (contractLoaded && step === 0) {
   if (step === 1) {
     return (
       <View style={styles.fullScreen}>
-        <Text style={styles.stepTitle}>
-{isStudent ? "Step 1 of 2" : "Step 1 of 1"}
-</Text>
+     <View style={styles.signatureHeader}>
+  <Text style={styles.stepTitle}>
+    {isStudent ? "Step 1 of 2" : "Step 1 of 1"}
+  </Text>
 
-<Text style={styles.stepSubtitle}>
-{isStudent ? "Tenant Signature" : "User Signature"}
-</Text>
+  <Text style={styles.stepSubtitle}>
+    {isStudent ? "Tenant Signature" : "User Signature"}
+  </Text>
+</View>
 
         <View style={styles.signatureFull}>
           <Signature
@@ -467,8 +519,10 @@ if (contractLoaded && step === 0) {
   /* ================== STEP 2: GUARDIAN SIGN ================== */
   return (
     <View style={styles.fullScreen}>
-      <Text style={styles.stepTitle}>Step 2 of 2</Text>
-      <Text style={styles.stepSubtitle}>Guardian Signature</Text>
+      <View style={styles.signatureHeader}>
+  <Text style={styles.stepTitle}>Step 2 of 2</Text>
+  <Text style={styles.stepSubtitle}>Guardian Signature</Text>
+</View>
 
       <View style={styles.signatureFull}>
         <Signature
@@ -516,7 +570,7 @@ const styles = StyleSheet.create({
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
 
   header: { padding: 20, backgroundColor: '#1E3A8A' },
-  headerTitle: { color: '#FFF', fontSize: 22, fontWeight: '700' },
+  headerTitle: { color: '#FFF', fontSize: 22, fontWeight: '700'  },
   headerSubtitle: { color: '#DCE3F1', marginTop: 4 },
 
   card: {
@@ -574,7 +628,17 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFF',
   },
 
-  row: { flexDirection: 'row', marginTop: 20 },
+row: { 
+  flexDirection: 'row',
+  marginTop: 20,
+  paddingBottom: Platform.OS === "android" ? 30 : 40
+},
+
+  signatureHeader: {
+  paddingTop: 40,   // punch hole safe spacing
+  paddingBottom: 10,
+  alignItems: "center",
+},
 
   secondaryBtn: {
     flex: 1,
@@ -594,12 +658,13 @@ const styles = StyleSheet.create({
   },
 
   signBtn: {
-    marginTop: 20,
-    padding: 16,
-    backgroundColor: '#16A34A',
-    borderRadius: 12,
-    alignItems: 'center',
-  },
+  marginTop: 20,
+  marginBottom: Platform.OS === "android" ? 30 : 40,
+  padding: 16,
+  backgroundColor: '#16A34A',
+  borderRadius: 12,
+  alignItems: 'center',
+},
 
   signText: { color: '#FFF', fontSize: 16, fontWeight: '700' },
 
@@ -611,15 +676,12 @@ const styles = StyleSheet.create({
 
 agreementContent: {
   padding: 20,
-  paddingBottom: 120,
+  paddingBottom: 160,
 },
 
 logo: {
-  width: 140,
-  height: 60,
-  alignSelf: "center",
-  marginTop: 20,
-  marginBottom: 16,
+  width: 120,
+  height: 50
 },
 
 agreementTitle: {
@@ -653,6 +715,8 @@ agreementFooter: {
   color: "#6B7280",
   textAlign: "center",
   marginTop: 10,
+  // paddingTop:10,
+  // bottom:0,
 },
 
 agreementButtonContainer: {
@@ -660,7 +724,9 @@ agreementButtonContainer: {
   bottom: 0,
   left: 0,
   right: 0,
-  padding: 20,
+  padding: 10,
+  paddingBottom:40,
+  // marginBottom:10,
   backgroundColor: "#F5F7FB",
   borderTopWidth: 1,
   borderColor: "#E5E7EB",
@@ -671,6 +737,20 @@ heading: {
   marginTop: 18,
   marginBottom: 6,
   color: "#111827",
+  
+},
+logoRow: {
+  height: 70,
+  justifyContent: "center",
+  alignItems: "center",
+  backgroundColor: "#F5F7FB",
+  marginTop:30,
+},
+backBtn: {
+  position: "absolute",
+  left: 20,
+  top: 22,
+  zIndex: 10
 },
 });
 

@@ -54,7 +54,7 @@ const BookingSuccessScreen = ({ route, navigation }) => {
           <View style={styles.card}>
             <Row label="Room Type" value={roomType} />
           <Row label="Check-in Date" value={formatDate(checkInDate)} />
-            <Row label="Duration" value={duration} />
+           <Row label="Duration" value={`${duration} month${duration > 1 ? "s" : ""}`} />
           </View>
 
           {/* Email / Phone Note */}

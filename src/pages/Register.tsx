@@ -153,10 +153,10 @@ const RegisterProfileScreen = ({ navigation, route }) => {
       return;
     }
 
-    if (!prefilledIdentifier) {
-      Toast.show({ type: 'error', text1: 'Missing prefilled identifier' });
-      return;
-    }
+    // if (!prefilledIdentifier) {
+    //   Toast.show({ type: 'error', text1: 'Missing prefilled identifier' });
+    //   return;
+    // }
 
     setLoading(true);
     try {

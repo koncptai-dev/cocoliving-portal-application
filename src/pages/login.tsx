@@ -203,10 +203,10 @@ useEffect(() => {
         console.log('HASH KEY:', hash);
 
         if (Platform.OS === 'android') {
-          ToastAndroid.show(
-            `App Hash: ${hash.join(', ')}`,
-            ToastAndroid.LONG
-          );
+          // ToastAndroid.show(
+          //   `App Hash: ${hash.join(', ')}`,
+          //   ToastAndroid.LONG
+          // );
         }
       } catch (e) {
         console.log('Hash error', e);
@@ -225,10 +225,6 @@ useEffect(() => {
     verifyOTP();
   }
 }, [otp, isAutoOtp, isOTPSent]);
-
-
-
-
 
 
 const handleOtpChange = (value: string) => {
@@ -637,10 +633,10 @@ const startFiveSecLoader = () => {
   onPress={() => navigation.navigate('Signup')}
   style={{ marginTop: 18 }}
 >
-  <Text style={styles.signupText}>
+  {/* <Text style={styles.signupText}>
     Don’t have an account?{' '}
     <Text style={styles.signupLink}>Sign up</Text>
-  </Text>
+  </Text> */}
 </TouchableOpacity>
 )}
 
