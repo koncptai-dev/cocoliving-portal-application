@@ -112,13 +112,23 @@ const paymentWindowOpen = isPaymentWindowOpen();
 // 🔥 IMPROVED NEXT RENT DUE + UNPAID MONTHS
 const today = new Date();
 const checkIn = new Date(bookingData.checkInDate);
-const monthsElapsed = Math.floor((today - checkIn) / (1000 * 60 * 60 * 24 * 30)) + 1;
-const unpaidMonths = monthsElapsed - bookingData.installmentsPaid;
+
+
+const monthsElapsed =
+  (today.getFullYear() - checkIn.getFullYear()) * 12 +
+  (today.getMonth() - checkIn.getMonth()) +
+  1;
+const unpaidMonths = Math.max(
+  monthsElapsed - bookingData.installmentsPaid,
+  0
+);
 
 const canPayRent =
   bookingData.monthlyPlanSelected &&
-  paymentWindowOpen &&
+  bookingData.securityDepositPaid &&
   unpaidMonths > 0;
+
+  
 
 // 🔥 LATE FEE CALCULATION (backend exact same)
 const calculateLateFeeAndTotal = () => {
@@ -550,6 +560,13 @@ const payMonthlyRent = async () => {
   if (!bookingData) return <View style={styles.center}><Text>No booking data</Text></View>;
   if (loading) return <View style={styles.center}><ActivityIndicator size="large" color="#C97B63" /></View>;
 
+  const isFirstInstallment = bookingData.installmentsPaid === 0;
+
+const showLateFee =
+  bookingData.monthlyPlanSelected &&
+  !isFirstInstallment &&
+  lateFee > 0;
+
   /* =====================
      UI
   ===================== */
@@ -586,40 +603,29 @@ return (
       <InfoCard label="Room Type" value={bookingData.rateCard?.roomType} />
       <InfoCard label="Status" value={bookingData.displayStatus} />
 
-     {paymentSummary && (
+ {paymentSummary && (
   <View style={styles.card}>
     <Text style={styles.section}>Payments</Text>
 
     <Row
-  label="Installment Progress"
-  value={`${paidInstallments} / ${totalInstallments}`}
-/>
-<View style={styles.progressBarContainer}>
-
-  <View
-    style={[
-      styles.progressBarFill,
-      {
-        width: `${(paidInstallments / totalInstallments) * 100}%`
-      }
-    ]}
-  />
-
-</View>
-
-{/* <Row
-  label="Next Rent Due"
-  value={nextRentDue}
-/> */}
-
-    <Row
-      label="Remaining"
-      value={`₹${paymentSummary.totals?.remainingRupees}`}
+      label="Installment Progress"
+      value={`${paidInstallments} / ${totalInstallments}`}
     />
 
+    <View style={styles.progressBarContainer}>
+      <View
+        style={[
+          styles.progressBarFill,
+          {
+            width: `${(paidInstallments / totalInstallments) * 100}%`,
+          },
+        ]}
+      />
+    </View>
+
     <Row
-      label="Monthly Rent"
-      value={`₹${bookingData.monthlyRent}`}
+      label="Remaining Amount"
+      value={`₹${paymentSummary.totals?.remainingRupees || 0}`}
     />
 
     <Row
@@ -627,93 +633,68 @@ return (
       value={bookingData.securityDepositPaid ? "Paid" : "Pending"}
     />
 
-   {/* 🔥 Sirf tab dikhao jab Monthly Plan ACTIVE ho */}
+    {/* Monthly Plan Details */}
     {bookingData.monthlyPlanSelected && (
       <>
-       <Row
-      label="Monthly Rent"
-      value={`₹${bookingData.monthlyRent}`}
-    />
         <Row
           label="Monthly Plan"
           value="Active"
         />
+
+        <Row
+          label="Monthly Installment"
+          value={`₹${bookingData.monthlyInstallment}`}
+        />
+
         <Row
           label="Installments Paid"
           value={`${bookingData.installmentsPaid}`}
         />
-
       </>
     )}
 
-  
-
-{/* <Row
-      label="Monthly Rent"
-      value={`₹${bookingData.monthlyRent}`}
-    /> */}
-
-    {/* Sirf late fee hone par dikhao */}
-    {lateFee > 0 && (
+    {/* Late Fee (only after first installment) */}
+    {showLateFee && (
       <>
-        <Row 
-          label="Late Fee (Penalty)" 
-          value={`₹${lateFee}`} 
+        <Row
+          label="Late Fee"
+          value={`₹${lateFee}`}
         />
-        <Row 
-          label="Total to Pay" 
-          value={`₹${totalPayable}`} 
-          style={{ fontFamily: "Quicksand-Bold", color: "#d32f2f" }} 
+
+        <Row
+          label="Total Payable"
+          value={`₹${totalPayable}`}
         />
       </>
     )}
 
-    {bookingData.monthlyInstallment && (
-      <Row
-        label="Monthly Installment"
-        value={`₹${bookingData.monthlyInstallment}`}
-      />
-    )}
-
+    {/* Payment Window Message */}
     {bookingData.monthlyPlanSelected && (
-
-  <View style={styles.paymentWindow}>
-
-    {paymentWindowOpen ? (
-
-      <Text style={styles.windowOpen}>
-        Rent payment window is open (1st – 7th)
-      </Text>
-
-    ) : (
-
-      <Text style={styles.windowClosed}>
-        Rent payment window opens on 1st of next month
-      </Text>
-
+      <View style={styles.paymentWindow}>
+        {paymentWindowOpen ? (
+          <Text style={styles.windowOpen}>
+            Rent payment window is open (1st – 7th)
+          </Text>
+        ) : (
+          <Text style={styles.windowClosed}>
+            Rent can still be paid. Late fee may apply.
+          </Text>
+        )}
+      </View>
     )}
-
   </View>
-
-  
-
 )}
 
-  </View>
-
-  
-)}
-
-
+{/* 
 {bookingData.monthlyPlanSelected &&
  paymentWindowOpen === false &&
- hasPendingInstallment && (
+(
 
-  <Text style={styles.lateFeeWarning}>
-    Late fee may apply if payment is delayed.
-  </Text>
+  // <Text style={styles.lateFeeWarning}>
+  //   Late fee may apply if payment is delayed.
+  // </Text>
 
-)}
+)} */}
       {/* PAY REMAINING */}
      {bookingData.bookingType === "PREBOOK" && bookingData.contractStatus==="SIGNED" && (
 

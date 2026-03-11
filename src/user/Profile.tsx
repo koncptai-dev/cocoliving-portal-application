@@ -222,10 +222,20 @@ const saveProfile = async () => {
     Toast.show({ type: "success", text1: "Profile Updated Successfully!" });
 
   } catch (e: any) {
-    console.log("UPDATE ERROR RESPONSE:", e.response?.data); // Isse enum error saaf dikhega
-    const msg = e.response?.data?.error || e.response?.data?.message || "Failed to update profile";
-    Toast.show({ type: "error", text1: msg });
+  console.log("UPDATE ERROR RESPONSE:", e.response?.data);
+
+  let msg = e.response?.data?.error || e.response?.data?.message || "Failed to update profile";
+
+  // 🔴 Parent validation error ko replace karo
+  if (msg.includes("parentMobile")) {
+    msg = "Parents Details Required";
   }
+
+  Toast.show({
+    type: "error",
+    text1: msg,
+  });
+}
 };
 
   return (

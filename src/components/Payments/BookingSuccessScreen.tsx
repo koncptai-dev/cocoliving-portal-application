@@ -20,6 +20,18 @@ const BookingSuccessScreen = ({ route, navigation }) => {
     userPhone,
   } = route.params || {};
 
+  const formatDate = (dateString) => {
+  if (!dateString) return "";
+
+  const date = new Date(dateString);
+
+  return date.toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+};
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -41,7 +53,7 @@ const BookingSuccessScreen = ({ route, navigation }) => {
           {/* Booking Details */}
           <View style={styles.card}>
             <Row label="Room Type" value={roomType} />
-            <Row label="Check-in Date" value={checkInDate} />
+          <Row label="Check-in Date" value={formatDate(checkInDate)} />
             <Row label="Duration" value={duration} />
           </View>
 
@@ -108,9 +120,16 @@ const Row = ({ label, value, highlight }) => (
 export default BookingSuccessScreen;
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff" },
-  scrollContent: { flexGrow: 1, padding: 22 },
-  content: { alignItems: "center" },
+content: {
+  alignItems: "center",
+  paddingTop: 40
+},
+scrollContent: {
+  flexGrow: 1,
+  padding: 22,
+  paddingBottom: 40
+},
+ 
   title: { fontSize: 24, fontFamily:'Quicksand-Bold', color: "#4f3421", marginTop: 20 },
   subtitle: { fontSize: 14, color: "#8c8c8c",fontFamily:'Quicksand-Regular', marginBottom: 20 },
   card: {

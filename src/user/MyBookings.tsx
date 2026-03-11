@@ -98,7 +98,7 @@ const MyBookings = ({ navigation }: any) => {
               {/* ACTION BUTTONS */}
 <View style={styles.actionRow}>
   {currentBooking.bookingType === "PREBOOK" &&
-    currentBooking.paymentStatus === "PARTIAL" && (
+    currentBooking.paymentStatus === "PARTIAL" && currentBooking.contractStatus==="SIGNED" && (
       <PrimaryBtn
         title="Pay Remaining"
         onPress={() =>

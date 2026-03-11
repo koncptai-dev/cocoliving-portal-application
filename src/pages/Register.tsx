@@ -160,9 +160,10 @@ const RegisterProfileScreen = ({ navigation, route }) => {
 
     setLoading(true);
     try {
-      await axios.post(SIGNUP_SEND_OTP, { identifier: prefilledIdentifier });
+    const res=  await axios.post(SIGNUP_SEND_OTP, { identifier: prefilledIdentifier });
 
       setOtpSent(true);
+      console.log("Response of send otp: ",otp)
       Toast.show({
         type: 'success',
         text1: `OTP sent to your ${prefilledMedium === 'phone' ? 'mobile' : 'email'}`,
@@ -247,14 +248,28 @@ const handleSubmitProfile = async () => {
     } catch (e: any) {
   console.log("===== REGISTER ERROR START =====");
 
+  let errorMessage = "Registration failed";
+
   if (e.response) {
     console.log("Status:", e.response.status);
     console.log("Headers:", e.response.headers);
     console.log("Data:", JSON.stringify(e.response.data, null, 2));
-  } else if (e.request) {
+
+    // 🔴 Backend validation error
+    if (e.response.data?.errors?.length > 0) {
+      errorMessage = e.response.data.errors[0].msg;
+    } 
+    // 🔴 Normal message
+    else if (e.response.data?.message) {
+      errorMessage = e.response.data.message;
+    }
+  } 
+  else if (e.request) {
     console.log("No response received:", e.request);
-  } else {
+  } 
+  else {
     console.log("Error message:", e.message);
+    errorMessage = e.message;
   }
 
   console.log("Full error object:", e);
@@ -262,7 +277,7 @@ const handleSubmitProfile = async () => {
 
   Toast.show({
     type: 'error',
-    text1: e?.response?.data?.message || e.message || 'Registration failed',
+    text1: errorMessage,
   });
 } finally {
       setLoading(false);
