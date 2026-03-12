@@ -246,11 +246,11 @@ const bookingIdFromRoute = route?.params?.bookingId;
   const [signed, setSigned] = useState(false);
   const [contractUrl, setContractUrl] = useState<string | null>(null);
 
-  const [tenantSignaturePath, setTenantSignaturePath] = useState<string | null>(null);
-  const [guardianSignaturePath, setGuardianSignaturePath] = useState<string | null>(null);
+ const [step, setStep] = useState(0);
+const [tenantSignaturePath, setTenantSignaturePath] = useState(null);
+const [guardianSignaturePath, setGuardianSignaturePath] = useState(null);
 
-  const [step, setStep] = useState<0 | 1 | 2>(0);
-  const isStudent = user?.userType === "student";
+const isStudent = user?.userType === "student";
 
   /* ================== FETCH CONTRACT ================== */
   const fetchContract = async () => {
@@ -281,31 +281,29 @@ const bookingIdFromRoute = route?.params?.bookingId;
   };
      
   /* ================== SAVE SIGNATURE ================== */
-const saveSignature = async (signature: string, type: 'tenant' | 'guardian') => {
-  const base64Data = signature.replace('data:image/png;base64,', '');
+const saveSignature = async (signature, type) => {
+  const base64Data = signature.replace("data:image/png;base64,", "");
   const path = `${RNFS.DocumentDirectoryPath}/${type}_signature.png`;
-  await RNFS.writeFile(path, base64Data, 'base64');
 
-  if (type === 'tenant') {
+  await RNFS.writeFile(path, base64Data, "base64");
+
+  if (type === "tenant") {
+
     setTenantSignaturePath(path);
+    tenantSignatureRef.current?.clearSignature();
 
     if (isStudent) {
-      setTimeout(() => setStep(2), 300); // guardian signature screen
+      setStep(2);
     } else {
-      // professional case → directly sign contract
-      setTimeout(() => {
-        signContract(path);
-      }, 300);
+      signContract(path);
     }
   }
 
-  if (type === 'guardian') {
-  setGuardianSignaturePath(path);
+if (type === "guardian") {
 
-  // guardian sign hone ke baad contract sign karo
-  setTimeout(() => {
-    signContract();
-  }, 300);
+  setGuardianSignaturePath(path);
+  guardianSignatureRef.current?.clearSignature();
+
 }
 };
 
@@ -321,86 +319,85 @@ const saveSignature = async (signature: string, type: 'tenant' | 'guardian') => 
 // Agreement screen: 
 
   /* ================== SIGN CONTRACT ================== */
-const signContract = async (tenantPath = tenantSignaturePath) => {
- if (!tenantPath) {
-  Toast.show({
-  type: "error",
-  text1: "User signature required",
-});
-  return;
-}
+const signContract = async (
+  tenantPath = tenantSignaturePath,
+  guardianPath = guardianSignaturePath
+) => {
 
-if (isStudent && !guardianSignaturePath) {
-Toast.show({
-  type: "error",
-  text1: "Guardian signature required",
-});
-  return;
-}
+  if (!tenantPath) {
+    Toast.show({
+      type: "error",
+      text1: "User signature required",
+    });
+    return;
+  }
 
-    const formData = new FormData();
+  if (isStudent && !guardianSignaturePath) {
+    Toast.show({
+      type: "error",
+      text1: "Guardian signature required",
+    });
+    return;
+  }
 
-    formData.append('tenantSignature', {
-  uri: `file://${tenantPath}`,
-      type: 'image/png',
-      name: 'tenant_signature.png',
-    } as any);
+  const formData = new FormData();
 
-if (isStudent && guardianSignaturePath) {
-  formData.append('guardianSignature', {
-    uri: `file://${guardianSignaturePath}`,
-    type: 'image/png',
-    name: 'guardian_signature.png',
+  formData.append("tenantSignature", {
+    uri: `file://${tenantPath}`,
+    type: "image/png",
+    name: "tenant_signature.png",
+  });
+
+ if (isStudent && guardianPath) {
+  formData.append("guardianSignature", {
+    uri: `file://${guardianPath}`,
+    type: "image/png",
+    name: "guardian_signature.png",
   });
 }
 
-   try {
-  setLoading(true);
+  try {
 
-  const res = await axios.post(
-    `${API_BASE}/contracts/${bookingId}/sign`,
-    formData,
-    {
-      headers: {
-        Authorization: `Bearer ${user?.token}`,
-        'Content-Type': 'multipart/form-data',
-      },
-    }
-  );
+    setLoading(true);
 
-  Toast.show({
-  type: "success",
-  text1: "Contract signed successfully",
-  text2: "Check your email for the PDF",
-  visibilityTime: 4000,   // 4 seconds
-});
+    const res = await axios.post(
+      `${API_BASE}/contracts/${bookingId}/sign`,
+      formData,
+      {
+        headers: {
+          Authorization: `Bearer ${user?.token}`,
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
 
-setSigned(true);
-setContractUrl(buildPdfUrl(res.data?.fileUrl));
+    Toast.show({
+      type: "success",
+      text1: "Contract signed successfully",
+      text2: "Check your email for the PDF",
+      visibilityTime: 6000,
+    });
 
-setTimeout(() => {
-  navigation.reset({
-    index: 0,
-    routes: [{ name: "HomeTabs" }],
-  });
-}, 2000);
+    setTimeout(() => {
+      navigation.reset({
+        index: 0,
+        routes: [{ name: "HomeTabs" }],
+      });
+    }, 1000);
 
-} catch (err: any) {
+  } catch (err) {
 
-  console.log("SIGN CONTRACT ERROR:", err.response?.data || err.message);
+    Toast.show({
+      type: "error",
+      text1:
+        err?.response?.data?.message ||
+        "Failed to sign contract",
+    });
 
- Toast.show({
-  type: "error",
-  text1:
-    err?.response?.data?.message ||
-    err?.message ||
-    "Failed to sign contract",
-});
-
-} finally {
-  setLoading(false);
-}
-  };
+  } finally {
+    setLoading(false);
+  }
+};
 
   /* ================== PDF VIEW ================== */
   if (signed && contractUrl) {
@@ -505,12 +502,12 @@ if (contractLoaded && step === 0) {
             <Text>Clear</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.successBtn}
-            onPress={() => tenantSignatureRef.current?.readSignature()}
-          >
-            <Text style={{ color: '#fff' }}>Save & Continue</Text>
-          </TouchableOpacity>
+         <TouchableOpacity
+  style={styles.successBtn}
+  onPress={() => tenantSignatureRef.current?.readSignature()}
+>
+  <Text style={{color:"#fff"}}>Save & Continue</Text>
+</TouchableOpacity>
         </View>
       </View>
     );
@@ -545,19 +542,24 @@ if (contractLoaded && step === 0) {
           <Text>Clear</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.successBtn}
-          onPress={() => guardianSignatureRef.current?.readSignature()}
-        >
-          <Text style={{ color: '#fff' }}>Save</Text>
-        </TouchableOpacity>
+       <TouchableOpacity
+  style={styles.successBtn}
+  onPress={() => guardianSignatureRef.current?.readSignature()}
+>
+  <Text style={{color:"#fff"}}>Save</Text>
+</TouchableOpacity>
       </View>
 
-      {guardianSignaturePath && (
-        <TouchableOpacity style={styles.signBtn} onPress={signContract}>
-          <Text style={styles.signText}>Submit Contract</Text>
-        </TouchableOpacity>
-      )}
+      
+       <TouchableOpacity
+  style={styles.signBtn}
+  onPress={() =>
+  signContract(tenantSignaturePath, guardianSignaturePath)
+}
+>
+  <Text style={styles.signText}>Submit Contract</Text>
+</TouchableOpacity>
+   
     </View>
   );
 };

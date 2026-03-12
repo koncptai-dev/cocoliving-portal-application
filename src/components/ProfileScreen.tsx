@@ -160,7 +160,7 @@ const openWhatsApp = async () => {
   label="Sign Contract"
   onPress={() => navigation.navigate("ContractSign")}
 /> */}
-      <MenuItem icon="settings-outline" label="Settings" onPress={()=>navigation.navigate("notificationSettingScreen")} />
+      {/* <MenuItem icon="settings-outline" label="Settings" onPress={()=>navigation.navigate("notificationSettingScreen")} /> */}
     </>
   );
 

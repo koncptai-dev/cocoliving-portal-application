@@ -62,7 +62,7 @@ const BookingSuccessScreen = ({ route, navigation }) => {
             <Text style={styles.emailText}>
               Booking details have been sent to{"\n"}
               <Text style={{ fontFamily:'Quicksand-Bold', }}>
-                {userPhone} | {userEmail}
+               {userEmail}
               </Text>
             </Text>
           </View>
@@ -79,21 +79,21 @@ const BookingSuccessScreen = ({ route, navigation }) => {
     <Ionicons name="arrow-forward" size={20} color="#3C2A1E" />
   </TouchableOpacity>
 
-  <TouchableOpacity
+  {/* <TouchableOpacity
     style={styles.secondaryBtn}
     onPress={() => navigation.navigate("MyBookings")}
   >
     <Text style={styles.secondaryBtnText}>View My Bookings</Text>
     <Ionicons name="arrow-forward" size={20} color="#3C2A1E" />
-  </TouchableOpacity>
+  </TouchableOpacity> */}
 
-  <TouchableOpacity
+  {/* <TouchableOpacity
     style={styles.secondaryBtn}
     onPress={() => navigation.navigate("Amenities")}
   >
     <Text style={styles.secondaryBtnText}>Explore Amenities</Text>
     <Ionicons name="arrow-forward" size={20} color="#3C2A1E" />
-  </TouchableOpacity>
+  </TouchableOpacity> */}
 
 </View>
         </View>

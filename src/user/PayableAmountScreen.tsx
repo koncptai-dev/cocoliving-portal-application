@@ -6,6 +6,7 @@ import {
   Image,
   ScrollView,
   TouchableOpacity,
+  TextInput,   // 👈 यह missing है
 } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import axios from "axios";
@@ -43,6 +44,81 @@ const PayableAmountScreen = ({ route, navigation }) => {
   const { user } = useAuth();
   const token = user?.token;
   const [loading, setLoading] = useState(false);
+  const [couponCode , setCouponCode] = useState("");
+  const [couponLoading , setCouponLoading] = useState(false);
+  const [discountType , setDiscountType] = useState(null);
+  const [discount ,setDiscount] = useState(0);
+
+
+  // Function to apply coupon
+  const applyCoupon = async () => {
+  if (!couponCode.trim()) {
+    Toast.show({
+      type: "error",
+      text1: "Enter coupon code",
+    });
+    return;
+  }
+
+  try {
+    setCouponLoading(true);
+
+    const res = await axios.post(
+      "https://staging.cocoliving.in/api/coupons/validate",
+      {
+        code: couponCode.trim(),
+        propertyId: room.propertyId,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    const data = res.data;
+    console.log("response: ",data)
+
+if (!data?.coupon?.discountValue) {
+  Toast.show({
+    type: "error",
+    text1: "Invalid Coupon",
+  });
+  return;
+}
+
+const value = Number(data.coupon.discountValue);
+const type = data.coupon.discountType.toUpperCase(); // normalize
+
+setDiscount(value);
+setDiscountType(type);
+
+Toast.show({
+  type: "success",
+  text1: "Coupon applied successfully",
+});
+
+    setDiscount(value);
+    setDiscountType(type);
+
+    Toast.show({
+      type: "success",
+      text1: "Coupon applied successfully",
+    });
+
+  } catch (err) {
+
+  const backendMessage =
+    err?.response?.data?.message || "Something went wrong";
+
+  Toast.show({
+    type: "error",
+    text1: backendMessage,
+  });
+
+}
+};
+
 
   /* =====================
      CALCULATIONS
@@ -81,6 +157,7 @@ const PayableAmountScreen = ({ route, navigation }) => {
       const payload = {
         userId: Number(user.id),
         bookingType: actionType === "PreBook" ? "PREBOOK" : "BOOK",
+          couponCode: discount > 0 ? couponCode : null,
        metadata: {
   rateCardId: room.rateCardId,
   propertyId: room.propertyId,
@@ -89,11 +166,13 @@ const PayableAmountScreen = ({ route, navigation }) => {
   duration: monthsNumber,
   monthlyRent: rent,
 
+
   // ✅ PREFERENCES (MISSING PART)
   preferredFloor: preferredFloor ?? null,
   preferredRoomNumber: preferredRoomNumber ?? null,
   preferredBed: preferredBed ?? null,
 },
+
         clientType: "mobile",
       };
       console.log("Payload which will sent: ",payload)
@@ -188,7 +267,7 @@ const PayableAmountScreen = ({ route, navigation }) => {
             name: "BookingSuccessScreen",
             params: {
               bookingId: statusRes.data.bookingId || tx?.bookingId,
-              amountPaid: finalPayable,
+              amountPaid: discountedAmount,
               transactionId: merchantOrderId,
               userEmail: user.email,
               userPhone: user.phone,
@@ -215,7 +294,7 @@ const PayableAmountScreen = ({ route, navigation }) => {
           name: "PaymentFailedScreen",
           params: {
             transactionId: merchantOrderId,
-            amount: finalPayable,
+            amount: discountedAmount,
             reason: "Payment Failed",
           },
         },
@@ -234,7 +313,7 @@ const PayableAmountScreen = ({ route, navigation }) => {
         console.log("[PhonePe] Polling timeout");
         navigation.replace("PaymentFailedScreen", {
           transactionId: merchantOrderId,
-          amount: finalPayable,
+          amount: discountedAmount,
           reason: "Timeout while waiting for status. Check My Bookings later.",
         });
       }
@@ -286,7 +365,7 @@ const PayableAmountScreen = ({ route, navigation }) => {
 
   navigation.replace("PaymentFailedScreen", {
     transactionId: merchantOrderId || "unknown",
-    amount: finalPayable,
+    amount: discountedAmount,
     reason: backendMessage,
   });
 
@@ -295,6 +374,20 @@ const PayableAmountScreen = ({ route, navigation }) => {
       console.log("[PhonePe] Flow ended");
     }
   };
+
+  // Calculation related to coupon
+  let discountedAmount = finalPayable;
+
+if (discountType === "PERCENTAGE") {
+  discountedAmount = finalPayable - (finalPayable * discount) / 100;
+}
+
+if (discountType === "AMOUNT") {
+  discountedAmount = finalPayable - discount;
+}
+
+if (discountedAmount < 0) discountedAmount = 0;
+
 
   /* =====================
      UI (full detailed version)
@@ -384,13 +477,72 @@ return (
 />
           </>
         )}
+
+
+        {discount > 0 && (
+  <>
+    <Row
+      title="Coupon Discount"
+      subtitle={
+        discountType === "PERCENTAGE"
+          ? `${discount}% OFF`
+          : "Coupon Applied"
+      }
+      value={`- ₹ ${
+        discountType === "PERCENTAGE"
+          ? ((finalPayable * discount) / 100).toLocaleString()
+          : discount.toLocaleString()
+      }`}
+    />
+
+    <View style={styles.dashedLine} />
+
+    {/* FINAL PAYABLE */}
+    <Row
+      title="Final Payable Amount"
+      subtitle="After Coupon Discount"
+      value={`₹ ${discountedAmount.toLocaleString()}`}
+      bold
+    />
+  </>
+)}
       </View>
+
+
+      {/* COUPON */}
+<View style={styles.couponBox}>
+
+  <Text style={styles.couponTitle}>Have a Coupon?</Text>
+
+  <View style={styles.couponRow}>
+    
+    <TextInput
+      placeholder="Enter coupon code"
+      value={couponCode}
+      onChangeText={setCouponCode}
+      style={styles.couponInput}
+      autoCapitalize="none"
+    />
+
+    <TouchableOpacity
+      style={styles.applyBtn}
+      onPress={applyCoupon}
+      disabled={couponLoading}
+    >
+      <Text style={styles.applyText}>
+        {couponLoading ? "..." : "Apply"}
+      </Text>
+    </TouchableOpacity>
+
+  </View>
+
+</View>
 
       {/* Info */}
       <View style={styles.infoRow}>
         <Text style={styles.infoText}>
           Booking details will be sent to{"\n"}
-          {user.phone} | {user.email}
+           {user.email}
         </Text>
       </View>
 
@@ -630,4 +782,40 @@ rowValue: {
     fontSize: 20,
   
   },
+  couponBox: {
+  marginTop: 20,
+},
+
+couponTitle: {
+  fontFamily: "Quicksand-Bold",
+  fontSize: 14,
+  marginBottom: 6,
+},
+
+couponRow: {
+  flexDirection: "row",
+},
+
+couponInput: {
+  flex: 1,
+  borderWidth: 1,
+  borderColor: "#D2C3AD",
+  borderRadius: 8,
+  paddingHorizontal: 12,
+  height: 45,
+  marginRight: 10,
+  fontFamily: "Quicksand-Regular",
+},
+
+applyBtn: {
+  backgroundColor: "#4F3421",
+  paddingHorizontal: 16,
+  justifyContent: "center",
+  borderRadius: 8,
+},
+
+applyText: {
+  color: "#fff",
+  fontFamily: "Quicksand-Bold",
+},
 });

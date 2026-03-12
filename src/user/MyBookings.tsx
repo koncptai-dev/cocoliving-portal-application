@@ -20,6 +20,7 @@ const MyBookings = ({ navigation }: any) => {
 
   const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+ 
 
   useEffect(() => {
     if (token) fetchBookings();
@@ -43,18 +44,29 @@ const MyBookings = ({ navigation }: any) => {
 
   const today = new Date();
 
-  const currentBooking = bookings.find((b) => {
-    const status = b.displayStatus?.toLowerCase();
-    const checkIn = new Date(b.checkInDate);
-    const checkOut = b.checkOutDate ? new Date(b.checkOutDate) : null;
+/* UPCOMING BOOKING */
+const upcomingBooking = bookings.find((b) => {
+  const status = b.displayStatus?.toLowerCase();
+  const checkIn = new Date(b.checkInDate);
 
-    return (
-      ["approved", "active"].includes(status) &&
-      today >= checkIn &&
-      (checkOut ? today <= checkOut : true)
-    );
-  });
+  return status === "approved" && today < checkIn;
+});
 
+/* CURRENT BOOKING */
+const currentBooking = bookings.find((b) => {
+  const status = b.displayStatus?.toLowerCase();
+  const checkIn = new Date(b.checkInDate);
+  const checkOut = b.checkOutDate ? new Date(b.checkOutDate) : null;
+
+  return (
+    ["approved", "active"].includes(status) &&
+    today >= checkIn &&
+    (checkOut ? today <= checkOut : true)
+  );
+});
+
+/* BOOKING TO SHOW */
+const bookingToShow = currentBooking || upcomingBooking;
   const pastBookings = bookings.filter((b) => b !== currentBooking);
 
   if (loading) {
@@ -71,62 +83,62 @@ const MyBookings = ({ navigation }: any) => {
 
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* ===== CURRENT BOOKING ===== */}
-        {currentBooking && (
+        {(currentBooking || upcomingBooking) && (
           <View style={styles.currentWrap}>
             <Text style={styles.currentTitle}>Current Booking</Text>
 
             <View style={styles.currentCard}>
               <Text style={styles.roomNumber}>
-                Room #{currentBooking.room?.roomNumber || "--"}
+                Room #{bookingToShow.room?.roomNumber || "--"}
               </Text>
 
               <View style={styles.infoGrid}>
                 <Info
                   label="Last Payment"
-                  value={formatDate(currentBooking.updatedAt)}
+                  value={formatDate(bookingToShow.updatedAt)}
                 />
                 <Info
                   label="Duration"
-                  value={`${currentBooking.duration} months`}
+                  value={`${bookingToShow.duration} months`}
                 />
                 <Info
                   label="Days Left"
-                  value={daysLeft(currentBooking.checkOutDate)}
+                  value={daysLeft(bookingToShow.checkOutDate)}
                 />
               </View>
 
               {/* ACTION BUTTONS */}
 <View style={styles.actionRow}>
-  {currentBooking.bookingType === "PREBOOK" &&
-    currentBooking.paymentStatus === "PARTIAL" && currentBooking.contractStatus==="SIGNED" && (
+  {bookingToShow.bookingType === "PREBOOK" &&
+    bookingToShow.paymentStatus === "PARTIAL" && bookingToShow.contractStatus==="SIGNED" && (
       <PrimaryBtn
         title="Pay Remaining"
         onPress={() =>
           navigation.navigate("BookingDetails", {
-            booking: currentBooking,
+            booking: bookingToShow,
           })
         }
       />
     )}
 
-  {currentBooking.bookingType === "BOOK" && (
+  {bookingToShow.bookingType === "BOOK" && (
     <PrimaryBtn
       title="Extend Stay"
       onPress={() =>
         navigation.navigate("BookingDetails", {
-          booking: currentBooking,
+          booking: bookingToShow,
         })
       }
     />
   )}
 
   {/* SIGN CONTRACT BUTTON */}
-  {currentBooking?.contractStatus !== "SIGNED" && (
+  {bookingToShow?.contractStatus !== "SIGNED" && (
     <PrimaryBtn
       title="Sign Contract"
       onPress={() =>
         navigation.navigate("ContractSign", {
-          bookingId: currentBooking.id,
+          bookingId: bookingToShow.id,
         })
       }
     />
@@ -136,7 +148,7 @@ const MyBookings = ({ navigation }: any) => {
     title="Cancel"
     onPress={() =>
       navigation.navigate("BookingDetails", {
-        booking: currentBooking,
+        booking: bookingToShow,
       })
     }
   />

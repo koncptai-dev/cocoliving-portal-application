@@ -104,19 +104,28 @@ const handleNotificationPress = async (notification) => {
 
       const today = new Date();
 
-      const currentBooking = bookings.find((b) => {
-        const status = b.displayStatus?.toLowerCase();
-        const checkIn = new Date(b.checkInDate);
-        const checkOut = b.checkOutDate ? new Date(b.checkOutDate) : null;
+     const upcomingBooking = bookings.find((b) => {
+  const status = b.displayStatus?.toLowerCase();
+  const checkIn = new Date(b.checkInDate);
 
-        return (
-          ["approved", "active"].includes(status) &&
-          today >= checkIn &&
-          (checkOut ? today <= checkOut : true)
-        );
-      });
+  return status === "approved" && today < checkIn;
+});
 
-      if (!currentBooking) {
+const currentBooking = bookings.find((b) => {
+  const status = b.displayStatus?.toLowerCase();
+  const checkIn = new Date(b.checkInDate);
+  const checkOut = b.checkOutDate ? new Date(b.checkOutDate) : null;
+
+  return (
+    ["approved", "active"].includes(status) &&
+    today >= checkIn &&
+    (checkOut ? today <= checkOut : true)
+  );
+});
+
+const bookingToShow = currentBooking || upcomingBooking;
+
+     if (!bookingToShow){
         Toast.show({
           type: "info",
           text1: "No active booking found",
@@ -124,7 +133,7 @@ const handleNotificationPress = async (notification) => {
         return;
       }
 
-      if (currentBooking.contractStatus === "SIGNED") {
+    if (bookingToShow.contractStatus === "SIGNED") {
         Toast.show({
           type: "info",
           text1: "Contract already signed",
@@ -133,7 +142,7 @@ const handleNotificationPress = async (notification) => {
       }
 
       navigation.navigate("ContractSign", {
-        bookingId: currentBooking.id,
+        bookingId: bookingToShow.id
       });
 
     } catch (error) {
