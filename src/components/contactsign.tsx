@@ -630,24 +630,20 @@ if (step === 1) {
       )}
 
       {/* Final Submit Button - Sirf tabhi active aur visible jab save ho jaye */}
-      <TouchableOpacity
-        style={[
-          styles.signBtn, 
-          { backgroundColor: isGuardianSaved ? '#1E3A8A' : '#9CA3AF' }
-        ]}
-        onPress={() => {
-          if(!isGuardianSaved) {
-            Toast.show({ type: "info", text1: "Please save signature first" });
-            return;
-          }
-          signContract(tenantSignaturePath, guardianSignaturePath);
-        }}
-        disabled={!isGuardianSaved || loading}
-      >
-        <Text style={styles.signText}>
-          {loading ? "Submitting..." : "Submit Contract"}
-        </Text>
-      </TouchableOpacity>
+      {isGuardianSaved && (
+  <TouchableOpacity
+    style={[
+      styles.signBtn,
+      { backgroundColor: loading ? '#9CA3AF' : '#1E3A8A' }
+    ]}
+    onPress={() => signContract(tenantSignaturePath, guardianSignaturePath)}
+    disabled={loading}
+  >
+    <Text style={styles.signText}>
+      {loading ? "Submitting..." : "Submit Contract"}
+    </Text>
+  </TouchableOpacity>
+)}
     </View>
   );
 }
