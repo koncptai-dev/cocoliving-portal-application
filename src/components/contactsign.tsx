@@ -21,6 +21,8 @@ import { Image, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import Toast from "react-native-toast-message";
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import { InteractionManager } from "react-native";
+
 
 
 /* ================== CONFIG ================== */
@@ -249,6 +251,8 @@ const bookingIdFromRoute = route?.params?.bookingId;
  const [step, setStep] = useState(0);
 const [tenantSignaturePath, setTenantSignaturePath] = useState(null);
 const [guardianSignaturePath, setGuardianSignaturePath] = useState(null);
+const [isGuardianSaved, setIsGuardianSaved] = useState(false);
+const [isTenantSaved, setIsTenantSaved] = useState(false);
 
 const isStudent = user?.userType === "student";
 
@@ -287,21 +291,19 @@ const saveSignature = async (signature, type) => {
 
   await RNFS.writeFile(path, base64Data, "base64");
 
-  if (type === "tenant") {
-
-    setTenantSignaturePath(path);
-    tenantSignatureRef.current?.clearSignature();
-
-    if (isStudent) {
-      setStep(2);
-    } else {
-      signContract(path);
-    }
+ if (type === "tenant") {
+  setTenantSignaturePath(path);
+  if (isStudent) {
+    setStep(2); // Student hai to step 2 pe bhejo
+  } else {
+    setIsTenantSaved(true); // Professional hai to sirf lock karo, API call mat karo abhi
   }
+}
 
 if (type === "guardian") {
 
   setGuardianSignaturePath(path);
+  setIsGuardianSaved(true);
   guardianSignatureRef.current?.clearSignature();
 
 }
@@ -356,58 +358,77 @@ const signContract = async (
   });
 }
 
-  try {
+try {
+  setLoading(true);
 
-    setLoading(true);
+  const res = await axios.post(
+    `${API_BASE}/contracts/${bookingId}/sign`,
+    formData,
+    {
+      headers: {
+        Authorization: `Bearer ${user?.token}`,
+        "Content-Type": "multipart/form-data",
+      },
+    }
+  );
 
-    const res = await axios.post(
-      `${API_BASE}/contracts/${bookingId}/sign`,
-      formData,
+  setLoading(false);
+
+  // Toast ki jagah Alert
+  Alert.alert(
+    "Success!",
+    "Contract signed successfully. Redirecting to home...",
+    [
       {
-        headers: {
-          Authorization: `Bearer ${user?.token}`,
-          "Content-Type": "multipart/form-data",
-        },
+        text: "OK",
+        onPress: () => {
+          // Thoda delay de sakte ho agar chahiye, lekin zaruri nahi
+          setTimeout(() => {
+            navigation.reset({
+              index: 0,
+              routes: [{ name: "HomeTabs" }],
+            });
+          }, 800); // 0.8 second ka chhota sa buffer, smooth feel ke liye
+        }
       }
-    );
+    ],
+    { cancelable: false } // user ko dismiss na kar sake
+  );
 
-    Toast.show({
-      type: "success",
-      text1: "Contract signed successfully",
-      text2: "Check your email for the PDF",
-      visibilityTime: 6000,
-    });
+} catch (err) {
+  setLoading(false);
 
-    setTimeout(() => {
-      navigation.reset({
-        index: 0,
-        routes: [{ name: "HomeTabs" }],
-      });
-    }, 1000);
-
-  } catch (err) {
-
-    Toast.show({
-      type: "error",
-      text1:
-        err?.response?.data?.message ||
-        "Failed to sign contract",
-    });
-
-  } finally {
-    setLoading(false);
-  }
-};
+  // Error ke liye bhi Alert rakh sakte ho (optional)
+  Alert.alert(
+    "Error",
+    err?.response?.data?.message || "Failed to sign contract",
+    [{ text: "OK" }]
+  );
+} finally {
+  setLoading(false);
+}
 
   /* ================== PDF VIEW ================== */
-  if (signed && contractUrl) {
-    const googleViewerUrl = `https://docs.google.com/gview?embedded=true&url=${encodeURIComponent(
-      contractUrl
-    )}`;
+  // if (signed && contractUrl) {
+  //   const googleViewerUrl = `https://docs.google.com/gview?embedded=true&url=${encodeURIComponent(
+  //     contractUrl
+  //   )}`;
+
+  
+
 
     return (
       <View style={{ flex: 1 }}>
         <StatusBar barStyle="dark-content" />
+        {/* Loading overlay ko yahan return ke andar rakhein */}
+      {loading && (
+        <View style={styles.loadingOverlay}>
+          <ActivityIndicator size="large" color="#1E3A8A" />
+          <Text style={{marginTop: 10, color: '#1E3A8A', fontWeight: '600'}}>
+            Processing...
+          </Text>
+        </View>
+      )}
         <WebView
           source={{ uri: googleViewerUrl }}
           startInLoadingState
@@ -422,13 +443,7 @@ const signContract = async (
     );
   }
 
-  if (loading) {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color="#1E3A8A" />
-      </View>
-    );
-  }
+
 if (contractLoaded && step === 0) {
   return <AgreementScreen onAccept={() => setStep(1)} />;
 }
@@ -441,6 +456,14 @@ if (contractLoaded && step === 0) {
       >
         <View style={styles.container}>
           <StatusBar backgroundColor="#1E3A8A" barStyle="light-content" />
+
+          {/* YE BLOCK ADD KAREIN */}
+        {loading && (
+          <View style={styles.loadingOverlay}>
+            <ActivityIndicator size="large" color="#1E3A8A" />
+            <Text style={{marginTop: 10, color: '#1E3A8A'}}>Checking Booking ID...</Text>
+          </View>
+        )}
 
           <View style={styles.header}>
             <Text style={styles.headerTitle}>Cocoliving</Text>
@@ -467,101 +490,167 @@ if (contractLoaded && step === 0) {
   }
 
   /* ================== STEP 1: TENANT SIGN ================== */
-  if (step === 1) {
-    return (
-      <View style={styles.fullScreen}>
-     <View style={styles.signatureHeader}>
-  <Text style={styles.stepTitle}>
-    {isStudent ? "Step 1 of 2" : "Step 1 of 1"}
-  </Text>
-
-  <Text style={styles.stepSubtitle}>
-    {isStudent ? "Tenant Signature" : "User Signature"}
-  </Text>
-</View>
-
-        <View style={styles.signatureFull}>
-          <Signature
-            ref={tenantSignatureRef}
-            onOK={(sig) => saveSignature(sig, 'tenant')}
-            autoClear={false}
-            descriptionText=""
-            webStyle={`.m-signature-pad--footer { display: none; }`}
-          />
-        </View>
-
-        <Text style={{ textAlign: "center", marginTop: 10, fontWeight: "600" }}>
-{user?.fullName}
-</Text>
-
-        <View style={styles.row}>
-          <TouchableOpacity
-            style={styles.secondaryBtn}
-            onPress={() => tenantSignatureRef.current?.clearSignature()}
-          >
-            <Text>Clear</Text>
-          </TouchableOpacity>
-
-         <TouchableOpacity
-  style={styles.successBtn}
-  onPress={() => tenantSignatureRef.current?.readSignature()}
->
-  <Text style={{color:"#fff"}}>Save & Continue</Text>
-</TouchableOpacity>
-        </View>
-      </View>
-    );
-  }
-
-  /* ================== STEP 2: GUARDIAN SIGN ================== */
+ /* ================== STEP 1: TENANT SIGN ================== */
+/* ================== STEP 1: TENANT SIGN ================== */
+/* ================== STEP 1: TENANT SIGN ================== */
+if (step === 1) {
   return (
     <View style={styles.fullScreen}>
+      {loading && (
+        <View style={styles.loadingOverlay}>
+          <ActivityIndicator size="large" color="#1E3A8A" />
+        </View>
+      )}
+
       <View style={styles.signatureHeader}>
-  <Text style={styles.stepTitle}>Step 2 of 2</Text>
-  <Text style={styles.stepSubtitle}>Guardian Signature</Text>
-</View>
-
-      <View style={styles.signatureFull}>
-        <Signature
-          ref={guardianSignatureRef}
-          onOK={(sig) => saveSignature(sig, 'guardian')}
-          autoClear={false}
-          descriptionText=""
-          webStyle={`.m-signature-pad--footer { display: none; }`}
-        />
+        {/* ✅ Condition for Title */}
+        {isStudent && <Text style={styles.stepTitle}>Step 1 of 2</Text>}
+        <Text style={styles.stepSubtitle}>
+          {isStudent ? "Tenant Signature" : "User Signature"}
+        </Text>
       </View>
-      <Text style={{ textAlign: "center", marginTop: 10, fontWeight: "600" }}>
-{user?.parentName || "Guardian"}
-</Text>
 
-      <View style={styles.row}>
+      {!isTenantSaved ? (
+        <>
+          <View style={styles.signatureFull}>
+            <Signature
+              ref={tenantSignatureRef}
+              onOK={(sig) => {
+                saveSignature(sig, 'tenant');
+                // ✅ Student ke case mein pad ko clear kar do taaki Step 2 fresh mile
+                if(isStudent) tenantSignatureRef.current?.clearSignature();
+              }}
+              autoClear={false}
+              webStyle={`.m-signature-pad--footer { display: none; }`}
+            />
+          </View>
+          
+          <Text style={{ textAlign: "center", marginTop: 10, fontWeight: "600" }}>
+            {user?.fullName}
+          </Text>
+
+          <View style={styles.row}>
+            <TouchableOpacity 
+              style={styles.secondaryBtn} 
+              onPress={() => tenantSignatureRef.current?.clearSignature()}
+            >
+              <Text>Clear</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={styles.successBtn} 
+              onPress={() => tenantSignatureRef.current?.readSignature()}
+            >
+              <Text style={{color:"#fff"}}>
+                {isStudent ? "Save & Continue" : "Save Signature"}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </>
+      ) : (
+        /* Professional Case Saved View */
+        <View style={styles.savedContainer}>
+          <Ionicons name="checkmark-circle" size={80} color="#16A34A" />
+          <Text style={styles.savedText}>Signature Saved!</Text>
+          <TouchableOpacity onPress={() => setIsTenantSaved(false)}>
+            <Text style={{color: '#4B5563', textDecorationLine: 'underline', marginTop: 10}}>Re-draw</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {!isStudent && isTenantSaved && (
         <TouchableOpacity
-          style={styles.secondaryBtn}
-          onPress={() => guardianSignatureRef.current?.clearSignature()}
+          style={styles.signBtn}
+          onPress={() => signContract(tenantSignaturePath, null)}
         >
-          <Text>Clear</Text>
+          <Text style={styles.signText}>Submit Contract</Text>
         </TouchableOpacity>
-
-       <TouchableOpacity
-  style={styles.successBtn}
-  onPress={() => guardianSignatureRef.current?.readSignature()}
->
-  <Text style={{color:"#fff"}}>Save</Text>
-</TouchableOpacity>
-      </View>
-
-      
-       <TouchableOpacity
-  style={styles.signBtn}
-  onPress={() =>
-  signContract(tenantSignaturePath, guardianSignaturePath)
-}
->
-  <Text style={styles.signText}>Submit Contract</Text>
-</TouchableOpacity>
-   
+      )}
     </View>
   );
+}
+  /* ================== STEP 2: GUARDIAN SIGN ================== */
+ if (step === 2) {
+  return (
+    <View style={styles.fullScreen}>
+      {loading && (
+        <View style={styles.loadingOverlay}>
+          <ActivityIndicator size="large" color="#1E3A8A" />
+        </View>
+      )}
+      
+      <View style={styles.signatureHeader}>
+        <Text style={styles.stepTitle}>Step 2 of 2</Text>
+        <Text style={styles.stepSubtitle}>Guardian Signature</Text>
+      </View>
+
+      {/* Signature Pad: Jab save ho jaye toh ise hide kar dein ya placeholder dikhayein */}
+      {!isGuardianSaved ? (
+        <>
+          <View style={styles.signatureFull}>
+            <Signature
+              ref={guardianSignatureRef}
+              onOK={(sig) => saveSignature(sig, 'guardian')}
+              autoClear={false}
+              descriptionText=""
+              webStyle={`.m-signature-pad--footer { display: none; }`}
+            />
+          </View>
+          <Text style={{ textAlign: "center", marginTop: 10, fontWeight: "600" }}>
+            {user?.parentName || "Guardian"}
+          </Text>
+
+          <View style={styles.row}>
+            <TouchableOpacity
+              style={styles.secondaryBtn}
+              onPress={() => guardianSignatureRef.current?.clearSignature()}
+            >
+              <Text>Clear</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.successBtn}
+              onPress={() => guardianSignatureRef.current?.readSignature()}
+            >
+              <Text style={{ color: "#fff", fontWeight: "bold" }}>Save Signature</Text>
+            </TouchableOpacity>
+          </View>
+        </>
+      ) : (
+        /* ✅ SAVE HONE KE BAAD YE DIKHEGA */
+        <View style={styles.savedContainer}>
+          <Ionicons name="checkmark-circle" size={80} color="#16A34A" />
+          <Text style={styles.savedText}>Guardian Signature Saved!</Text>
+          <TouchableOpacity 
+            onPress={() => setIsGuardianSaved(false)} 
+            style={{marginTop: 10}}
+          >
+            <Text style={{color: '#4B5563', textDecorationLine: 'underline'}}>Re-draw Signature</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* Final Submit Button - Sirf tabhi active aur visible jab save ho jaye */}
+      <TouchableOpacity
+        style={[
+          styles.signBtn, 
+          { backgroundColor: isGuardianSaved ? '#1E3A8A' : '#9CA3AF' }
+        ]}
+        onPress={() => {
+          if(!isGuardianSaved) {
+            Toast.show({ type: "info", text1: "Please save signature first" });
+            return;
+          }
+          signContract(tenantSignaturePath, guardianSignaturePath);
+        }}
+        disabled={!isGuardianSaved || loading}
+      >
+        <Text style={styles.signText}>
+          {loading ? "Submitting..." : "Submit Contract"}
+        </Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
 };
 
 export default ContractSignScreen;
@@ -658,7 +747,33 @@ row: {
     borderRadius: 10,
     alignItems: 'center',
   },
-
+loadingOverlay: {
+  position: "absolute",
+  top: 0,
+  bottom: 0,
+  left: 0,
+  right: 0,
+  backgroundColor: "rgba(255,255,255,0.7)",
+  justifyContent: "center",
+  alignItems: "center",
+  zIndex: 50
+},
+savedContainer: {
+  flex: 1,
+  justifyContent: 'center',
+  alignItems: 'center',
+  backgroundColor: '#F0FDF4', // Light green background
+  borderRadius: 12,
+  borderWidth: 2,
+  borderColor: '#BBF7D0',
+  borderStyle: 'dashed',
+},
+savedText: {
+  fontSize: 18,
+  fontWeight: '700',
+  color: '#16A34A',
+  marginTop: 10,
+},
   signBtn: {
   marginTop: 20,
   marginBottom: Platform.OS === "android" ? 30 : 40,

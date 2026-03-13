@@ -11,6 +11,8 @@ import Ionicons from "react-native-vector-icons/Ionicons";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
 import HeaderGradient from "../components/HeaderGradient";
+import { useFocusEffect } from '@react-navigation/native';
+import { useCallback } from 'react';
 
 const API_BASE_URL = "https://staging.cocoliving.in";
 
@@ -22,9 +24,13 @@ const MyBookings = ({ navigation }: any) => {
   const [loading, setLoading] = useState(true);
  
 
-  useEffect(() => {
-    if (token) fetchBookings();
-  }, [token]);
+ useFocusEffect(
+  useCallback(() => {
+    if (token) {
+      fetchBookings();
+    }
+  }, [token])
+);
 
   const fetchBookings = async () => {
     try {

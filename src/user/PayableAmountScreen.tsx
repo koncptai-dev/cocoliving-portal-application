@@ -116,7 +116,10 @@ Toast.show({
     text1: backendMessage,
   });
 
-}
+}finally {
+    // 👈 Yeh sabse important hai, isse loading state khatam ho jayegi
+    setCouponLoading(false); 
+  }
 };
 
 
@@ -479,7 +482,7 @@ return (
         )}
 
 
-        {discount > 0 && (
+       {discount > 0 && (
   <>
     <Row
       title="Coupon Discount"
@@ -494,18 +497,12 @@ return (
           : discount.toLocaleString()
       }`}
     />
-
     <View style={styles.dashedLine} />
-
-    {/* FINAL PAYABLE */}
-    <Row
-      title="Final Payable Amount"
-      subtitle="After Coupon Discount"
-      value={`₹ ${discountedAmount.toLocaleString()}`}
-      bold
-    />
   </>
 )}
+
+{/* FINAL PAYABLE — ALWAYS SHOW */}
+
       </View>
 
 
@@ -519,9 +516,10 @@ return (
     <TextInput
       placeholder="Enter coupon code"
       value={couponCode}
-      onChangeText={setCouponCode}
+      onChangeText={(text) => setCouponCode(text.replace(/\s/g, '').toUpperCase())}
       style={styles.couponInput}
-      autoCapitalize="none"
+      autoCapitalize="characters"
+      autoCorrect={false}
     />
 
     <TouchableOpacity
