@@ -1,4 +1,7 @@
 import React from "react";
+import axios from "axios";
+import { useAuth } from "../context/AuthContext";
+import { useState, useEffect } from "react";
 import { View, Image, StyleSheet, Platform } from "react-native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import Ionicons from "react-native-vector-icons/Ionicons";
@@ -45,6 +48,41 @@ const Tab = createBottomTabNavigator();
 export default function BottomTabs({ hasBooking }) {
   const insets = useSafeAreaInsets(); // agar use kar rahe ho toh rakho
 
+  const { user } = useAuth();
+const token = user?.token;
+
+const [hasBookingState, setHasBookingState] = useState(hasBooking);
+
+useEffect(() => {
+  if (!token) return;
+
+  const checkBooking = async () => {
+    try {
+      const res = await axios.get(
+        "https://staging.cocoliving.in/api/book-room/getUserBookings?page=1&limit=5",
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      const bookings = res.data?.bookings || [];
+
+      const approvedBooking = bookings.find((b) => {
+        const status = b.displayStatus?.toLowerCase();
+        return ["approved", "active"].includes(status);
+      });
+
+      setHasBookingState(!!approvedBooking);
+
+    } catch (err) {
+      console.log("BottomTabs booking check failed");
+    }
+  };
+
+  checkBooking();
+
+}, [token]);
+
   return (
     <Tab.Navigator
       initialRouteName="Center"
@@ -79,7 +117,7 @@ export default function BottomTabs({ hasBooking }) {
         }}
       />
 
-      {hasBooking && (
+      {hasBookingState && (
         <Tab.Screen
           name="Events"
           component={EventsScreen}
@@ -90,23 +128,26 @@ export default function BottomTabs({ hasBooking }) {
         />
       )}
 
-      <Tab.Screen
-        name="Center"
-        component={hasBooking ? DashboardScreen : FindStayScreen}
-        options={{
-          tabBarLabel: "",
-          tabBarIcon: () => (
-            <View style={styles.centerIconWrapper}>
-              <Image
-                source={require("../../assets/images/logo.png")}
-                style={styles.centerIcon}
-              />
-            </View>
-          ),
-        }}
-      />
+   
+  <Tab.Screen
+  key={hasBookingState ? "booking" : "nobooking"}
+  name="Center"
+  component={hasBookingState ? DashboardScreen : FindStayScreen}
+  options={{
+    tabBarLabel: "",
+    tabBarIcon: () => (
+      <View style={styles.centerIconWrapper}>
+        <Image
+          source={require("../../assets/images/logo.png")}
+          style={styles.centerIcon}
+        />
+      </View>
+    ),
+  }}
+/>
 
-      {hasBooking && (
+
+      {hasBookingState && (
         <Tab.Screen
           name="Logs"
           component={AccessHistory}

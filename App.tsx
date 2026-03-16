@@ -68,37 +68,44 @@ const AppNavigator = () => {
   const [hasActiveBooking, setHasActiveBooking] = useState(false);
 
   useEffect(() => {
-    if (!user) {
+
+  if (!user) {
+    setLoadingInitial(false);
+    return;
+  }
+
+  const checkBookingStatus = async () => {
+    try {
+
+      const response = await axios.get(
+        `${API_BASE_URL}/api/book-room/getUserBookings?page=1&limit=10`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      const bookings = response?.data?.bookings || [];
+
+      const active = bookings.find((b) => {
+        const status = b.displayStatus?.toLowerCase();
+        return status === "active" || status === "approved";
+      });
+
+      setHasActiveBooking(!!active);
+
+    } catch (error) {
+      console.log("Booking check error:", error);
+    } finally {
       setLoadingInitial(false);
-      return;
     }
+  };
 
-    const checkBookingStatus = async () => {
-      try {
-        const response = await axios.get(
-          `${API_BASE_URL}/api/book-room/getUserBookings?page=1&limit=10`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
+  checkBookingStatus();
 
-        const bookings = response?.data?.bookings || [];
+  // 🔥 every 5 sec re-check
+  const interval = setInterval(checkBookingStatus, 5000);
 
-        const active = bookings.find(
-          (b) =>
-            b.displayStatus?.toLowerCase() === 'active' ||
-            b.displayStatus?.toLowerCase() === 'approved'
-        );
+  return () => clearInterval(interval);
 
-        setHasActiveBooking(!!active);
-      } catch (error) {
-        console.log('Booking check error:', error);
-        setHasActiveBooking(false);
-      } finally {
-        setLoadingInitial(false);
-      }
-    };
-
-    checkBookingStatus();
-  }, [user, token]);
+}, [user, token]);
 
   // Show splash while auth is restoring
   if (authLoading) {

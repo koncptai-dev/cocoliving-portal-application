@@ -31,6 +31,10 @@ const DashboardScreen = ({ navigation }) => {
   const [todayFood, setTodayFood] = useState(null);
   const [events, setEvents] = useState([]);
 
+  const [stayType ,setStayType] = useState("NONE");
+  const [checkInDateText, setCheckInDateText] = useState("")
+  const [bookingId, setBookingId] = useState(null);
+
   // Debug: Events state değiştiğinde logla
   useEffect(() => {
     console.log("Events state updated:", events);
@@ -63,35 +67,71 @@ const DashboardScreen = ({ navigation }) => {
       const allBookings = bookingRes.data.bookings || [];
       console.log("Bookings fetched successfully. Count:", allBookings.length);
 
-      const active = allBookings.find((b) => {
-        const status = b.displayStatus?.toLowerCase();
-        const checkIn = new Date(b.checkInDate);
-        const checkOut = b.checkOutDate ? new Date(b.checkOutDate) : null;
+    const active = allBookings.find((b) => {
+  const status = b.displayStatus?.toLowerCase();
+  const checkIn = new Date(b.checkInDate);
+  const checkOut = b.checkOutDate ? new Date(b.checkOutDate) : null;
 
-        return (
-          ["approved", "active"].includes(status) &&
-          today >= checkIn &&
-          (checkOut ? today <= checkOut : true)
-        );
-      });
+  return (
+    ["approved", "active"].includes(status) &&
+    today >= checkIn &&
+    (checkOut ? today <= checkOut : true)
+  );
+});
 
-      if (active) {
-        const newRoomNumber = `#${active.room?.roomNumber || "N/A"}`;
-        let newDaysLeft = 0;
+const upcoming = allBookings.find((b) => {
+  const status = b.displayStatus?.toLowerCase();
+  const checkIn = new Date(b.checkInDate);
 
-        if (active.checkOutDate) {
-          const diff = (new Date(active.checkOutDate) - today) / (1000 * 60 * 60 * 24);
-          newDaysLeft = Math.max(0, Math.ceil(diff));
-        }
+  return status === "approved" && today < checkIn;
+});
 
-        setRoomNumber(newRoomNumber);
-        setDaysLeft(newDaysLeft);
-        console.log("Active booking found → Room:", newRoomNumber, "Days left:", newDaysLeft);
-      } else {
-        console.log("No active booking found");
-        setRoomNumber("#N/A");
-        setDaysLeft(0);
-      }
+/* ACTIVE BOOKING */
+if (active) {
+
+  const newRoomNumber = `#${active.room?.roomNumber || "N/A"}`;
+
+  let newDaysLeft = 0;
+
+  if (active.checkOutDate) {
+    const diff =
+      (new Date(active.checkOutDate) - today) /
+      (1000 * 60 * 60 * 24);
+
+    newDaysLeft = Math.max(0, Math.ceil(diff));
+  }
+
+  setRoomNumber(newRoomNumber);
+  setDaysLeft(newDaysLeft);
+  setStayType("ACTIVE");
+
+}
+
+/* UPCOMING BOOKING */
+else if (upcoming) {
+
+  const newRoomNumber = `#${upcoming.room?.roomNumber || "N/A"}`;
+
+  const formattedDate = new Date(
+    upcoming.checkInDate
+  ).toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+
+  setRoomNumber(newRoomNumber);
+  setCheckInDateText(formattedDate);
+  setStayType("UPCOMING");
+
+}
+
+/* NONE */
+else {
+  setRoomNumber("#N/A");
+  setDaysLeft(0);
+  setStayType("NONE");
+}
     } catch (err) {
       console.log("Bookings API failed:", err?.response?.data || err.message || err);
     }
@@ -142,9 +182,11 @@ const DashboardScreen = ({ navigation }) => {
       const tickets = ticketRes.data.tickets || [];
       console.log("Tickets fetched successfully. Count:", tickets.length);
 
-      const openCount = tickets.filter(
-        (t) => t.status?.toLowerCase() === "open"
-      ).length;
+    const openCount = tickets.filter(
+  (t) =>
+    t.status?.toLowerCase() === "open" &&
+    t.bookingId === bookingId
+).length;
 
       setOpenRequests(openCount);
       console.log("Open requests count:", openCount);
@@ -190,7 +232,11 @@ const DashboardScreen = ({ navigation }) => {
 
       {/* ---------------- MY STAY STATUS ---------------- */}
       <View style={styles.statusCard}>
-        <Text style={styles.statusTitle}>My Stay Status</Text>
+      <Text style={styles.statusTitle}>
+  {stayType === "UPCOMING"
+    ? "My Upcoming Stay"
+    : "My Stay Status"}
+</Text>
 
         <View style={styles.statusRow}>
           <StatusItem
@@ -198,11 +244,11 @@ const DashboardScreen = ({ navigation }) => {
             value={roomNumber}
             label="Room"
           />
-          <StatusItem
-            image={require("../../assets/icons/days.png")}
-            value={daysLeft}
-            label="Days left"
-          />
+         <StatusItem
+  image={require("../../assets/icons/days.png")}
+  value={stayType === "UPCOMING" ? checkInDateText : daysLeft}
+  label={stayType === "UPCOMING" ? "Check-in Date" : "Days left"}
+/>
           <StatusItem
             image={require("../../assets/icons/tools.png")}
             value={openRequests}

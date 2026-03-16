@@ -126,7 +126,7 @@ const unpaidMonths = Math.max(
 const canPayRent =
   bookingData.monthlyPlanSelected &&
   bookingData.securityDepositPaid &&
-  unpaidMonths > 0;
+  bookingData.installmentsPaid < bookingData.duration;
 
   
 
