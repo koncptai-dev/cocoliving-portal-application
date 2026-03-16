@@ -24,7 +24,7 @@ const DashboardScreen = ({ navigation }) => {
   const firstName = username.split(" ")[0];
   const firstLetter = username.charAt(0).toUpperCase();
 
-  const [roomNumber, setRoomNumber] = useState("#N/A");
+  const [roomNumber, setRoomNumber] = useState("N/A");
   const [daysLeft, setDaysLeft] = useState(0);
   const [openRequests, setOpenRequests] = useState(0);
 
@@ -89,7 +89,7 @@ const upcoming = allBookings.find((b) => {
 /* ACTIVE BOOKING */
 if (active) {
 
-  const newRoomNumber = `#${active.room?.roomNumber || "N/A"}`;
+  const newRoomNumber = `${active.room?.roomNumber || "N/A"}`;
 
   let newDaysLeft = 0;
 
@@ -110,15 +110,15 @@ if (active) {
 /* UPCOMING BOOKING */
 else if (upcoming) {
 
-  const newRoomNumber = `#${upcoming.room?.roomNumber || "N/A"}`;
+  const newRoomNumber = `${upcoming.room?.roomNumber || "N/A"}`;
 
-  const formattedDate = new Date(
-    upcoming.checkInDate
-  ).toLocaleDateString("en-IN", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
+const dateObj = new Date(upcoming.checkInDate);
+
+const day = String(dateObj.getDate()).padStart(2, "0");
+const month = String(dateObj.getMonth() + 1).padStart(2, "0");
+const year = dateObj.getFullYear();
+
+const formattedDate = `${day}-${month}-${year}`;  
 
   setRoomNumber(newRoomNumber);
   setCheckInDateText(formattedDate);
