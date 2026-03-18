@@ -42,7 +42,7 @@ const BrowsePropertiesScreen = ({ navigation }) => {
   const [priceOpen, setPriceOpen] = useState(false);
 
   const priceOptions = ["5000", "10000", "15000", "20000", "25000"];
-  const roomTypeOptions = ["Single", "Double", "Triple", "Four"];
+  const roomTypeOptions = ["Single", "Double", "Triple", "Quad","premium Triple"];
 
   /* ================= API ================= */
 

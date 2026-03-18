@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   SafeAreaView,
   View,
@@ -72,7 +72,8 @@ const RegisterProfileScreen = ({ navigation, route }) => {
   const [dob, setDob] = useState('');
   const [gender, setGender] = useState('');
   const [userType, setUserType] = useState<'student' | 'professional'>('student');
-
+const [timer, setTimer] = useState(30);
+const [canResend, setCanResend] = useState(false);
   // const [parentName, setParentName] = useState('');
   // const [parentEmail, setParentEmail] = useState('');
   // const [parentMobile, setParentMobile] = useState('');
@@ -163,11 +164,14 @@ const RegisterProfileScreen = ({ navigation, route }) => {
     const res=  await axios.post(SIGNUP_SEND_OTP, { identifier: prefilledIdentifier });
 
       setOtpSent(true);
+setTimer(30);
+setCanResend(false);
       console.log("Response of send otp: ",otp)
       Toast.show({
         type: 'success',
         text1: `OTP sent to your ${prefilledMedium === 'phone' ? 'mobile' : 'email'}`,
       });
+    
     } catch (error: any) {
       const msg = error?.response?.data?.message || 'Failed to send OTP';
       Toast.show({ type: 'error', text1: msg });
@@ -181,6 +185,28 @@ const RegisterProfileScreen = ({ navigation, route }) => {
     const [day, month, year] = d.split('-');
     return `${year}-${month}-${day}`;
   };
+
+
+  const handleResendOTP = async () => {
+  setLoading(true);
+  try {
+    await axios.post(SIGNUP_SEND_OTP, { identifier: prefilledIdentifier });
+
+    Toast.show({
+      type: 'success',
+      text1: 'OTP resent successfully',
+    });
+
+    setOtp('');
+setTimer(30);
+setCanResend(false);
+  } catch (error: any) {
+    const msg = error?.response?.data?.message || 'Failed to resend OTP';
+    Toast.show({ type: 'error', text1: msg });
+  } finally {
+    setLoading(false);
+  }
+};
 
 const handleSubmitProfile = async () => {
     if (!otp.trim()) {
@@ -283,6 +309,22 @@ const handleSubmitProfile = async () => {
       setLoading(false);
     }
   };
+
+
+ useEffect(() => {
+  if (!otpSent) return;
+
+  if (timer === 0) {
+    setCanResend(true);
+    return;
+  }
+
+  const interval = setInterval(() => {
+    setTimer((prev) => prev - 1);
+  }, 1000);
+
+  return () => clearInterval(interval);
+}, [otpSent, timer]);
 
 
     return (
@@ -406,14 +448,34 @@ const handleSubmitProfile = async () => {
           </>
         )} */}
 
-        {otpSent && (
-          <FloatingInput
-            label={`Enter OTP (sent to ${prefilledMedium === 'phone' ? 'mobile' : 'email'})*`}
-            value={otp}
-            onChangeText={(text) => setOtp(text.replace(/[^0-9]/g, ''))}
-            keyboardType="numeric"
-          />
-        )}
+       {otpSent && (
+  <>
+    <FloatingInput
+      label={`Enter OTP (sent to ${prefilledMedium === 'phone' ? 'mobile' : 'email'})*`}
+      value={otp}
+      onChangeText={(text) => setOtp(text.replace(/[^0-9]/g, ''))}
+      keyboardType="numeric"
+    />
+
+    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 }}>
+      {!canResend ? (
+        <Text style={{ color: COLORS.muted }}>
+          Resend OTP in {timer}s
+        </Text>
+      ) : (
+      <TouchableOpacity 
+  onPress={handleResendOTP} 
+  disabled={loading}
+  style={{ alignSelf: 'center' }}
+>
+  <Text style={{ color: COLORS.primary, fontWeight: '600', opacity: loading ? 0.5 : 1 }}>
+    Resend OTP
+  </Text>
+</TouchableOpacity>
+      )}
+    </View>
+  </>
+)}
 
         <TouchableOpacity
           style={styles.button}

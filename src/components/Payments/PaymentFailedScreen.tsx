@@ -1,4 +1,5 @@
 import React from "react";
+import { useState } from "react";
 import {
   View,
   Text,
@@ -6,11 +7,13 @@ import {
   TouchableOpacity,
   SafeAreaView,
   ScrollView,
+  Modal
 } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 
 const PaymentFailedScreen = ({ route, navigation }) => {
   const { transactionId, amount, failureReason } = route.params || {};
+  const [showContactModal, setShowContactModal] = useState(false);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -18,7 +21,12 @@ const PaymentFailedScreen = ({ route, navigation }) => {
         <View style={styles.content}>
           
           {/* Failed Icon */}
-          <Ionicons name="close-circle" size={90} color="#E74C3C" />
+         <Ionicons
+  name="close-circle"
+  size={90}
+  color="#E74C3C"
+  style={{ marginTop: 30 }}
+/>
 
           {/* Title */}
           <Text style={styles.title}>Payment Failed</Text>
@@ -53,13 +61,13 @@ const PaymentFailedScreen = ({ route, navigation }) => {
         <View style={styles.buttonContainer}>
         
         
-          <TouchableOpacity
-            style={styles.secondaryBtn}
-            onPress={() => navigation.navigate("Support")}
-          >
-            <Text style={styles.secondaryBtnText}>Contact Support Team</Text>
-            <Ionicons name="arrow-forward" size={20} color="#3C2A1E" />
-          </TouchableOpacity>
+        <TouchableOpacity
+  style={styles.secondaryBtn}
+  onPress={() => setShowContactModal(true)}
+>
+  <Text style={styles.secondaryBtnText}>Contact Support Team</Text>
+  <Ionicons name="arrow-forward" size={20} color="#3C2A1E" />
+</TouchableOpacity>
         
           <TouchableOpacity
             style={styles.secondaryBtn}
@@ -72,13 +80,37 @@ const PaymentFailedScreen = ({ route, navigation }) => {
         </View>
         </View>
 
-        <TouchableOpacity onPress={()=>navigation.navigate("Support")}>
+        {/* <TouchableOpacity onPress={()=>navigation.navigate("Support")}>
                  <Text style={styles.helpText}>
                  Need help? <Text style={{ fontFamily:'Quicksand-Bold' }}>Contact support</Text>
                </Text>
-               </TouchableOpacity>
+               </TouchableOpacity> */}
       </ScrollView>
+      <Modal
+  visible={showContactModal}
+  transparent
+  animationType="fade"
+>
+  <View style={styles.modalOverlay}>
+    <View style={styles.modalBox}>
+      
+      {/* Cross Icon */}
+      <TouchableOpacity
+        style={styles.closeIcon}
+        onPress={() => setShowContactModal(false)}
+      >
+        <Ionicons name="close" size={22} color="#000" />
+      </TouchableOpacity>
+
+      <Text style={styles.footerHeading}>Contact Info</Text>
+      <Text style={styles.footerText}>+91-8141676967</Text>
+      <Text style={styles.footerText}>info@cocoliving.in</Text>
+
+    </View>
+  </View>
+</Modal>
     </SafeAreaView>
+    
   );
 };
 
@@ -101,7 +133,7 @@ export default PaymentFailedScreen;
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#fff" },
   scrollContent: { flexGrow: 1, padding: 22 },
-  content: { alignItems: "center" },
+  content: { alignItems: "center" ,  },
   title: { fontSize: 24, fontFamily:'Quicksand-Bold', color: "#4f3421", marginTop: 20 },
   subtitle: { fontSize: 14, color: "#8c8c8c",fontFamily:'Quicksand-Regular', marginBottom: 20 },
   card: {
@@ -174,5 +206,41 @@ const styles = StyleSheet.create({
   shadowOffset: { width: 0, height: 4 },
   shadowOpacity: 0.1,
   shadowRadius: 8,
+},
+
+
+modalOverlay: {
+  flex: 1,
+  backgroundColor: "rgba(0,0,0,0.4)",
+  justifyContent: "center",
+  alignItems: "center",
+},
+
+modalBox: {
+  width: "80%",
+  backgroundColor: "#fff",
+  borderRadius: 16,
+  padding: 20,
+  alignItems: "center",
+},
+
+closeIcon: {
+  position: "absolute",
+  top: 10,
+  right: 10,
+},
+
+footerHeading: {
+  fontSize: 18,
+  fontFamily: "Quicksand-Bold",
+  marginBottom: 10,
+  color: "#3C2A1E",
+},
+
+footerText: {
+  fontSize: 14,
+  fontFamily: "Quicksand-Medium",
+  color: "#7D6C54",
+  marginTop: 5,
 },
 });

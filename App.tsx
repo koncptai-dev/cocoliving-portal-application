@@ -51,8 +51,11 @@ import {
   createNotificationChannel,
   getFcmToken,
   listenForegroundNotifications,
+  listenNotificationOpen,
+  listenForegroundClick
 } from './src/user/notificationservice';
 import SupportScreen from './src/user/Support';
+import { navigationRef } from './src/user/NavigationService';
 
 const Stack = createNativeStackNavigator();
 const API_BASE_URL = 'https://staging.cocoliving.in';
@@ -179,13 +182,16 @@ const AppNavigator = () => {
 const App = () => {
   const [showSplash, setShowSplash] = useState(true);
 
-  useEffect(() => {
-    requestNotificationPermission();
-    createNotificationChannel();
-    getFcmToken();
-    const unsubscribe = listenForegroundNotifications();
-    return unsubscribe;
-  }, []);
+useEffect(() => {
+  createNotificationChannel();
+
+  const unsubscribe = listenForegroundNotifications();
+
+  listenNotificationOpen();  
+  listenForegroundClick();    
+
+  return unsubscribe;
+}, []);
 
   return (
     <View style={{ flex: 1 }}>
@@ -193,7 +199,7 @@ const App = () => {
       {/* MAIN APP ALWAYS MOUNTED */}
       <SafeAreaProvider>
         <AuthProvider>
-          <NavigationContainer>
+        <NavigationContainer ref={navigationRef}>
             <AppNavigator />
           </NavigationContainer>
         </AuthProvider>

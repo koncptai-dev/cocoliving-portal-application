@@ -95,7 +95,7 @@ const bookingToShow = currentBooking || upcomingBooking;
 
             <View style={styles.currentCard}>
               <Text style={styles.roomNumber}>
-                Room #{bookingToShow.room?.roomNumber || "--"}
+                Room {bookingToShow.room?.roomNumber || "--"}
               </Text>
 
               <View style={styles.infoGrid}>
@@ -108,9 +108,13 @@ const bookingToShow = currentBooking || upcomingBooking;
                   value={`${bookingToShow.duration} months`}
                 />
                 <Info
-                  label="Days Left"
-                  value={daysLeft(bookingToShow.checkOutDate)}
-                />
+              label={currentBooking ? "Days Left" : "Check-in Date"}
+              value={
+                currentBooking
+                  ? daysLeft(bookingToShow.checkOutDate)
+                  : formatDate(bookingToShow.checkInDate)
+              }
+            />
               </View>
 
               {/* ACTION BUTTONS */}
@@ -185,7 +189,7 @@ const bookingToShow = currentBooking || upcomingBooking;
               </Text>
 
               <Text style={styles.smallText}>
-                Room #{b.room?.roomNumber || "--"}
+                Room {b.room?.roomNumber || "--"}
               </Text>
 
               <Text style={styles.smallText}>

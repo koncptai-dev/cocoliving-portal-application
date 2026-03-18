@@ -169,9 +169,16 @@ const renderItem = ({ item }) => (
     <View style={styles.cardContent}>
       <Text style={styles.title}>{item.title}</Text>
       <Text style={styles.message}>{item.message}</Text>
-      <Text style={styles.date}>
-        {new Date(item.createdAt).toLocaleString()}
-      </Text>
+     <Text style={styles.date}>
+  {new Date(item.createdAt).toLocaleString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true, // AM/PM ke liye
+  })}
+</Text>
     </View>
   </TouchableOpacity>
 );

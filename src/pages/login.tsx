@@ -5,6 +5,9 @@ import {
   requestNotificationPermission,
   getFcmToken,
   syncFcmTokenToBackend,
+  createNotificationChannel,
+  listenForegroundNotifications,
+  listenNotificationOpen
 } from '../user/notificationservice';
 
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -19,6 +22,8 @@ import OTPTextInput from 'react-native-otp-textinput';
 import Toast from 'react-native-toast-message';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
+
+
 
 export const API_BASE_URL = 'https://staging.cocoliving.in';
 const CHECK_IDENTIFIER_API = `${API_BASE_URL}/api/common/check-email`;
@@ -108,6 +113,14 @@ useEffect(() => {
 }, [timer, isOTPSent]);
 
 
+
+useEffect(() => {
+  const askPermission = async () => {
+    await requestNotificationPermission();
+  };
+
+  askPermission();
+}, []);
   
 // useEffect(() => {
 //   RNOtpVerify.getHash()
@@ -404,24 +417,26 @@ const startFiveSecLoader = () => {
         ...(childId && { childId }),
       });
 
-      if (res.data?.success) {
-        const { token, account, loginAs } = res.data;
-        await setUser({ ...account, token, loginAs });
+     if (res.data?.success) {
+  const { token, account, loginAs } = res.data;
+  await setUser({ ...account, token, loginAs });
 
- // 🔥 FCM FLOW STARTS HERE
-      const hasPermission = await requestNotificationPermission();
-      if (hasPermission) {
-        const fcmToken = await getFcmToken();
-        if (fcmToken) {
+  // ✅ permission
+  const hasPermission = await requestNotificationPermission();
 
-          await syncFcmTokenToBackend(token, fcmToken);
-    console.log(' Failed to sync FCM token -- to backend');
-        }
-      }
+  if (hasPermission) {
+    const fcmToken = await getFcmToken();
 
+    if (fcmToken) {
+      await syncFcmTokenToBackend(token, fcmToken);
+    }
 
-        Toast.show({ type: 'success', text1: 'Login successful' });
-      }
+    // ✅ MOVE THESE HERE
+    await createNotificationChannel();
+    listenForegroundNotifications();
+    listenNotificationOpen();
+  }
+}
     } catch (err: any) {
       Toast.show({ type: 'error', text1: err?.response?.data?.message || 'OTP verification failed' });
     } finally {

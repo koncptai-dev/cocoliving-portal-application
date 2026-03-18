@@ -81,7 +81,7 @@ const MyVisit = () => {
           headers: {
             "Content-Type": "application/json",
           },
-          timeout: 15000, // 15 seconds timeout to detect network issues
+          timeout: 1500
         }
       );
 

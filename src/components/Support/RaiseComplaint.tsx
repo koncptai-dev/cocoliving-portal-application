@@ -16,7 +16,8 @@ import { useNavigation } from '@react-navigation/native';
 import axios from 'axios';
 import {launchCamera, launchImageLibrary} from 'react-native-image-picker';
 import { useAuth } from '../../context/AuthContext';
-import Toast from 'react-native-toast-message';
+
+import Toast from "react-native-toast-message";
 
 const RaiseComplaint = () => {
 
@@ -72,6 +73,7 @@ const RaiseComplaint = () => {
 
   const [roomNumber, setRoomNumber] = useState('');
   const [loadingRoom, setLoadingRoom] = useState(true);
+  const[submitting , setSubmitting] = useState(false);
 
   const [complaintDate] = useState(new Date());
 
@@ -122,7 +124,7 @@ const RaiseComplaint = () => {
       activeBookings.sort((a, b) => new Date(a.checkInDate) - new Date(b.checkInDate));
       const activeBooking = activeBookings[0];
 
-      setRoomNumber(activeBooking?.room?.roomNumber ? `#${activeBooking.room.roomNumber}` : "No room assigned");
+      setRoomNumber(activeBooking?.room?.roomNumber ? `${activeBooking.room.roomNumber}` : "No room assigned");
     } catch (error) {
       console.error("Error fetching bookings:", error);
       setRoomNumber("Error loading room");
@@ -132,53 +134,83 @@ const RaiseComplaint = () => {
   };
 
   const handleSubmit = async () => {
-    if (!roomNumber || roomNumber === 'No room assigned' || roomNumber === 'Error loading room') {
-      return Toast.show({ type: "error", text1: "No room assigned" });
+
+  // 🔒 agar already submit ho raha hai → dobara click ignore
+  if (submitting) return;
+
+  if (!roomNumber || roomNumber === 'No room assigned' || roomNumber === 'Error loading room') {
+    return Toast.show({ type: "error", text1: "No room assigned" });
+  }
+  if (!category) return Toast.show({ type: "error", text1: "Category is required" });
+  if (!subCategory) return Toast.show({ type: "error", text1: "Sub Category is required" });
+  if (!issue.trim()) return Toast.show({ type: "error", text1: "Issue required" });
+  if (!description.trim()) return Toast.show({ type: "error", text1: "Description required" });
+
+  try {
+    setSubmitting(true); // 🔥 START LOADING
+
+    const formData = new FormData();
+    formData.append("date", complaintDate.toISOString().slice(0, 10));
+    formData.append("roomNumber", roomNumber.replace('#', ''));
+    formData.append("issue", issue.trim());
+    formData.append("description", description.trim());
+    formData.append("priority", urgency.toUpperCase());
+    formData.append("category", category);
+    formData.append("subCategory", subCategory);
+
+    if (uploadedImage) {
+      const uri = Platform.OS === "android" ? uploadedImage : uploadedImage.replace("file://", "");
+      const filename = uploadedImage.split("/").pop() || "photo.jpg";
+      const type = filename.endsWith(".png") ? "image/png" : "image/jpeg";
+      formData.append("ticketImage", { uri, name: filename, type });
     }
-    if (!category) return Toast.show({ type: "error", text1: "Category is required" });
-    if (!subCategory) return Toast.show({ type: "error", text1: "Sub Category is required" });
-    if (!issue.trim()) return Toast.show({ type: "error", text1: "Issue required" });
-    if (!description.trim()) return Toast.show({ type: "error", text1: "Description required" });
 
-    try {
-      const formData = new FormData();
-      formData.append("date", complaintDate.toISOString().slice(0, 10));
-      formData.append("roomNumber", roomNumber.replace('#', ''));
-      formData.append("issue", issue.trim());
-      formData.append("description", description.trim());
-      formData.append("priority", urgency.toUpperCase());
-      formData.append("category", category);
-      formData.append("subCategory", subCategory);
-
-      if (uploadedImage) {
-        const uri = Platform.OS === "android" ? uploadedImage : uploadedImage.replace("file://", "");
-        const filename = uploadedImage.split("/").pop() || "photo.jpg";
-        const type = filename.endsWith(".png") ? "image/png" : "image/jpeg";
-        formData.append("ticketImage", { uri, name: filename, type } as any);
-      }
-
-      const response = await axios.post(`${baseURL}/api/tickets/create`, formData, {
+    const response = await axios.post(
+      `${baseURL}/api/tickets/create`,
+      formData,
+      {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "multipart/form-data",
         },
-        transformRequest: [(data) => data],
-      });
-      console.log("Response of raising request: ",response)
+      }
+    );
 
-      Toast.show({
-  type: "success",
-  text1: "Ticket Raised Successfully",
-});
+    // ✅ SUCCESS TOAST (proper backend msg bhi show karo)
+    const successMsg =
+      response?.data?.message || "Ticket Raised Successfully";
 
-setTimeout(() => {
+    Toast.show({
+      type: "success",
+      text1: successMsg,
+    });
+
+    // slight delay taaki toast dikhe
+   setTimeout(() => {
   navigation.goBack();
-}, 800);
-    } catch (error: any) {
-      const message = error?.response?.data?.message || error?.message || "Unknown server error";
-      Toast.show({ type: "error", text1: "Failed", text2: message });
-    }
-  };
+}, 200); // ✅ 1.5 sec (best UX)
+
+  } catch (error: any) {
+
+    console.log("❌ Submit Error:", error?.response?.data);
+
+    // ✅ PROPER ERROR MESSAGE (backend priority)
+    const errorMsg =
+      error?.response?.data?.message ||
+      error?.response?.data?.error ||
+      error?.message ||
+      "Something went wrong";
+
+    Toast.show({
+      type: "error",
+      text1: "Failed to submit",
+      text2: errorMsg,
+    });
+
+  } finally {
+    setSubmitting(false); // 🔓 END LOADING
+  }
+};
 
   return (
     <KeyboardAvoidingView
@@ -381,9 +413,19 @@ setTimeout(() => {
           )} */}
 
           {/* SUBMIT */}
-          <TouchableOpacity style={styles.submitBtn} onPress={handleSubmit}>
-            <Text style={styles.submitText}>Submit</Text>
-          </TouchableOpacity>
+         <TouchableOpacity
+  style={[
+    styles.submitBtn,
+    submitting && { opacity: 0.6 } // disabled look
+  ]}
+  onPress={handleSubmit}
+  activeOpacity={0.8}
+  disabled={submitting}
+>
+  <Text style={styles.submitText}>
+    {submitting ? "Processing..." : "Submit"}
+  </Text>
+</TouchableOpacity>
 
         </View>
       </ScrollView>

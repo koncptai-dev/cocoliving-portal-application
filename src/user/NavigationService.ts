@@ -41,9 +41,31 @@ const notificationScreenMap: Record<string, keyof RootStackParamList> = {
   // Add more mappings if needed
 };
 
-export function navigateFromNotification(title: string) {
-  const screen = notificationScreenMap[title];
-  if (screen && navigationRef.isReady()) {
-    navigationRef.navigate(screen);
+export function navigateFromNotification(data: any) {
+  if (!navigationRef.isReady()) return;
+
+  const key = data?.notificationKey;
+
+  switch (key) {
+    case "booking":
+
+  if (data?.bookingId) {
+    navigationRef.navigate("ContractSign", {
+      bookingId: data.bookingId,
+    });
+  } else {
+    // fallback (safe)
+    navigationRef.navigate("notificationListScreen");
+  }
+
+  break;
+
+    case "complaint":
+      navigationRef.navigate("ComplaintStatus");
+      break;
+
+    default:
+      navigationRef.navigate("notificationListScreen");
   }
 }
+

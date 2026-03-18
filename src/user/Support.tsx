@@ -4,10 +4,23 @@ import HeaderGradient from '../components/HeaderGradient';
 import colors from '../constants/color';
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialIcons'; // Ya apne according icon library
+import { useRoute } from "@react-navigation/native";
+import { useEffect } from "react";
+import Toast from "react-native-toast-message";
 
 const SupportScreen = () => {
     
     const navigation = useNavigation();
+    const route = useRoute();
+
+    useEffect(() => {
+  if (route.params?.successMessage) {
+    Toast.show({
+      type: "success",
+      text1: route.params.successMessage,
+    });
+  }
+}, []);
 
     return (
         <View style={{ flex: 1, backgroundColor: '#fff' }}>

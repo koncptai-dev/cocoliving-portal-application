@@ -1,24 +1,49 @@
 import messaging, { FirebaseMessagingTypes } from '@react-native-firebase/messaging';
-import notifee, { AndroidImportance } from '@notifee/react-native';
+import notifee, { AndroidImportance,EventType } from '@notifee/react-native';
 import axios from 'axios';
+import { PermissionsAndroid, Platform } from "react-native";
 import { navigateFromNotification } from './NavigationService'
+
 
 /* ----------------------------------------------------
  * PERMISSIONS
  * ---------------------------------------------------- */
+
+
 export async function requestNotificationPermission(): Promise<boolean> {
-  const authStatus = await messaging().requestPermission();
-  const enabled =
-    authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
-    authStatus === messaging.AuthorizationStatus.PROVISIONAL;
+  try {
 
-  console.log(
-    enabled
-      ? '✅ Notification permission granted'
-      : '❌ Notification permission denied'
-  );
+    // ✅ ANDROID 13+ FIX
+    if (Platform.OS === "android" && Platform.Version >= 33) {
+      const granted = await PermissionsAndroid.request(
+        PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS
+      );
 
-  return enabled;
+      if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
+        console.log("❌ Android notification permission denied");
+        return false;
+      }
+    }
+
+    // ✅ iOS + fallback
+    const authStatus = await messaging().requestPermission();
+
+    const enabled =
+      authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
+      authStatus === messaging.AuthorizationStatus.PROVISIONAL;
+
+    console.log(
+      enabled
+        ? "✅ Notification permission granted"
+        : "❌ Notification permission denied"
+    );
+
+    return enabled;
+
+  } catch (error) {
+    console.log("❌ Permission error:", error);
+    return false;
+  }
 }
 
 /* ----------------------------------------------------
@@ -86,7 +111,7 @@ export async function syncFcmTokenToBackend(
  * ---------------------------------------------------- */
 export function listenForegroundNotifications(): () => void {
   return messaging().onMessage(
-    async (remoteMessage: FirebaseMessagingTypes.RemoteMessage) => {
+    async (remoteMessage) => {
       console.log('📩 Foreground notification:', remoteMessage);
 
       await notifee.displayNotification({
@@ -99,9 +124,21 @@ export function listenForegroundNotifications(): () => void {
         data: remoteMessage.data,
       });
 
-      handleNavigation(remoteMessage);
+      // ❌ yaha navigation mat karo
     }
   );
+}
+
+export function listenForegroundClick() {
+  notifee.onForegroundEvent(({ type, detail }) => {
+    if (type === EventType.PRESS) {
+      console.log("👆 Foreground notification clicked");
+
+      handleNavigation({
+        data: detail.notification?.data
+      });
+    }
+  });
 }
 
 /* ----------------------------------------------------
@@ -138,13 +175,12 @@ export function listenTokenRefresh(authToken: string): void {
 /* ----------------------------------------------------
  * NAVIGATION HANDLER
  * ---------------------------------------------------- */
-function handleNavigation(
-  remoteMessage: FirebaseMessagingTypes.RemoteMessage
-) {
-  const title = remoteMessage?.notification?.title ?? '';
-  navigateFromNotification(title);
-}
+function handleNavigation(remoteMessage) {
+  const data = remoteMessage?.data;
+  console.log("📦 Notification data:", data);
 
+  navigateFromNotification(data);
+}
 
 
 

@@ -17,6 +17,7 @@ import Ionicons from "react-native-vector-icons/Ionicons";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
 import { useNavigation } from "@react-navigation/native";
+import RNFS from "react-native-fs";
 
 const API_BASE_URL = "https://staging.cocoliving.in";
 
@@ -129,23 +130,38 @@ const PaymentHistoryScreen = () => {
     }
   };
 
-  const handleInvoicePress = (item: any) => {
-    setSelectedPayment(item);
-    showToast("Invoice loaded! Tap 'Save as PDF' to download.");
-  };
+const handleInvoicePress = (item) => {
+  const invoiceUrl = `${API_BASE_URL}/uploads/invoices/INV-${item.id}.pdf`;
 
-  const handleSavePdf = async () => {
-    if (!selectedPayment) return;
+  setSelectedPayment({
+    ...item,
+    invoiceUrl
+  });
+};
 
-    try {
-      const html = printableInvoiceHtml(selectedPayment);
-      await Print.print({ html });
-      showToast("PDF saved successfully!");
-    } catch (error) {
-      console.error("Print error:", error);
-      showToast("Failed to save PDF. Try again.");
-    }
-  };
+ const handleSavePdf = async () => {
+  if (!selectedPayment) return;
+
+  try {
+
+    const downloadDest = `${RNFS.DocumentDirectoryPath}/invoice-${selectedPayment.id}.pdf`;
+
+    await RNFS.downloadFile({
+      fromUrl: selectedPayment.invoiceUrl,
+      toFile: downloadDest,
+    }).promise;
+
+    await Print.print({
+      filePath: downloadDest
+    });
+
+    showToast("PDF downloaded successfully!");
+
+  } catch (error) {
+    console.log("Print error:", error);
+    showToast("Failed to save PDF");
+  }
+};
 
   const htmlContent = selectedPayment ? printableInvoiceHtml(selectedPayment) : "";
 
@@ -262,8 +278,10 @@ const PaymentHistoryScreen = () => {
           </View>
 
           <WebView
-            source={{ html: htmlContent }}
-            style={{ flex: 1 }}
+             source={{
+    uri: `https://docs.google.com/gview?embedded=true&url=${selectedPayment?.invoiceUrl}`
+  }}
+  style={{ flex: 1 }}
             javaScriptEnabled={true}
             domStorageEnabled={true}
             startInLoadingState={true}
