@@ -40,9 +40,10 @@ const BrowsePropertiesScreen = ({ navigation }) => {
   const [location, setLocation] = useState("");
   const [roomTypeOpen, setRoomTypeOpen] = useState(false);
   const [priceOpen, setPriceOpen] = useState(false);
+  const [roomTypeOptions, setRoomTypeOptions] = useState([]);
 
   const priceOptions = ["5000", "10000", "15000", "20000", "25000"];
-  const roomTypeOptions = ["Single", "Double", "Triple", "Quad","premium Triple"];
+  // const roomTypeOptions = ["Single", "Double", "Triple", "Quad","premium Triple"];
 
   /* ================= API ================= */
 
@@ -59,17 +60,28 @@ const BrowsePropertiesScreen = ({ navigation }) => {
 
       const data = res.data?.properties || [];
 
-      const cleaned = data
-        .map((p) => ({
-          ...p,
-          rateCard: (p.rateCard || []).filter(
-            (r) => r.isAvailable && r.availableRooms > 0
-          ),
-        }))
-        .filter((p) => p.rateCard.length > 0);
+     const cleaned = data
+  .map((p) => ({
+    ...p,
+    rateCard: (p.rateCard || []).filter(
+      (r) => r.isAvailable && r.availableRooms > 0
+    ),
+  }))
+  .filter((p) => p.rateCard.length > 0);
 
-      setProperties(cleaned);
-      setFilteredList(cleaned);
+setProperties(cleaned);
+setFilteredList(cleaned);
+
+// ✅ Dynamic room types
+const uniqueRoomTypes = [
+  ...new Set(
+    cleaned.flatMap((p) =>
+      p.rateCard.map((r) => r.roomType)
+    )
+  ),
+];
+
+setRoomTypeOptions(uniqueRoomTypes);
     } catch (e) {
       Toast.show({
         type: "error",
@@ -210,7 +222,7 @@ const BrowsePropertiesScreen = ({ navigation }) => {
                 setRoomTypeOpen(false);
               }}
             >
-              <Text style={filterStyles.listText}>{t} Sharing</Text>
+              <Text style={filterStyles.listText}>{t}</Text>
             </TouchableOpacity>
           ))}
         </View>

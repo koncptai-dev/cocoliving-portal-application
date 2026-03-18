@@ -86,7 +86,7 @@ const NotificationListScreen = () => {
 
   // ReDirection
 const handleNotificationPress = async (notification) => {
-
+// *********************BOOKING NOTIFICATION******************//
   if (notification.notificationKey === "booking") {
 
     try {
@@ -149,6 +149,62 @@ const bookingToShow = currentBooking || upcomingBooking;
       console.log("Booking check failed:", error);
     }
   }
+
+  // *************EVENT NOTIFCATION*************//
+ else if (notification.notificationKey === "event") {
+  try {
+    const res = await axios.get(
+      `${baseURL}/api/events/allevents?page=1&limit=20`,
+      {
+        headers: { Authorization: `Bearer ${user.token}` },
+      }
+    );
+
+    const fetchedEvents = res.data.events || [];
+
+    // 🔥 same filter logic (IMPORTANT)
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const upcomingEvents = fetchedEvents.filter((event) => {
+      if (!event.eventDate) return false;
+
+      const eventDate = new Date(event.eventDate);
+      eventDate.setHours(0, 0, 0, 0);
+
+      return eventDate >= today;
+    });
+
+    // 🔥 Extract event name from notification message
+    const match = notification.message.match(/"([^"]+)"/);
+    const eventName = match ? match[1] : null;
+
+    // 🔥 Find correct event
+    const selectedEvent = upcomingEvents.find(
+      (e) => e.title === eventName
+    );
+
+    if (!selectedEvent) {
+      Toast.show({
+        type: "error",
+        text1: "Event not found",
+      });
+      return;
+    }
+
+    // ✅ Navigate
+    navigation.navigate("EventDetails", {
+      event: selectedEvent,
+    });
+
+  } catch (error) {
+    console.log("Event fetch failed:", error);
+    Toast.show({
+      type: "error",
+      text1: "Failed to load event",
+    });
+  }
+}
 };
  
   /* ---------------- RENDER ITEM ---------------- */

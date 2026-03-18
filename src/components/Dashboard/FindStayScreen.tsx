@@ -30,6 +30,31 @@ const FindStayScreen = ({ navigation }) => {
 
   const { user } = useAuth();
   const firstLetter = user?.fullName?.charAt(0)?.toUpperCase() || "U";
+  const [notificationCount, setNotificationCount] = useState(0);
+
+
+
+  const fetchNotifications = useCallback(async () => {
+  try {
+    const res = await axios.get(
+      `${baseURL}/api/fcm/get-notifications`,
+      {
+        headers: {
+          Authorization: `Bearer ${user?.token}`,
+        },
+      }
+    );
+
+    const notifications = res.data?.data || [];
+
+    console.log("🔔 Notifications count:", notifications.length);
+
+    setNotificationCount(notifications.length);
+  } catch (err) {
+    console.log("Notification API failed:", err?.response?.data || err.message);
+    setNotificationCount(0);
+  }
+}, [user?.token]);
 
   /* ================= API ================= */
   const fetchProperties = useCallback(async () => {
@@ -59,6 +84,12 @@ const FindStayScreen = ({ navigation }) => {
       setProperties([]);
     }
   }, [user?.token]);
+
+  useFocusEffect(
+  useCallback(() => {
+    fetchNotifications();
+  }, [fetchNotifications])
+);
 
   useEffect(() => {
     fetchProperties();
@@ -249,9 +280,13 @@ const FindStayScreen = ({ navigation }) => {
                 color="#fff"
                 onPress={() => navigation.navigate("notificationListScreen")}
               />
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}></Text>
-              </View>
+              {notificationCount > 0 && (
+  <View style={styles.badge}>
+    <Text style={styles.badgeText}>
+      {notificationCount > 99 ? "99+" : notificationCount}
+    </Text>
+  </View>
+)}
             </View>
           </View>
         </View>

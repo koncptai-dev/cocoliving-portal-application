@@ -34,6 +34,7 @@ const DashboardScreen = ({ navigation }) => {
   const [stayType ,setStayType] = useState("NONE");
   const [checkInDateText, setCheckInDateText] = useState("")
   const [bookingId, setBookingId] = useState(null);
+  const [notificationCount, setNotificationCount] = useState(0);
 
   // Debug: Events state değiştiğinde logla
   useEffect(() => {
@@ -194,6 +195,24 @@ else {
       console.log("Tickets API failed:", err?.response?.data || err.message || err);
       setOpenRequests(0);
     }
+
+    /* ---------- NOTIFICATIONS ---------- */
+try {
+  const notifRes = await axios.get(
+  `${API_BASE_URL}/api/fcm/get-notifications`,
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
+
+  const notifications = notifRes.data?.data || [];
+  console.log("notificationlength: ",notifications.length)
+  console.log("Notifications fetched:", notifications.length);
+
+  setNotificationCount(notifications.length);
+
+} catch (err) {
+  console.log("Notifications API failed:", err?.response?.data || err.message);
+  setNotificationCount(0);
+}
   };
 
   return (
@@ -222,9 +241,13 @@ else {
 
             <View style={styles.notification}>
               <Ionicons name="notifications-outline" size={22} color="#fff" onPress={()=>navigation.navigate("notificationListScreen")} />
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>4</Text>
-              </View>
+            {notificationCount > 0 && (
+  <View style={styles.badge}>
+    <Text style={styles.badgeText}>
+      {notificationCount > 99 ? "99+" : notificationCount}
+    </Text>
+  </View>
+)}
             </View>
           </View>
         </View>

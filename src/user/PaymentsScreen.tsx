@@ -210,13 +210,15 @@ const handleInvoicePress = (item) => {
 
                 <View style={styles.amountRow}>
                   <Text style={styles.amount}>{rupee(item.amountRupees)}</Text>
-                  <TouchableOpacity
-                    style={styles.downloadBtn}
-                    onPress={() => handleInvoicePress(item)}
-                  >
-                    <Ionicons name="download-outline" size={16} color="#fff" />
-                    <Text style={styles.downloadText}>Invoice</Text>
-                  </TouchableOpacity>
+                 {item.status === "SUCCESS" && (
+  <TouchableOpacity
+    style={styles.downloadBtn}
+    onPress={() => handleInvoicePress(item)}
+  >
+    <Ionicons name="download-outline" size={16} color="#fff" />
+    <Text style={styles.downloadText}>Invoice</Text>
+  </TouchableOpacity>
+)}
                 </View>
 
                 <Text style={styles.dateText}>

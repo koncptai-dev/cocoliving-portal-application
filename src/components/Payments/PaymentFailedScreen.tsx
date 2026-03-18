@@ -53,7 +53,11 @@ const PaymentFailedScreen = ({ route, navigation }) => {
           {/* Action Buttons */}
           <TouchableOpacity
             style={styles.primaryBtn}
-            onPress={() => navigation.goBack()}
+            onPress={() =>
+  navigation.navigate("HomeTabs", {   // 👈 tumhara tab navigator ka naam
+    screen: "Rooms",
+  })
+}
           >
             <Text style={styles.primaryBtnText}>Try Again</Text>
           </TouchableOpacity>
