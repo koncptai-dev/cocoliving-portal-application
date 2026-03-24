@@ -14,6 +14,9 @@ import Toast from "react-native-toast-message";
 import { useAuth } from "../context/AuthContext";
 import { useNavigation } from "@react-navigation/native";
  import Config from "react-native-config";
+ import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useFocusEffect } from "@react-navigation/native";
+import { useCallback } from "react";
 export const baseURL = Config.API_BASE_URL;
  
 const POLLING_INTERVAL = 10000; // 10 seconds
@@ -24,6 +27,27 @@ const NotificationListScreen = () => {
   const [loading, setLoading] = useState(true);
   const [notifications, setNotifications] = useState([]);
   const navigation = useNavigation();
+
+
+  const markAllAsRead = async (notifications) => {
+  try {
+    const storedReadIds = await AsyncStorage.getItem("readNotifications");
+    const readIds = storedReadIds ? JSON.parse(storedReadIds) : [];
+
+    // ✅ merge old + new (IMPORTANT)
+    const newIds = notifications.map((n) => n._id || n.id);
+
+    const updatedReadIds = [...new Set([...readIds, ...newIds])];
+
+    await AsyncStorage.setItem(
+      "readNotifications",
+      JSON.stringify(updatedReadIds)
+    );
+
+  } catch (e) {
+    console.log("Mark read error:", e);
+  }
+};
  
   /* ---------------- FETCH NOTIFICATIONS ---------------- */
   const fetchNotifications = async (silent = false) => {
@@ -45,9 +69,13 @@ const NotificationListScreen = () => {
       console.log("✅ API Success:", res.status);
       console.log("📦 Raw Data:", res.data);
  
-      if (res.data?.success) {
-        setNotifications(res.data.data || []);
-      } else {
+     if (res.data?.success) {
+  const data = res.data.data || [];
+  setNotifications(data);
+
+  // 🔥 mark read yahin karo
+  markAllAsRead(data);
+} else {
         Toast.show({
           type: "error",
           text1: "Invalid notification response",
@@ -245,6 +273,15 @@ else if (
   navigation.navigate("MyBookings");
 }
 };
+
+useFocusEffect(
+  useCallback(() => {
+    // sirf screen open hone par mark karo
+    if (notifications.length > 0) {
+      markAllAsRead(notifications);
+    }
+  }, []) 
+);
  
   /* ---------------- RENDER ITEM ---------------- */
 const renderItem = ({ item }) => (

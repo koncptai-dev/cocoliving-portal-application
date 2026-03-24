@@ -267,6 +267,7 @@ const styles = StyleSheet.create({
   justifyContent: 'center',
   paddingVertical: 10,
   flexWrap: 'wrap',
+  alignContent:'center'
 },
 
 foodText: {
@@ -275,6 +276,7 @@ foodText: {
   textAlign: "center",
   lineHeight: 22,  // 🔥 18 → 22
   fontFamily:'Quicksand-Bold',
+  alignItems:'center'
   
 },
 

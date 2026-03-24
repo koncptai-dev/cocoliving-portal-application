@@ -360,9 +360,9 @@ const signContract = async (
 
 try {
   setLoading(true);
-
+  console.log("API SIGN CONTRACT: ",API_BASE)
   const res = await axios.post(
-    `${API_BASE}/contracts/${bookingId}/sign`,
+    `${API_BASE}/api/contracts/${bookingId}/sign`,
     formData,
     {
       headers: {
@@ -371,6 +371,8 @@ try {
       },
     }
   );
+
+  console.log("response: ",res)
 
   setLoading(false);
 

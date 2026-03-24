@@ -15,6 +15,7 @@ import axios from "axios";
 import { useAuth } from "../../context/AuthContext";
 import { useFocusEffect } from "@react-navigation/native";
 import Config from "react-native-config";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const IMAGE_WIDTH = SCREEN_WIDTH - 32;
@@ -50,7 +51,14 @@ const FindStayScreen = ({ navigation }) => {
 
     console.log("🔔 Notifications count:", notifications.length);
 
-    setNotificationCount(notifications.length);
+    const storedReadIds = await AsyncStorage.getItem("readNotifications");
+const readIds = storedReadIds ? JSON.parse(storedReadIds) : [];
+
+const unread = notifications.filter(
+  (n) => !readIds.includes(n._id || n.id)
+);
+
+setNotificationCount(unread.length);
   } catch (err) {
     console.log("Notification API failed:", err?.response?.data || err.message);
     setNotificationCount(0);
@@ -274,21 +282,20 @@ const FindStayScreen = ({ navigation }) => {
               )}
             </TouchableOpacity>
 
-            <View style={styles.notification}>
-              <Ionicons
-                name="notifications-outline"
-                size={22}
-                color="#fff"
-                onPress={() => navigation.navigate("notificationListScreen")}
-              />
-              {notificationCount > 0 && (
-  <View style={styles.badge}>
-    <Text style={styles.badgeText}>
-      {notificationCount > 99 ? "99+" : notificationCount}
-    </Text>
-  </View>
-)}
-            </View>
+            <TouchableOpacity
+  style={styles.notification}
+  onPress={() => navigation.navigate("notificationListScreen")}
+>
+  <Ionicons name="notifications-outline" size={22} color="#fff" />
+
+  {notificationCount > 0 && (
+    <View style={styles.badge}>
+      <Text style={styles.badgeText}>
+        {notificationCount > 99 ? "99+" : notificationCount}
+      </Text>
+    </View>
+  )}
+</TouchableOpacity>
           </View>
         </View>
 
