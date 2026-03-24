@@ -13,13 +13,16 @@ import axios from "axios";
 import Toast from "react-native-toast-message";
 import { useAuth } from "../context/AuthContext";
 import PhonePePaymentSDK from "react-native-phonepe-pg";
+import Config from "react-native-config";
+
+export const API_BASE_URL = Config.API_BASE_URL;
 
 /* =====================
    CONSTANTS
 ===================== */
 const MERCHANT_ID = "M23E2LC5I15OA_2511281216";
 const ENVIRONMENT = "SANDBOX";
-const BASE_URL = "https://staging.cocoliving.in";
+export const BASE_URL = Config.API_BASE_URL;
 
 /* =====================
    SCREEN
@@ -64,7 +67,7 @@ const PayableAmountScreen = ({ route, navigation }) => {
     setCouponLoading(true);
 
     const res = await axios.post(
-      "https://staging.cocoliving.in/api/coupons/validate",
+      `${API_BASE_URL}/api/coupons/validate`,
       {
         code: couponCode.trim(),
         propertyId: room.propertyId,

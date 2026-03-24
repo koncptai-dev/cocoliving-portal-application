@@ -14,6 +14,7 @@ import Ionicons from "react-native-vector-icons/Ionicons";
 import axios from "axios";
 import Toast from "react-native-toast-message";
 import { useAuth } from "../context/AuthContext";
+import Config from "react-native-config";
 
 /* ---------------------- TYPES ---------------------- */
 interface FormDataType {
@@ -28,6 +29,7 @@ interface FormDataType {
   position: string;
   foodPreference: "Jain" | "Non-Jain" | null;
 }
+export const API_BASE_URL = Config.API_BASE_URL;
 
 const EditProfileScreen = () => {
   const { user } = useAuth();
@@ -63,7 +65,7 @@ const EditProfileScreen = () => {
       setLoading(true);
 
       const res = await axios.get(
-        `https://staging.cocoliving.in/api/user/getUser/${user.id}`,
+        `${API_BASE_URL}/api/user/getUser/${user.id}`,
         {
           headers: { Authorization: `Bearer ${user.token}` },
         }
@@ -140,7 +142,7 @@ const EditProfileScreen = () => {
 
       // 5. API Call
       const res = await axios.put(
-        `https://staging.cocoliving.in/api/user/update-profile/${user.id}`,
+        `${API_BASE_URL}/api/user/update-profile/${user.id}`,
         payload,
         {
           headers: { 

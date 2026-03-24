@@ -22,10 +22,11 @@ import OTPTextInput from 'react-native-otp-textinput';
 import Toast from 'react-native-toast-message';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
+import Config from 'react-native-config';
 
 
 
-export const API_BASE_URL = 'https://staging.cocoliving.in';
+export const API_BASE_URL = Config.API_BASE_URL;
 const CHECK_IDENTIFIER_API = `${API_BASE_URL}/api/common/check-email`;
 const LOGIN_SEND_OTP = `${API_BASE_URL}/api/common/login/request-otp`;
 const LOGIN_VERIFY_OTP = `${API_BASE_URL}/api/common/login/verify-otp`;

@@ -14,11 +14,12 @@ import Ionicons from "react-native-vector-icons/Ionicons";
 import axios from "axios";
 import { useAuth } from "../../context/AuthContext";
 import { useFocusEffect } from "@react-navigation/native";
+import Config from "react-native-config";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const IMAGE_WIDTH = SCREEN_WIDTH - 32;
 
-const baseURL = "https://staging.cocoliving.in";
+ export const baseURL = Config.API_BASE_URL;
 const PLACEHOLDERS = ["city", "room type"];
 
 const FindStayScreen = ({ navigation }) => {

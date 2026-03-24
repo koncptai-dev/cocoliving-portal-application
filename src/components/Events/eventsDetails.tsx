@@ -13,8 +13,9 @@ import { useAuth } from "../../context/AuthContext";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import Toast from "react-native-toast-message";
 import colors from "../../constants/color";
+import Config from "react-native-config";
 
-const BASE_URL = "https://staging.cocoliving.in";
+ export const BASE_URL = Config.API_BASE_URL;
 
 const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7";
 

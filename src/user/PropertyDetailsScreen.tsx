@@ -11,8 +11,9 @@ import {
 } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import colors from "../constants/color";
+import Config from "react-native-config";
 
-const baseURL = "https://staging.cocoliving.in";
+export const baseURL = Config.API_BASE_URL;
 // const baseURL = "http://10.0.2.2:5001"; // backend
 
 const openInMaps = (address) => {

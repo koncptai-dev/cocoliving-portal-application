@@ -13,8 +13,8 @@ import axios from "axios";
 import Toast from "react-native-toast-message";
 import { useAuth } from "../context/AuthContext";
 import { useNavigation } from "@react-navigation/native";
- 
-const baseURL = "https://staging.cocoliving.in";
+ import Config from "react-native-config";
+export const baseURL = Config.API_BASE_URL;
  
 const POLLING_INTERVAL = 10000; // 10 seconds
  
@@ -204,6 +204,45 @@ const bookingToShow = currentBooking || upcomingBooking;
       text1: "Failed to load event",
     });
   }
+
+
+  
+}
+
+// *************GUEST NOTIFICATION*************//
+  else if (
+    notification.title?.toLowerCase().includes("guest")
+  ) {
+    navigation.navigate("GuestVisit");
+  }
+
+  // *************REQUEST UPDATE NOTIFICATION*************//
+  else if (
+    notification.title?.toLowerCase().includes("request")
+  ) {
+    navigation.navigate("ComplaintStatus");
+  }
+
+  // *************WELCOME NOTIFICATION*************//
+ else if (
+  notification.title?.toLowerCase() === "welcome"
+) {
+  navigation.navigate("HomeTabs", {
+    screen: "Center",
+  });
+}
+  // *************RENT DUE NOTIFICATION*************//
+ else if (
+    notification.title?.toLowerCase().includes("rent")
+  ) {
+    navigation.navigate("MyBookings");
+  }
+
+  // *************CHECK-IN REMINDER*************//
+else if (
+  notification.title?.toLowerCase().includes("check-in")
+) {
+  navigation.navigate("MyBookings");
 }
 };
  

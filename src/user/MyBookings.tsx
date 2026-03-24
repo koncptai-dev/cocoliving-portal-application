@@ -13,8 +13,8 @@ import { useAuth } from "../context/AuthContext";
 import HeaderGradient from "../components/HeaderGradient";
 import { useFocusEffect } from '@react-navigation/native';
 import { useCallback } from 'react';
-
-const API_BASE_URL = "https://staging.cocoliving.in";
+import Config from "react-native-config";
+export const API_BASE_URL = Config.API_BASE_URL;
 
 const MyBookings = ({ navigation }: any) => {
   const { user } = useAuth();

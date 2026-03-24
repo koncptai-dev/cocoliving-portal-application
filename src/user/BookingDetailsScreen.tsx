@@ -18,11 +18,12 @@ import PhonePePaymentSDK from "react-native-phonepe-pg";
 import { useAuth } from "../context/AuthContext";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { useNavigation } from "@react-navigation/native";
+import Config from "react-native-config";
 
 /* =====================
    CONSTANTS
 ===================== */
-const BASE_URL = "https://staging.cocoliving.in";
+export const BASE_URL = Config.API_BASE_URL;
 const MERCHANT_ID = "M23E2LC5I15OA_2511281216";
 const ENVIRONMENT = "SANDBOX";
 

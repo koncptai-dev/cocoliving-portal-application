@@ -14,14 +14,14 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useAuth } from '../context/AuthContext';
 import { useNavigation } from '@react-navigation/native';
 import axios from 'axios';
-
+import Config from 'react-native-config';
 const { width } = Dimensions.get('window');
 
 // 375x263 image → ratio = 0.7013
 const IMAGE_RATIO = 200 / 375;
 const IMAGE_HEIGHT = width * IMAGE_RATIO;
 
-const baseURL = 'https://staging.cocoliving.in';
+export const baseURL = Config.API_BASE_URL;
 
 type Props = {
   title: string;

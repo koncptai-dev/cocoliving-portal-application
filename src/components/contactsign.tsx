@@ -22,12 +22,12 @@ import { useNavigation } from '@react-navigation/native';
 import Toast from "react-native-toast-message";
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { InteractionManager } from "react-native";
-
+import Config from 'react-native-config';
 
 
 /* ================== CONFIG ================== */
-const API_BASE = 'https://staging.cocoliving.in/api';
-const BASE_URL = 'https://staging.cocoliving.in';
+export const BASE_URL = Config.API_BASE_URL;
+export const API_BASE = Config.API_BASE_URL;
 
 /* ================== HELPERS ================== */
 const buildPdfUrl = (path?: string | null) => {

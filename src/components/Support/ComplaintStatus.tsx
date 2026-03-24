@@ -4,9 +4,11 @@ import HeaderGradient from "../HeaderGradient";
 import axios from "axios";
 import { useAuth } from "../../context/AuthContext";
 import Toast from "react-native-toast-message";
+import Config from "react-native-config";
+   export const baseURL = Config.API_BASE_URL;
 
 const ComplaintStatus = () => {
-  const baseURL = "https://staging.cocoliving.in";
+
   const { user } = useAuth();
   const token = user?.token;
 

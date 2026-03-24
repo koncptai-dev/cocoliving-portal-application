@@ -35,93 +35,181 @@ export type RootStackParamList = {
 
 export const navigationRef = createNavigationContainerRef<RootStackParamList>();
 
-// Optional: Map notification titles to screens (agar future mein title-based navigation chahiye)
-const notificationScreenMap: Record<string, keyof RootStackParamList> = {
-  "Booking Approved": "ContractSign",
-  // Add more if needed in future
-};
-
 interface NotificationData {
   notificationKey?: string;
   type?: string;
   eventId?: string;
   bookingId?: string;
-  // Add other possible fields from your FCM payload
+  requestId?: string;
+  notification?: any;
   [key: string]: any;
 }
 
-/**
- * Navigates to the appropriate screen based on push notification data.
- * Handles both app foreground/background and quit states safely.
- */
+/* ================= MAIN ENTRY ================= */
 export function navigateFromNotification(data: NotificationData | null | undefined) {
+  console.log("\n🚀 ===============================");
+  console.log("🚀 navigateFromNotification CALLED");
+
   if (!data) {
-    console.warn("No notification data received");
+    console.warn("❌ No notification data received");
     return;
   }
+
+  console.log("📦 RAW DATA:", JSON.stringify(data, null, 2));
 
   if (!navigationRef.isReady()) {
-    console.log("Navigation container not ready yet → scheduling retry");
+    console.log("⏳ Navigation NOT ready → retrying...");
 
-    // Retry after a short delay (common for app launch from quit state)
     setTimeout(() => {
+      console.log("🔁 Retry triggered");
+
       if (navigationRef.isReady()) {
-        console.log("Navigation now ready → performing navigation");
+        console.log("✅ Navigation READY after delay");
         performNavigation(data);
       } else {
-        console.warn("Navigation still not ready after delay → fallback to notification list");
-        if (navigationRef.isReady()) {
-          navigationRef.navigate("notificationListScreen");
-        }
+        console.warn("❌ Still NOT ready → fallback to notification list");
+        navigationRef.navigate("notificationListScreen");
       }
-    }, 1200); // 1.2 seconds – adjust between 800-2000ms if needed
+    }, 1200);
 
     return;
   }
 
+  console.log("✅ Navigation READY immediately");
   performNavigation(data);
 }
 
+/* ================= NAVIGATION LOGIC ================= */
 function performNavigation(data: NotificationData) {
-  const key = data?.notificationKey || data?.type;
+  console.log("\n🔥 =================================");
+  console.log("🔥 performNavigation START");
 
-  console.log("🔥 FULL PUSH NOTIFICATION DATA:", JSON.stringify(data, null, 2));
-  console.log("👉 Detected notification key/type:", key);
+  /* ---------- CLEAN KEY ---------- */
+  const rawKey = data?.notificationKey || data?.type || "";
+  const key = rawKey.toString().trim().toLowerCase();
 
-  switch (key?.toLowerCase()) {  // case-insensitive for safety
+  /* ---------- EXTRACT TITLE ---------- */
+  const title =
+    data?.title?.toLowerCase?.() ||
+    data?.notification?.title?.toLowerCase?.() ||
+    "";
 
-    /* ================= BOOKING ================= */
-    case "booking":
-      console.log("📌 Booking notification clicked");
+  console.log("🧪 RAW KEY:", rawKey);
+  console.log("🧹 CLEAN KEY:", key);
+  console.log("📌 TITLE:", title);
+  console.log("📦 FULL DATA:", JSON.stringify(data, null, 2));
 
-      if (data?.bookingId) {
-        console.log("✅ Navigating to ContractSign with bookingId:", data.bookingId);
-        navigationRef.navigate("ContractSign", {
-          bookingId: data.bookingId,
-        });
-      } else {
-        console.warn("⚠️ bookingId missing in payload → fallback");
-        navigationRef.navigate("notificationListScreen");
-      }
-      break;
+  /* ================= KEY BASED HANDLING ================= */
 
-    /* ================= EVENT ================= */
-case "event":
-  console.log("📌 Event notification clicked → redirecting to list");
+  // 🔥 REQUEST UPDATE
+  if (key === "request_update") {
+    console.log("✅ MATCH: REQUEST_UPDATE");
 
-  navigationRef.navigate("notificationListScreen");
-  break;
+    navigationRef.navigate("ComplaintStatus", {
+      requestId: data.requestId,
+    });
 
-    /* ================= COMPLAINT ================= */
-    case "complaint":
-      console.log("📌 Complaint notification clicked → navigating to ComplaintStatus");
-      navigationRef.navigate("ComplaintStatus");
-      break;
-
-    /* ================= DEFAULT / UNKNOWN ================= */
-    default:
-      console.warn("⚠️ Unknown or unmapped notification key/type:", key);
-      navigationRef.navigate("notificationListScreen");
-      break;
+    console.log("🚀 Navigated → ComplaintStatus");
+    return;
   }
+
+  // 🔥 ONBOARDING SUCCESS
+  if (key === "onboarding_success") {
+    console.log("✅ MATCH: ONBOARDING_SUCCESS");
+
+    navigationRef.reset({
+      index: 0,
+      routes: [
+        {
+          name: "HomeTabs",
+          state: {
+            routes: [{ name: "Center" }],
+          },
+        },
+      ],
+    });
+
+    console.log("🚀 Reset → HomeTabs → Center");
+    return;
+  }
+
+  // 🔥 BOOKING
+  if (key === "booking") {
+    console.log("➡️ MATCH: BOOKING");
+
+    if (data?.bookingId) {
+      navigationRef.navigate("ContractSign", {
+        bookingId: data.bookingId,
+      });
+      console.log("🚀 Navigated → ContractSign");
+    } else {
+      console.warn("⚠️ bookingId missing → fallback");
+      navigationRef.navigate("notificationListScreen");
+    }
+
+    return;
+  }
+
+  // 🔥 EVENT
+  if (key === "event") {
+    console.log("➡️ MATCH: EVENT");
+    navigationRef.navigate("notificationListScreen");
+    return;
+  }
+
+  // 🔥 COMPLAINT
+  if (key === "complaint") {
+    console.log("➡️ MATCH: COMPLAINT");
+    navigationRef.navigate("ComplaintStatus");
+    return;
+  }
+
+  /* ================= TITLE BASED FALLBACK ================= */
+
+  console.log("➡️ FALLBACK → TITLE BASED CHECK");
+
+  if (title.includes("guest")) {
+    console.log("✅ TITLE MATCH: GUEST");
+    navigationRef.navigate("GuestVisit");
+    return;
+  }
+
+  if (title.includes("request")) {
+    console.log("✅ TITLE MATCH: REQUEST");
+    navigationRef.navigate("ComplaintStatus");
+    return;
+  }
+
+  if (title.includes("rent")) {
+    console.log("✅ TITLE MATCH: RENT");
+    navigationRef.navigate("PaymentScreen");
+    return;
+  }
+
+  if (title === "welcome") {
+    console.log("✅ TITLE MATCH: WELCOME");
+
+    navigationRef.reset({
+      index: 0,
+      routes: [
+        {
+          name: "HomeTabs",
+          state: {
+            routes: [{ name: "Center" }],
+          },
+        },
+      ],
+    });
+
+    console.log("🚀 Reset → HomeTabs → Center");
+    return;
+  }
+
+  /* ================= FINAL FALLBACK ================= */
+
+  console.warn("❌ NO MATCH FOUND → notification list");
+  navigationRef.navigate("notificationListScreen");
+
+  console.log("🔥 performNavigation END");
+  console.log("🔥 =================================\n");
 }

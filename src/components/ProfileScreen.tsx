@@ -16,9 +16,9 @@ import LinearGradient from "react-native-linear-gradient";
 import Toast from "react-native-toast-message";
 import axios from "axios";
 import colors from "../constants/color";
+import Config from "react-native-config";
 
-
-const BASE_URL = "https://staging.cocoliving.in";
+export const BASE_URL = Config.API_BASE_URL;
 
 const ProfileScreen = () => {
   const navigation = useNavigation();

@@ -12,8 +12,9 @@ import axios from "axios";
 import { useAuth } from "../context/AuthContext";
 import HeaderGradient from "../components/HeaderGradient";
 import { useRoute } from "@react-navigation/native";
+import Config from "react-native-config";
 
-const BASE_URL = "https://staging.cocoliving.in";
+export const BASE_URL = Config.API_BASE_URL;
 
 
 const days = [

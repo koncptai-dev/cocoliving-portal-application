@@ -15,8 +15,10 @@ import axios from "axios";
 import Toast from "react-native-toast-message";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { useNavigation } from "@react-navigation/native";
+import { useAuth } from "../context/AuthContext";
+import Config from "react-native-config";
+export const BASE_URL = Config.API_BASE_URL;
 
-const BASE_URL = "https://staging.cocoliving.in";
 
 const MyVisit = () => {
   const [form, setForm] = useState({
@@ -29,7 +31,7 @@ const MyVisit = () => {
 
   const [showPicker, setShowPicker] = useState(false);
   const [loading, setLoading] = useState(false);
-
+  const { user } = useAuth();
   const navigation = useNavigation();
 
   const onDateChange = (event: any, selectedDate?: Date) => {
@@ -74,16 +76,17 @@ const MyVisit = () => {
 
       console.log("Submitting Payload:", JSON.stringify(payload, null, 2));
 
-      const response = await axios.post(
-        `${BASE_URL}/api/scheduled-visits`,
-        payload,
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-          timeout: 1500
-        }
-      );
+       const response = await axios.post(
+      `${BASE_URL}/api/scheduled-visits/make-a-visit`,
+      payload,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${user?.token}`, // ✅ important change
+        },
+        timeout: 5000, // thoda safe timeout
+      }
+    );
 
       console.log("API Success Response:", response.status, response.data);
 

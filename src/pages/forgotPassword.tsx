@@ -17,12 +17,13 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import colors from '../constants/color';
 import AuthHeader from '../components/AuthHeader';
+import Config from 'react-native-config';
 
 // const API_BASE_URL =
 //   Platform.OS === 'android'
 //     ? 'http://10.0.2.2:5001'
 //     : 'http://localhost:5001';
-const API_BASE_URL='https://staging.cocoliving.in';
+export const API_BASE_URL = Config.API_BASE_URL;
 const FORGOT_PASSWORD_URL = `${API_BASE_URL}/api/common/forgot-password`;
 const RESET_PASSWORD_URL = `${API_BASE_URL}/api/common/reset-password`;
 

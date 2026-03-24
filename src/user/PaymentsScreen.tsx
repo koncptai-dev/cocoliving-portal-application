@@ -18,8 +18,9 @@ import axios from "axios";
 import { useAuth } from "../context/AuthContext";
 import { useNavigation } from "@react-navigation/native";
 import RNFS from "react-native-fs";
+import Config from "react-native-config";
 
-const API_BASE_URL = "https://staging.cocoliving.in";
+export const API_BASE_URL = Config.API_BASE_URL;
 
 const rupee = (n?: number) => `₹${(n || 0).toLocaleString("en-IN")}`;
 

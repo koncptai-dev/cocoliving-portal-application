@@ -20,8 +20,9 @@ import Toast from "react-native-toast-message";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { useAuth } from "../context/AuthContext";
 import { useNavigation } from "@react-navigation/native";
+import Config from "react-native-config";
  
-const baseURL = "https://staging.cocoliving.in/api";
+export const baseURL = Config.API_BASE_URL;
  
 const GatepassScreen = () => {
   const { user } = useAuth();

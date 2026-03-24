@@ -13,8 +13,9 @@ import axios from "axios";
 
 import colors from "../constants/color";
 import { useFocusEffect } from "@react-navigation/native";
+import Config from "react-native-config";
 
-const API_BASE_URL = "https://staging.cocoliving.in";
+export const API_BASE_URL = Config.API_BASE_URL;
 
 const DashboardScreen = ({ navigation }) => {
   const { user } = useAuth();
@@ -147,8 +148,27 @@ else {
       const menus = foodRes.data.menus || [];
       console.log("Food menus fetched successfully. Count:", menus.length);
 
-      const todayMenu = menus[0]?.weekMenu?.[todayName] || null;
-      setTodayFood(todayMenu);
+    const menuObj = menus[0];
+
+const dayData = menuObj?.weekMenu?.[todayName];
+const photoData = menuObj?.photos?.[todayName];
+
+const todayMenu = dayData
+  ? {
+      breakfast: dayData.breakfast || [],
+      lunch: dayData.lunch || [],
+      dinner: dayData.dinner || [],
+
+      // ✅ images add
+      breakfastImg: photoData?.breakfast?.[0] || null,
+      lunchImg: photoData?.lunch?.[0] || null,
+      dinnerImg: photoData?.dinner?.[0] || null,
+    }
+  : null;
+
+setTodayFood(todayMenu);
+
+console.log("Today's FULL food:", todayMenu);
       console.log("Today's food set:", todayMenu);
     } catch (err) {
       console.log("Food menu API failed:", err?.response?.data || err.message || err);
@@ -287,35 +307,47 @@ try {
       />
 
       <View style={styles.foodRow}>
-        <FoodCard
-          title="Breakfast"
-          subtitle={
-            todayFood?.breakfast?.length
-              ? todayFood.breakfast.join(", ")
-              : "Not available"
-          }
-          image={require("../../assets/images/breakfastt.png")}
-        />
+       <FoodCard
+  title="Breakfast"
+  subtitle={
+    todayFood?.breakfast?.length
+      ? todayFood.breakfast.join(", ")
+      : "Not available"
+  }
+  image={
+    todayFood?.breakfastImg
+      ? { uri: `${API_BASE_URL}${todayFood.breakfastImg}?t=${Date.now()}` }
+      : require("../../assets/images/breakfastt.png")
+  }
+/>
+
+       <FoodCard
+  title="Lunch"
+  subtitle={
+    todayFood?.lunch?.length
+      ? todayFood.lunch.join(", ")
+      : "Not available"
+  }
+  image={
+    todayFood?.lunchImg
+      ? { uri: `${API_BASE_URL}${todayFood.lunchImg}?t=${Date.now()}` }
+      : require("../../assets/images/lunch.png")
+  }
+/>
 
         <FoodCard
-          title="Lunch"
-          subtitle={
-            todayFood?.lunch?.length
-              ? todayFood.lunch.join(", ")
-              : "Not available"
-          }
-          image={require("../../assets/images/lunch.png")}
-        />
-
-        <FoodCard
-          title="Dinner"
-          subtitle={
-            todayFood?.dinner?.length
-              ? todayFood.dinner.join(", ")
-              : "Not available"
-          }
-          image={require("../../assets/images/dinner.png")}
-        />
+  title="Dinner"
+  subtitle={
+    todayFood?.dinner?.length
+      ? todayFood.dinner.join(", ")
+      : "Not available"
+  }
+  image={
+    todayFood?.dinnerImg
+      ? { uri: `${API_BASE_URL}${todayFood.dinnerImg}?t=${Date.now()}` }
+      : require("../../assets/images/dinner.png")
+  }
+/>
       </View>
 
       {/* ---------------- EVENTS ---------------- */}

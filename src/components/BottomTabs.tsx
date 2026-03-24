@@ -42,8 +42,9 @@ import AboutUsScreen from '../components/AboutUsScreen';
 import NotificationListScreen from '../components/notificationIcon';
 import Myvisit from '../components/Myvisit';
 import GuestVisit from '../components/GuestVisit';
-
+import Config from "react-native-config";
 const Tab = createBottomTabNavigator();
+   export const baseURL = Config.API_BASE_URL;
 
 export default function BottomTabs({ hasBooking }) {
   const insets = useSafeAreaInsets(); // agar use kar rahe ho toh rakho
@@ -59,7 +60,7 @@ useEffect(() => {
   const checkBooking = async () => {
     try {
       const res = await axios.get(
-        "https://staging.cocoliving.in/api/book-room/getUserBookings?page=1&limit=5",
+        `${baseURL}/api/book-room/getUserBookings?page=1&limit=5`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }

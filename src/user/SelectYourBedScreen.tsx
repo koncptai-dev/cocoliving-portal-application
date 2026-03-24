@@ -14,9 +14,10 @@ import { useAuth } from "../context/AuthContext";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import colors from "../constants/color";
 import axios from "axios";
-
+import Config from "react-native-config";
+ export const baseURL = Config.API_BASE_URL;
 const SelectYourBedScreen = ({ route, navigation }) => {
-  const baseURL = "https://staging.cocoliving.in";
+
 
   const roomImages = {
   "Single Sharing": require("../../assets/images/one.jpg.jpeg"),

@@ -16,12 +16,13 @@ import { useNavigation } from '@react-navigation/native';
 import axios from 'axios';
 import {launchCamera, launchImageLibrary} from 'react-native-image-picker';
 import { useAuth } from '../../context/AuthContext';
-
+import Config from 'react-native-config';
 import Toast from "react-native-toast-message";
+   export const baseURL = Config.API_BASE_URL;
 
 const RaiseComplaint = () => {
 
-  const baseURL = 'https://staging.cocoliving.in';
+
   const navigation = useNavigation();
 
   const { user } = useAuth();
