@@ -10,6 +10,7 @@ import {
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
+import Config from 'react-native-config';
  
 type PreferenceKey =
   | 'pushnotifications'
@@ -17,7 +18,7 @@ type PreferenceKey =
   | 'newsletters'
   | 'email';
  
-const baseURL = 'https://staging.cocoliving.in';
+ export const baseURL = Config.API_BASE_URL;
  
 const NotificationSettingsScreen: React.FC<any> = ({ navigation }) => {
   const { user } = useAuth();

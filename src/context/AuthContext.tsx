@@ -4,6 +4,7 @@ import * as Keychain from 'react-native-keychain';
 import { jwtDecode } from 'jwt-decode';
 import Toast from 'react-native-toast-message';
 import axios from 'axios';
+import Config from 'react-native-config';
 
 /* ================= TYPES ================= */
 
@@ -44,7 +45,7 @@ const AuthContext = createContext<AuthContextType>({
 
 const USER_DATA_KEY = 'userData';
 const SECURE_AUTH_KEY = 'secureAuth';
-const BASE_URL = 'https://staging.cocoliving.in';
+export const BASE_URL = Config.API_BASE_URL;
 
 /* ================= PROVIDER ================= */
 

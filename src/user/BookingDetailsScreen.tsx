@@ -24,8 +24,8 @@ import Config from "react-native-config";
    CONSTANTS
 ===================== */
 export const BASE_URL = Config.API_BASE_URL;
-const MERCHANT_ID = "M23E2LC5I15OA_2511281216";
-const ENVIRONMENT = "SANDBOX";
+export const MERCHANT_ID = Config.MERCHANT_ID;
+export const ENVIRONMENT = Config.ENVIRONMENT;
 
 
 const getNextRentDueDate = (checkInDate, installmentsPaid) => {
@@ -214,6 +214,7 @@ const { lateFee, totalPayable } = calculateLateFeeAndTotal();
 
       // 2️⃣ Initiate API
       console.log("Calling initiate API...");
+      console.log("BASE_URL: ",BASE_URL)
       const res = await axios.post(
         `${BASE_URL}${initiateUrl}`,
         payload,
@@ -223,7 +224,9 @@ const { lateFee, totalPayable } = calculateLateFeeAndTotal();
             "x-client": "mobile",
           },
         }
+      
       );
+        console.log("Response of BASE_URL: ",BASE_URL)
       console.log("✅ Initiate Response:", JSON.stringify(res.data, null, 2));
 
     if (!res.data?.success) {

@@ -63,8 +63,9 @@ const EditProfileScreen = () => {
       if (!user?.id || !user?.token) return;
 
       setLoading(true);
-
+      console.log("Response of profile fetch: ",API_BASE_URL)
       const res = await axios.get(
+
         `${API_BASE_URL}/api/user/getUser/${user.id}`,
         {
           headers: { Authorization: `Bearer ${user.token}` },

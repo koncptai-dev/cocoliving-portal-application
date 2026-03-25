@@ -56,9 +56,10 @@ import {
 } from './src/user/notificationservice';
 import SupportScreen from './src/user/Support';
 import { navigationRef } from './src/user/NavigationService';
+import Config from 'react-native-config';
 
 const Stack = createNativeStackNavigator();
-const API_BASE_URL = 'https://staging.cocoliving.in';
+ export const API_BASE_URL = Config.API_BASE_URL;
 
 // ---------------------------------------------------------
 // APP NAVIGATOR

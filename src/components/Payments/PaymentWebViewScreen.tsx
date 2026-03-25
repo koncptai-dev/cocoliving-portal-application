@@ -5,8 +5,8 @@ import WebView from 'react-native-webview';
 import axios from 'axios';
 
 // सुनिश्चित करें कि यह BASE URL एकदम सटीक हो
-const PHONEPE_REDIRECT_URL_BASE = "https://staging.cocoliving.in/payment/redirect";
-const BASE_URL = "https://staging.cocoliving.in"; 
+const PHONEPE_REDIRECT_URL_BASE = "https://www.cocoliving.in/payment/redirect";
+const BASE_URL = "https://www.cocoliving.in"; 
 
 const PaymentWebViewScreen = ({ route, navigation }) => {
   const { redirectUrl, orderId, userToken } = route.params; 

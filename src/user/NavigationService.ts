@@ -84,11 +84,9 @@ function performNavigation(data: NotificationData) {
   console.log("\n🔥 =================================");
   console.log("🔥 performNavigation START");
 
-  /* ---------- CLEAN KEY ---------- */
   const rawKey = data?.notificationKey || data?.type || "";
   const key = rawKey.toString().trim().toLowerCase();
 
-  /* ---------- EXTRACT TITLE ---------- */
   const title =
     data?.title?.toLowerCase?.() ||
     data?.notification?.title?.toLowerCase?.() ||
@@ -101,9 +99,69 @@ function performNavigation(data: NotificationData) {
 
   /* ================= KEY BASED HANDLING ================= */
 
+  // 🔥 VISIT TODAY
+  if (key === "visit_today") {
+    console.log("✅ MATCH: VISIT TODAY");
+
+    navigationRef.navigate("notificationListScreen");
+
+    console.log("🚀 Navigated → myVisit");
+    return;
+  }
+
+  // 🔥 CHECK-IN REMINDER
+  if (key === "checkin_reminder") {
+    console.log("✅ MATCH: CHECKIN REMINDER");
+
+    navigationRef.navigate("MyBookings");
+
+    console.log("🚀 Navigated → MyBookings");
+    return;
+  }
+
+  // 🔥 ONBOARDING SUCCESS
+  if (key === "onboarding_success") {
+    console.log("✅ MATCH: ONBOARDING SUCCESS");
+
+    navigationRef.reset({
+      index: 0,
+      routes: [
+        {
+          name: "HomeTabs",
+          state: {
+            routes: [{ name: "Center" }],
+          },
+        },
+      ],
+    });
+
+    console.log("🚀 Reset → HomeTabs → Center");
+    return;
+  }
+
+  // 🔥 SECURITY DEPOSIT
+  if (key === "security_deposit") {
+    console.log("✅ MATCH: SECURITY DEPOSIT");
+
+        navigationRef.navigate("MyBookings");
+
+    console.log("🚀 Navigated → PaymentScreen");
+    return;
+  }
+
+  // 🔥 RENT DUE
+  if (key === "rent_due_last_day") {
+    console.log("✅ MATCH: RENT DUE");
+
+        navigationRef.navigate("MyBookings");
+
+    console.log("🚀 Navigated → PaymentScreen");
+    return;
+  }
+
   // 🔥 REQUEST UPDATE
   if (key === "request_update") {
-    console.log("✅ MATCH: REQUEST_UPDATE");
+    console.log("✅ MATCH: REQUEST UPDATE");
 
     navigationRef.navigate("ComplaintStatus", {
       requestId: data.requestId,
@@ -113,27 +171,27 @@ function performNavigation(data: NotificationData) {
     return;
   }
 
-  // 🔥 ONBOARDING SUCCESS
-  if (key === "onboarding_success") {
-    console.log("✅ MATCH: ONBOARDING_SUCCESS");
+  // 🔥 GUEST UPDATE
+  if (key === "guest_update") {
+    console.log("✅ MATCH: GUEST UPDATE");
 
-    navigationRef.reset({
-      index: 0,
-      routes: [
-        {
-          name: "HomeTabs",
-          state: {
-            routes: [{ name: "Center" }],
-          },
-        },
-      ],
-    });
+    navigationRef.navigate("GuestVisit");
 
-    console.log("🚀 Reset → HomeTabs → Center");
+    console.log("🚀 Navigated → GuestVisit");
     return;
   }
 
-  // 🔥 BOOKING
+  // 🔥 TENURE ENDING
+  if (key === "tenure_ending") {
+    console.log("✅ MATCH: TENURE ENDING");
+
+    navigationRef.navigate("MyBookings");
+
+    console.log("🚀 Navigated → MyBookings");
+    return;
+  }
+
+  // 🔥 BOOKING (old support)
   if (key === "booking") {
     console.log("➡️ MATCH: BOOKING");
 
@@ -141,54 +199,33 @@ function performNavigation(data: NotificationData) {
       navigationRef.navigate("ContractSign", {
         bookingId: data.bookingId,
       });
-      console.log("🚀 Navigated → ContractSign");
     } else {
-      console.warn("⚠️ bookingId missing → fallback");
       navigationRef.navigate("notificationListScreen");
     }
 
     return;
   }
 
-  // 🔥 EVENT
-  if (key === "event") {
-    console.log("➡️ MATCH: EVENT");
-    navigationRef.navigate("notificationListScreen");
-    return;
-  }
+  /* ================= FALLBACK ================= */
 
-  // 🔥 COMPLAINT
-  if (key === "complaint") {
-    console.log("➡️ MATCH: COMPLAINT");
-    navigationRef.navigate("ComplaintStatus");
-    return;
-  }
-
-  /* ================= TITLE BASED FALLBACK ================= */
-
-  console.log("➡️ FALLBACK → TITLE BASED CHECK");
+  console.log("➡️ FALLBACK → TITLE CHECK");
 
   if (title.includes("guest")) {
-    console.log("✅ TITLE MATCH: GUEST");
     navigationRef.navigate("GuestVisit");
     return;
   }
 
-  if (title.includes("request")) {
-    console.log("✅ TITLE MATCH: REQUEST");
-    navigationRef.navigate("ComplaintStatus");
-    return;
-  }
-
   if (title.includes("rent")) {
-    console.log("✅ TITLE MATCH: RENT");
     navigationRef.navigate("PaymentScreen");
     return;
   }
 
-  if (title === "welcome") {
-    console.log("✅ TITLE MATCH: WELCOME");
+  if (title.includes("check-in")) {
+    navigationRef.navigate("MyBookings");
+    return;
+  }
 
+  if (title === "welcome") {
     navigationRef.reset({
       index: 0,
       routes: [
@@ -200,14 +237,10 @@ function performNavigation(data: NotificationData) {
         },
       ],
     });
-
-    console.log("🚀 Reset → HomeTabs → Center");
     return;
   }
 
-  /* ================= FINAL FALLBACK ================= */
-
-  console.warn("❌ NO MATCH FOUND → notification list");
+  console.warn("❌ NO MATCH → notification list");
   navigationRef.navigate("notificationListScreen");
 
   console.log("🔥 performNavigation END");

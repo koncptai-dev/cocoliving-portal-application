@@ -54,7 +54,7 @@ useEffect(() => {
       const res = await axios.get(`${BASE_URL}/api/guest-visits/user`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-
+      console.log("response of guest list: ",res)
       setVisits(res.data.visits || []);
     } catch (err: any) {
       console.log('Guest visits fetch error:', err);

@@ -18,8 +18,8 @@ import { launchCamera } from "react-native-image-picker";  // ← CHANGED TO CAM
 import Toast from "react-native-toast-message";
 import { useAuth } from "../context/AuthContext";
 import { useNavigation } from "@react-navigation/native";
-
-const BASE_URL = "https://staging.cocoliving.in";
+import Config from "react-native-config";
+export const BASE_URL = Config.API_BASE_URL;
 
 export default function Profile() {
   const { user } = useAuth();
@@ -108,7 +108,7 @@ export default function Profile() {
       });
 
       if (u.profileImage) {
-        setImage(`https://staging.cocoliving.in${u.profileImage}`);
+        setImage(`${BASE_URL}${u.profileImage}`);
       }
     } catch (e) {
       Toast.show({ type: "error", text1: "Failed to load profile" });

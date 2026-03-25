@@ -16,13 +16,14 @@ import PhonePePaymentSDK from "react-native-phonepe-pg";
 import Config from "react-native-config";
 
 export const API_BASE_URL = Config.API_BASE_URL;
-
+export const MERCHANT_ID = Config.MERCHANT_ID;
+export const ENVIRONMENT = Config.ENVIRONMENT;
 /* =====================
    CONSTANTS
 ===================== */
-const MERCHANT_ID = "M23E2LC5I15OA_2511281216";
-const ENVIRONMENT = "SANDBOX";
-export const BASE_URL = Config.API_BASE_URL;
+
+
+
 
 /* =====================
    SCREEN
@@ -156,7 +157,7 @@ Toast.show({
         MERCHANT_ID,
         `FLOW_${Date.now()}`,
         true
-      );
+      ).then(result => { console.log("result" + JSON.stringify(result)); }).catch(error => {   console.log("error:" + error.message); });
       console.log("[PhonePe] SDK initialized");
 
       // 2️⃣ Initiate API
@@ -186,7 +187,7 @@ Toast.show({
       console.log("[PhonePe] Sending initiate payload:", payload);
 
       const res = await axios.post(
-        `${BASE_URL}/api/booking-payments/initiate`,
+        `${API_BASE_URL}/api/booking-payments/initiate`,
         payload,
         {
           headers: {
@@ -238,7 +239,7 @@ Toast.show({
         console.log(`[PhonePe] Poll attempt #${attempts}`);
 
         const statusRes = await axios.get(
-          `${BASE_URL}/api/payments/status/${encodeURIComponent(merchantOrderId)}`,
+          `${API_BASE_URL}/api/payments/status/${encodeURIComponent(merchantOrderId)}`,
           {
             headers: { Authorization: `Bearer ${token}` },
           }
@@ -425,7 +426,7 @@ return (
                 source={{
                   uri:
                     room.roomImages?.length > 0
-                      ? `${BASE_URL}${room.roomImages[0]}`
+                      ? `${API_BASE_URL}${room.roomImages[0]}`
                       : "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=600",
                 }}
                 style={styles.thumb}

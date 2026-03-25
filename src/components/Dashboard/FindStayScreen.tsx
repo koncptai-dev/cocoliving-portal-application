@@ -16,6 +16,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useFocusEffect } from "@react-navigation/native";
 import Config from "react-native-config";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { BASE_URL } from "../ProfileScreen";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const IMAGE_WIDTH = SCREEN_WIDTH - 32;
@@ -274,7 +275,7 @@ setNotificationCount(unread.length);
             >
               {user?.profileImage ? (
                 <Image
-                  source={{ uri: `https://staging.cocoliving.in${user.profileImage}` }}
+                  source={{ uri: `${BASE_URL}${user.profileImage}` }}
                   style={styles.profileImage}
                 />
               ) : (

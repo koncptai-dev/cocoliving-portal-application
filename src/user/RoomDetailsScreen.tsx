@@ -14,9 +14,10 @@ import Ionicons from "react-native-vector-icons/Ionicons";
 import LinearGradient from "react-native-linear-gradient";
 import Toast from "react-native-toast-message";
 import { useAuth } from "../context/AuthContext";
+import Config from "react-native-config";
 
 const { width } = Dimensions.get("window");
-const baseURL = "https://staging.cocoliving.in";
+export const BASE_URL = Config.API_BASE_URL;
 
 const RoomDetailsScreen = ({ route, navigation }) => {
   const { room, property } = route.params;
@@ -24,7 +25,7 @@ const RoomDetailsScreen = ({ route, navigation }) => {
 
   const gallery =
     room.roomImages?.length > 0
-      ? room.roomImages.map((img) => `${baseURL}${img}`)
+      ? room.roomImages.map((img) => `${BASE_URL}${img}`)
       : [];
 
   const [activeIndex, setActiveIndex] = useState(0);

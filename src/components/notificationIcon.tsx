@@ -237,6 +237,12 @@ const bookingToShow = currentBooking || upcomingBooking;
   
 }
 
+ // 🔥 TENURE ENDING (NEW)
+  else if (notification.title.includes("tenure")) {
+    console.log("✅ Tenure Ending → MyBookings");
+    navigation.navigate("MyBookings");
+  }
+
 // *************GUEST NOTIFICATION*************//
   else if (
     notification.title?.toLowerCase().includes("guest")

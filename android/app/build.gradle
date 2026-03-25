@@ -80,10 +80,10 @@ android {
 
     namespace "com.mycoco"
     defaultConfig {
-        applicationId "com.mycoco"
+         applicationId "com.mycoco"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 19
+        versionCode 20
         versionName "1.0"
     }
     // signingConfigs {

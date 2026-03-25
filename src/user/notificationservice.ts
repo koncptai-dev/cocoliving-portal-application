@@ -3,12 +3,12 @@ import notifee, { AndroidImportance,EventType } from '@notifee/react-native';
 import axios from 'axios';
 import { PermissionsAndroid, Platform } from "react-native";
 import { navigateFromNotification } from './NavigationService'
-
+import Config from 'react-native-config';
 
 /* ----------------------------------------------------
  * PERMISSIONS
  * ---------------------------------------------------- */
-
+ export const baseURL = Config.API_BASE_URL;
 
 export async function requestNotificationPermission(): Promise<boolean> {
   try {
@@ -87,7 +87,7 @@ export async function syncFcmTokenToBackend(
     console.log('📤 Syncing FCM token to backend:', fcmToken);
 
     const response = await axios.post(
-      'https://staging.cocoliving.in/api/fcm/store-fcm-token',
+      `${baseURL}/api/fcm/store-fcm-token`,
       { fcmToken },
       {
         headers: {

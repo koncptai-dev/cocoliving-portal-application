@@ -314,7 +314,9 @@ const startFiveSecLoader = () => {
     setLoading(true);
 
     try {
+      console.log("BEFORE CALLING: ",CHECK_IDENTIFIER_API);
       const res = await axios.post(CHECK_IDENTIFIER_API, { email: identifier });
+      console.log("AFTER  CALLING: ",CHECK_IDENTIFIER_API);
       const data = res.data;
 
       if (!data.exists) {
@@ -384,6 +386,7 @@ const startFiveSecLoader = () => {
   console.log('📤 SEND OTP REQUEST PAYLOAD:', JSON.stringify(payload, null, 2));
 
   try {
+    console.log("URL LOGIN: ",LOGIN_SEND_OTP);
     await axios.post(LOGIN_SEND_OTP, payload);
 
     setChildId(selectedChildId);
