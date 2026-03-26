@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
 } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
+import { Linking } from "react-native";
 
 const AboutUsScreen = ({ navigation }) => {
   return (
@@ -207,9 +208,26 @@ const AboutUsScreen = ({ navigation }) => {
   <Text style={styles.footerText}>info@cocoliving.in</Text>
 
   <Text style={styles.footerHeading}>Policy</Text>
-  <Text style={styles.footerText}>Privacy Policy</Text>
-  <Text style={styles.footerText}>Terms & Conditions</Text>
-  <Text style={styles.footerText}>Refund & Cancellation Policy</Text>
+<Text
+  style={styles.footerText}
+  onPress={() => Linking.openURL('https://www.cocoliving.in/privacy-policy')}
+>
+  Privacy Policy
+</Text>
+
+<Text
+  style={styles.footerText}
+  onPress={() => Linking.openURL('https://www.cocoliving.in/terms-and-conditions')}
+>
+  Terms & Conditions
+</Text>
+
+<Text
+  style={styles.footerText}
+  onPress={() => Linking.openURL('https://www.cocoliving.in/refund-and-cancellation')}
+>
+  Refund & Cancellation Policy
+</Text>
 
   <Text style={styles.footerCopyright}>
     © 2025 COCO LIVING. All rights reserved.
