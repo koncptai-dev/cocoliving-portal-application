@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState,useEffect} from "react";
 import {
   View,
   Text,
@@ -17,6 +17,7 @@ import Ionicons from "react-native-vector-icons/Ionicons";
 import { useNavigation } from "@react-navigation/native";
 import { useAuth } from "../context/AuthContext";
 import Config from "react-native-config";
+
 export const BASE_URL = Config.API_BASE_URL;
 
 
@@ -28,11 +29,22 @@ const MyVisit = () => {
     visitDate: "",
     propertyId: "", // empty like web → should work if backend allows it
   });
-
+  
   const [showPicker, setShowPicker] = useState(false);
   const [loading, setLoading] = useState(false);
   const { user } = useAuth();
   const navigation = useNavigation();
+
+  useEffect(() => {
+  if (user) {
+    setForm(prev => ({
+      ...prev,
+      name: user.fullName || "",
+      email: user.email || "",
+      phone: user.phone || "",
+    }));
+  }
+}, [user]);
 
   const onDateChange = (event: any, selectedDate?: Date) => {
     setShowPicker(Platform.OS === "ios");

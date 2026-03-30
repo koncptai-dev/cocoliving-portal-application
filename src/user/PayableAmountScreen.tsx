@@ -300,9 +300,14 @@ Toast.show({
         {
           name: "PaymentFailedScreen",
           params: {
-            transactionId: merchantOrderId,
-            amount: discountedAmount,
-            reason: "Payment Failed",
+            room,
+  property,
+  rent,
+  monthsNumber,
+  isoDate,
+  netPayable,
+  preBookAmount,
+  actionType,
           },
         },
       ],

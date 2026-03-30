@@ -116,7 +116,8 @@ const EventDetailsScreen = ({ route, navigation }) => {
     `${localEvent.eventDate}T${localEvent.eventTime || "00:00:00"}`
   );
   const isPast = eventDateTime < new Date();
-
+  const isFull =
+  (localEvent?.attendingCount || 0) >= (localEvent?.maxParticipants || 0);
   const formatDate = (d) => {
     if (!d) return "TBD";
     const date = new Date(d);
@@ -220,26 +221,27 @@ const EventDetailsScreen = ({ route, navigation }) => {
           </View>
 
           {/* Button */}
-          <TouchableOpacity
-            style={[
-              styles.joinButton,
-              isPast
-                ? styles.completedButton
-                : isAttending
-                ? styles.greenButton
-                : styles.brownButton,
-            ]}
-            onPress={handleJoinEvent}
-            disabled={isPast}
-          >
-            <Text style={styles.joinText}>
-              {isPast
-                ? "Completed"
-                : isAttending
-                ? "You're In!"
-                : "I'm In!"}
-            </Text>
-          </TouchableOpacity>
+          {isPast ? (
+  <TouchableOpacity style={styles.completedButton} disabled>
+    <Text style={styles.joinText}>Completed</Text>
+  </TouchableOpacity>
+) : isFull ? (
+  <TouchableOpacity style={styles.completedButton} disabled>
+    <Text style={styles.joinText}>Event Full</Text>
+  </TouchableOpacity>
+) : (
+  <TouchableOpacity
+    style={[
+      styles.joinButton,
+      isAttending ? styles.greenButton : styles.brownButton,
+    ]}
+    onPress={handleJoinEvent}
+  >
+    <Text style={styles.joinText}>
+      {isAttending ? "You're In!" : "I'm In!"}
+    </Text>
+  </TouchableOpacity>
+)}
         </View>
       </ScrollView>
     </View>
@@ -379,6 +381,7 @@ const styles = StyleSheet.create({
     color: "#FFF",
     fontSize: 18,
     fontFamily: "Quicksand-Bold",
+    textAlign:'center'
   },
 });
 

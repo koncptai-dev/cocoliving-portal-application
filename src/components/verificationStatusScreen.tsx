@@ -761,17 +761,7 @@ await Linking.openURL(digilockerUrl);
                   onChangeText={(text) => setAadhaarMobile(text.replace(/[^0-9]/g, ''))}
                 />
 
-                <TouchableOpacity
-                  style={styles.actionButton}
-                  onPress={startAadhaarFlow}
-                  disabled={aadhaarVerifying}
-                >
-                  {aadhaarVerifying ? (
-                    <ActivityIndicator color="#fff" />
-                  ) : (
-                    <Text style={styles.btnText}>Verify via DigiLocker</Text>
-                  )}
-                </TouchableOpacity>
+             
 
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 16 }}>
                   {/* <View style={{ flex: 1, height: 1, backgroundColor: '#E5D8CF' }} /> */}
@@ -809,6 +799,18 @@ await Linking.openURL(digilockerUrl);
                     <Image source={{ uri: aadhaarBack.uri }} style={styles.previewSmall} />
                   )}
                 </View>
+
+                   <TouchableOpacity
+                  style={[styles.actionButton, { marginTop: 20 }]}
+                  onPress={startAadhaarFlow}
+                  disabled={aadhaarVerifying}
+                >
+                  {aadhaarVerifying ? (
+                    <ActivityIndicator color="#fff" />
+                  ) : (
+                    <Text style={styles.btnText}>Verify via DigiLocker</Text>
+                  )}
+                </TouchableOpacity>
               </View>
             )}
           </View>

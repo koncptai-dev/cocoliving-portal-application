@@ -204,8 +204,19 @@ const AboutUsScreen = ({ navigation }) => {
   </Text>
 
   <Text style={styles.footerHeading}>Contact Info</Text>
-  <Text style={styles.footerText}>+91-8141676967</Text>
-  <Text style={styles.footerText}>info@cocoliving.in</Text>
+<Text
+  style={styles.footerText}
+  onPress={() => Linking.openURL('tel:+918141676967')}
+>
+  +91-8141676967
+</Text>
+
+<Text
+  style={styles.footerText}
+  onPress={() => Linking.openURL('mailto:info@cocoliving.in')}
+>
+  info@cocoliving.in
+</Text>
 
   <Text style={styles.footerHeading}>Policy</Text>
 <Text
@@ -229,9 +240,9 @@ const AboutUsScreen = ({ navigation }) => {
   Refund & Cancellation Policy
 </Text>
 
-  <Text style={styles.footerCopyright}>
-    © 2025 COCO LIVING. All rights reserved.
-  </Text>
+ <Text style={styles.footerCopyright}>
+  © {new Date().getFullYear()} COCO LIVING. All rights reserved.
+</Text>
 </View>
 
       </ScrollView>

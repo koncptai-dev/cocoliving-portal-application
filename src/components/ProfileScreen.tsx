@@ -115,6 +115,16 @@ const openWhatsApp = async () => {
         label="Edit profile information"
         onPress={() => navigation.navigate("Profile")}
       />
+        <MenuItem
+        icon="call-outline"
+        label="Contact Us"
+        onPress={() => Linking.openURL("tel:+918141676967")}
+      />
+      <MenuItem
+  icon="mail-outline"
+  label="Email Us"
+  onPress={() => Linking.openURL("mailto:info@cocoliving.in")}
+/>
       <MenuItem
         icon="card-outline"
         label="Payment history"
@@ -179,6 +189,11 @@ const openWhatsApp = async () => {
         label="Contact Us"
         onPress={() => Linking.openURL("tel:+918141676967")}
       />
+      <MenuItem
+  icon="mail-outline"
+  label="Email Us"
+  onPress={() => Linking.openURL("mailto:info@cocoliving.in")}
+/>
       <MenuItem icon="information-circle-outline" label="About Us" onPress={()=>navigation.navigate("AboutUsScreen")} />
 
        <MenuItem

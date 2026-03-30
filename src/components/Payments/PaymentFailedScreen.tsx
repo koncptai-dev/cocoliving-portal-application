@@ -1,5 +1,5 @@
 import React from "react";
-import { useState } from "react";
+import { useState , useEffect} from "react";
 import {
   View,
   Text,
@@ -14,6 +14,9 @@ import Ionicons from "react-native-vector-icons/Ionicons";
 const PaymentFailedScreen = ({ route, navigation }) => {
   const { transactionId, amount, failureReason } = route.params || {};
   const [showContactModal, setShowContactModal] = useState(false);
+  useEffect(() => {
+  console.log("PARAMS:", route.params);
+}, []);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -53,12 +56,12 @@ const PaymentFailedScreen = ({ route, navigation }) => {
           {/* Action Buttons */}
           <TouchableOpacity
             style={styles.primaryBtn}
-            onPress={() =>
-  navigation.navigate("HomeTabs", {   // 👈 tumhara tab navigator ka naam
-    screen: "Rooms",
+           onPress={() =>
+  navigation.navigate("PayableAmountScreen", {
+    ...route.params,   
   })
 }
-          >
+>
             <Text style={styles.primaryBtnText}>Try Again</Text>
           </TouchableOpacity>
 

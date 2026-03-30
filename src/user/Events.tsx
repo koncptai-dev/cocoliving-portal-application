@@ -40,6 +40,7 @@ export default function EventsScreen() {
 
   const [locations, setLocations] = useState([]);
 
+
   // Refetch events every time screen comes into focus
   useFocusEffect(
     useCallback(() => {
@@ -325,6 +326,8 @@ export default function EventsScreen() {
               (p) => p.userId === user?.id
             );
             const isAttending = participation?.status === "attending";
+            const isFull =
+    (event.attendingCount || 0) >= event.maxParticipants;
 
             const eventDateTime = new Date(
               `${event.eventDate}T${event.eventTime || "00:00:00"}`
@@ -393,33 +396,34 @@ export default function EventsScreen() {
 
                     {/* Join Button */}
                     {isPast ? (
-                      <TouchableOpacity
-                        style={styles.completedButton}
-                        disabled
-                      >
-                        <Text style={styles.completedText}>Completed</Text>
-                      </TouchableOpacity>
-                    ) : (
-                      <TouchableOpacity
-                        style={[
-                          styles.joinButton,
-                          isAttending ? styles.greenButton : styles.grayButton,
-                        ]}
-                        onPress={(e) => {
-                          e.stopPropagation(); // Prevent card navigation when pressing button
-                          handleJoinEvent(event);
-                        }}
-                      >
-                        <Text
-                          style={[
-                            styles.joinText,
-                            isAttending && styles.greenText,
-                          ]}
-                        >
-                          {isAttending ? "See You There!" : "Count Me In!"}
-                        </Text>
-                      </TouchableOpacity>
-                    )}
+  <TouchableOpacity style={styles.completedButton} disabled>
+    <Text style={styles.completedText}>Completed</Text>
+  </TouchableOpacity>
+) : isFull ? (
+  <TouchableOpacity style={styles.completedButton} disabled>
+    <Text style={styles.completedText}>Event Full</Text>
+  </TouchableOpacity>
+) : (
+  <TouchableOpacity
+    style={[
+      styles.joinButton,
+      isAttending ? styles.greenButton : styles.grayButton,
+    ]}
+    onPress={(e) => {
+      e.stopPropagation();
+      handleJoinEvent(event);
+    }}
+  >
+    <Text
+      style={[
+        styles.joinText,
+        isAttending && styles.greenText,
+      ]}
+    >
+      {isAttending ? "See You There!" : "Count Me In!"}
+    </Text>
+  </TouchableOpacity>
+)}
                   </View>
                 </View>
               </TouchableOpacity>

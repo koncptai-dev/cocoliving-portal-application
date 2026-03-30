@@ -90,15 +90,17 @@ useEffect(() => {
 useEffect(() => {
   if (!preferredRoomId) return;
 
-  axios
+  const res=axios
     .get(
       `${baseURL}/api/inventory/available/${preferredRoomId}`,
       { headers: { Authorization: `Bearer ${user?.token}` } }
     )
+    
     .then(res => {
       const beds = (res.data.items || []).filter(i =>
         i.itemName?.toLowerCase().includes("bed")
       );
+      console.log("Bed response: ",res)
       setBedsInRoom(beds);
     });
 }, [preferredRoomId]);
@@ -251,9 +253,9 @@ useEffect(() => {
     onPress={() => setShowBedDD(!showBedDD)}
   >
     <Text style={[styles.fieldText, !preferredBedInventoryId && styles.placeholderText]}>
-      {preferredBedInventoryId
-        ? bedsInRoom.find(b => b.id === preferredBedInventoryId)?.inventoryCode
-        : "Select Bed"}
+     {preferredBedInventoryId
+  ? bedsInRoom.find(b => b.id === preferredBedInventoryId)?.itemName
+  : "Select Bed"}
     </Text>
     <Ionicons name="chevron-down" size={20} color="#6C5840" />
   </TouchableOpacity>
@@ -273,9 +275,7 @@ useEffect(() => {
           setShowBedDD(false);
         }}
       >
-        <Text style={styles.selectText}>
-          {b.inventoryCode ?? `Bed ${b.id}`}
-        </Text>
+        <Text style={styles.selectText}>{b.itemName}</Text>
       </TouchableOpacity>
     ))}
   </View>
@@ -409,7 +409,7 @@ useEffect(() => {
     roomsOnFloor.find(r => r.id === preferredRoomId)?.roomNumber ?? null,
 
   preferredBed:
-    bedsInRoom.find(b => b.id === preferredBedInventoryId)?.inventoryCode ?? null,
+    bedsInRoom.find(b => b.id === preferredBedInventoryId)?.itemName
 });
         }}
       >

@@ -73,6 +73,16 @@ export default function Profile() {
     return "";
   };
 
+  const normalizeNumber = (num) => {
+  if (!num) return "";
+
+  // sirf digits rakho
+  let digits = num.replace(/\D/g, "");
+
+  // last 10 digits lo (India case)
+  return digits.slice(-10);
+};
+
   // 🔥 Load User
   useEffect(() => {
     loadUser();
@@ -83,6 +93,8 @@ export default function Profile() {
       const res = await axios.get(`${BASE_URL}/api/user/getUser/${user.id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
+      console.log("Profile fetching: ",BASE_URL)
+      console.log("Profile fetchig: ",res)
 
       const u = res.data.user;
 
@@ -160,6 +172,19 @@ const saveProfile = async () => {
     Toast.show({ type: "error", text1: "Please fix error in parent email" });
     return;
   }
+
+  // 🔥 Parent mobile validation
+const userPhone = normalizeNumber(profile.phone);
+const parentPhone = normalizeNumber(profile.parentMobile);
+
+if (isStudent && userPhone && parentPhone && userPhone === parentPhone) {
+  Toast.show({
+    type: "error",
+    text1: "Invalid Parent Mobile",
+    text2: "Parent mobile number cannot be same as your number",
+  });
+  return;
+}
 
   try {
     const fullName = `${profile.firstName} ${profile.lastName}`.trim();
