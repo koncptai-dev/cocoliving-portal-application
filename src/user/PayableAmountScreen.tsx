@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
   View,
   Text,
@@ -52,15 +52,14 @@ const PayableAmountScreen = ({ route, navigation }) => {
   const [couponLoading , setCouponLoading] = useState(false);
   const [discountType , setDiscountType] = useState(null);
   const [discount ,setDiscount] = useState(0);
+const [appliedCoupon, setAppliedCoupon] = useState("");
 
 
   // Function to apply coupon
-  const applyCoupon = async () => {
+// Function to apply coupon
+const applyCoupon = async () => {
   if (!couponCode.trim()) {
-    Toast.show({
-      type: "error",
-      text1: "Enter coupon code",
-    });
+    Toast.show({ type: "error", text1: "Enter coupon code" });
     return;
   }
 
@@ -70,70 +69,78 @@ const PayableAmountScreen = ({ route, navigation }) => {
     const res = await axios.post(
       `${API_BASE_URL}/api/coupons/validate`,
       {
-        code: couponCode.trim(),
+        code: couponCode.trim().toUpperCase(),
         propertyId: room.propertyId,
       },
       {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       }
     );
 
-    const data = res.data;
-    console.log("response: ",data)
+    const couponData = res.data?.coupon;
+    if (!couponData?.discountValue) {
+      Toast.show({ type: "error", text1: "Invalid Coupon" });
+      return;
+    }
 
-if (!data?.coupon?.discountValue) {
-  Toast.show({
-    type: "error",
-    text1: "Invalid Coupon",
-  });
-  return;
-}
-
-const value = Number(data.coupon.discountValue);
-const type = data.coupon.discountType.toUpperCase(); // normalize
-
-setDiscount(value);
-setDiscountType(type);
-
-Toast.show({
-  type: "success",
-  text1: "Coupon applied successfully",
-});
+    const value = Number(couponData.discountValue);
+    const type = couponData.discountType.toUpperCase();
 
     setDiscount(value);
     setDiscountType(type);
+    setAppliedCoupon(couponCode.trim().toUpperCase());
 
     Toast.show({
       type: "success",
       text1: "Coupon applied successfully",
     });
 
-  } catch (err) {
-
-  const backendMessage =
-    err?.response?.data?.message || "Something went wrong";
-
-  Toast.show({
-    type: "error",
-    text1: backendMessage,
-  });
-
-}finally {
-    // 👈 Yeh sabse important hai, isse loading state khatam ho jayegi
-    setCouponLoading(false); 
+  } catch (err: any) {
+    const backendMessage = err?.response?.data?.message || "Something went wrong";
+    Toast.show({
+      type: "error",
+      text1: backendMessage,
+    });
+  } finally {
+    setCouponLoading(false);
   }
 };
+
+
 
 
   /* =====================
      CALCULATIONS
   ===================== */
-  const securityDeposit = rent * 2;
-  const finalPayable =
-    actionType === "PreBook" ? preBookAmount : netPayable;
+/* =====================
+   CALCULATIONS
+===================== */
+const securityDeposit = rent * 2;
+const finalPayable = actionType === "PreBook" ? preBookAmount : netPayable;
 
+const discountedAmount = React.useMemo(() => {
+  const base = Number(finalPayable) || 0;
+  const dVal = Number(discount) || 0;
+  const dType = discountType?.toUpperCase();
+
+  // DEBUG: Check if values are reaching here
+  console.log("Memo Input:", { base, dVal, dType });
+
+  if (dVal <= 0 || !dType) return base;
+
+  let result = base;
+  if (dType === "PERCENTAGE") {
+    result = base - (base * dVal) / 100;
+  } else {
+    // FLAT / AMOUNT / FIXED
+    result = base - dVal;
+  }
+
+  console.log("Memo Result:", result);
+  return Math.max(0, Math.round(result));
+}, [finalPayable, discount, discountType]);
+console.log("Current Discount State:", discount);
+console.log("Current DiscountedAmount:", discountedAmount);
   const proceedBtnText =
     actionType === "PreBook"
       ? "Proceed To Pre-book"
@@ -161,24 +168,28 @@ Toast.show({
       console.log("[PhonePe] SDK initialized");
 
       // 2️⃣ Initiate API
+          // 2️⃣ Initiate API
       const payload = {
         userId: Number(user.id),
         bookingType: actionType === "PreBook" ? "PREBOOK" : "BOOK",
-          couponCode: discount > 0 ? couponCode : null,
-       metadata: {
-  rateCardId: room.rateCardId,
-  propertyId: room.propertyId,
-  roomType: room.roomType,
-  checkInDate: isoDate,
-  duration: monthsNumber,
-  monthlyRent: rent,
+        
+        couponCode: discount > 0 ? appliedCoupon : null,   // ← Yeh sahi rahega
+        amount: discountedAmount,                          // ← Yeh important hai (backend ko discounted amount bhejo)
 
-
-  // ✅ PREFERENCES (MISSING PART)
-  preferredFloor: preferredFloor ?? null,
-  preferredRoomNumber: preferredRoomNumber ?? null,
-  preferredBed: preferredBed ?? null,
-},
+        metadata: {
+          rateCardId: room.rateCardId,
+          propertyId: room.propertyId,
+          roomType: room.roomType,
+          checkInDate: isoDate,
+          duration: monthsNumber,
+          monthlyRent: rent,
+          originalAmount: finalPayable,
+          discountedAmount: discountedAmount,   // extra help ke liye
+          
+          preferredFloor: preferredFloor ?? null,
+          preferredRoomNumber: preferredRoomNumber ?? null,
+          preferredBed: preferredBed ?? null,
+        },
 
         clientType: "mobile",
       };
@@ -302,6 +313,7 @@ Toast.show({
           params: {
             room,
   property,
+  amountPaid: discountedAmount,
   rent,
   monthsNumber,
   isoDate,
@@ -325,7 +337,7 @@ Toast.show({
         console.log("[PhonePe] Polling timeout");
         navigation.replace("PaymentFailedScreen", {
           transactionId: merchantOrderId,
-          amount: discountedAmount,
+          amountPaid: discountedAmount,        // ← change kiya
           reason: "Timeout while waiting for status. Check My Bookings later.",
         });
       }
@@ -337,7 +349,6 @@ Toast.show({
   const backendMessage =
     errorData?.message || "Something went wrong. Please try again.";
 
-  // ✅ CASE 1: KYC REQUIRED
   if (
     errorData?.code === "KYC_REQUIRED" ||
     backendMessage.toLowerCase().includes("kyc")
@@ -347,58 +358,48 @@ Toast.show({
       text1: "KYC Required",
       text2: "Please complete KYC to continue booking",
     });
-
     setLoading(false);
-
-    // 👉 Direct KYC screen
     navigation.replace("VerificationStatus");
     return;
   }
 
-  // ✅ CASE 2: Already active / pending booking
   if (
     backendMessage.includes("already have an active") ||
     backendMessage.includes("pending booking")
   ) {
-    Toast.show({
-      type: "info",
-      text1: backendMessage,
-    });
+    Toast.show({ type: "info", text1: backendMessage });
     setLoading(false);
     return;
   }
 
-  // ❌ बाकी सभी errors
   Toast.show({
     type: "error",
     text1: "Booking Error",
     text2: backendMessage,
   });
 
-  navigation.replace("PaymentFailedScreen", {
-    transactionId: merchantOrderId || "unknown",
-    amount: discountedAmount,
-    reason: backendMessage,
-  });
-
+  // ✅ FIXED
+navigation.replace("PaymentFailedScreen", {
+  room,
+  property,
+  amountPaid: discountedAmount,             // ← yahan bhi amountPaid
+  rent,
+  monthsNumber,
+  isoDate,
+  netPayable,
+  preBookAmount,
+  actionType,
+  transactionId: merchantOrderId || "unknown",
+  reason: backendMessage,
+});
 } finally {
-      setLoading(false);
-      console.log("[PhonePe] Flow ended");
-    }
+  setLoading(false);
+  console.log("[PhonePe] Flow ended");
+}
   };
 
   // Calculation related to coupon
-  let discountedAmount = finalPayable;
-
-if (discountType === "PERCENTAGE") {
-  discountedAmount = finalPayable - (finalPayable * discount) / 100;
-}
-
-if (discountType === "AMOUNT") {
-  discountedAmount = finalPayable - discount;
-}
-
-if (discountedAmount < 0) discountedAmount = 0;
+  
 
 
   /* =====================
@@ -487,6 +488,9 @@ return (
   value={`₹ ${preBookAmount.toLocaleString()}`}
   bold
 />
+
+<View style={styles.dashedLine} />
+
           </>
         )}
 

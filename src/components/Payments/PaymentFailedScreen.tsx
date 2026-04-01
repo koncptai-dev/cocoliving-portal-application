@@ -12,7 +12,7 @@ import {
 import Ionicons from "react-native-vector-icons/Ionicons";
 
 const PaymentFailedScreen = ({ route, navigation }) => {
-  const { transactionId, amount, failureReason } = route.params || {};
+  const { transactionId, amount, failureReason,netPayable,amountPaid} = route.params || {};
   const [showContactModal, setShowContactModal] = useState(false);
   useEffect(() => {
   console.log("PARAMS:", route.params);
@@ -37,7 +37,10 @@ const PaymentFailedScreen = ({ route, navigation }) => {
 
           {/* Payment Details */}
           <View style={styles.card}>
-            <Row label="Amount" value={`₹ ${amount?.toLocaleString()}`} />
+            <Row
+  label="Amount"
+  value={`₹ ${(amountPaid || amount || 0).toLocaleString()}`}
+/>
             <Row
               label="Status"
               value="FAILED"
