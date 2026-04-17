@@ -66,7 +66,7 @@ const AgreementScreen = ({ onAccept }: { onAccept: () => void }) => {
 
         {/* TITLE */}
         <Text style={styles.agreementTitle}>
-          Residen OnBoarding & Occupancy Agreement
+          Resident OnBoarding & Occupancy Agreement
         </Text>
 
         {/* AGREEMENT TEXT */}
@@ -321,12 +321,140 @@ if (type === "guardian") {
 // Agreement screen: 
 
   /* ================== SIGN CONTRACT ================== */
+// const signContract = async (
+//   tenantPath = tenantSignaturePath,
+//   guardianPath = guardianSignaturePath
+// ) => {
+
+//   if (!tenantPath) {
+//     Toast.show({
+//       type: "error",
+//       text1: "User signature required",
+//     });
+//     return;
+//   }
+
+//   if (isStudent && !guardianSignaturePath) {
+//     Toast.show({
+//       type: "error",
+//       text1: "Guardian signature required",
+//     });
+//     return;
+//   }
+
+//   const formData = new FormData();
+
+//   formData.append("tenantSignature", {
+//     uri: `file://${tenantPath}`,
+//     type: "image/png",
+//     name: "tenant_signature.png",
+//   });
+
+//  if (isStudent && guardianPath) {
+//   formData.append("guardianSignature", {
+//     uri: `file://${guardianPath}`,
+//     type: "image/png",
+//     name: "guardian_signature.png",
+//   });
+// }
+
+// try {
+//   setLoading(true);
+//   console.log("API SIGN CONTRACT: ",API_BASE)
+//   const res = await axios.post(
+//     `${API_BASE}/api/contracts/${bookingId}/sign`,
+//     formData,
+//     {
+//       headers: {
+//         Authorization: `Bearer ${user?.token}`,
+//         "Content-Type": "multipart/form-data",
+//       },
+//     }
+//   );
+
+//   console.log("response: ",res)
+
+//   setLoading(false);
+
+//   // Toast ki jagah Alert
+//   Alert.alert(
+//     "Success!",
+//     "Contract signed successfully. Redirecting to home...",
+//     [
+//       {
+//         text: "OK",
+//         onPress: () => {
+//           // Thoda delay de sakte ho agar chahiye, lekin zaruri nahi
+//           setTimeout(() => {
+//             navigation.reset({
+//               index: 0,
+//               routes: [{ name: "HomeTabs" }],
+//             });
+//           }, 800); // 0.8 second ka chhota sa buffer, smooth feel ke liye
+//         }
+//       }
+//     ],
+//     { cancelable: false } // user ko dismiss na kar sake
+//   );
+
+// } catch (err) {
+//   setLoading(false);
+
+//   // Error ke liye bhi Alert rakh sakte ho (optional)
+//   Alert.alert(
+//     "Error",
+//     err?.response?.data?.message || "Failed to sign contract",
+//     [{ text: "OK" }]
+//   );
+// } finally {
+//   setLoading(false);
+// }
+
+//   /* ================== PDF VIEW ================== */
+//   // if (signed && contractUrl) {
+//   //   const googleViewerUrl = `https://docs.google.com/gview?embedded=true&url=${encodeURIComponent(
+//   //     contractUrl
+//   //   )}`;
+
+  
+
+
+//     return (
+//       <View style={{ flex: 1 }}>
+//         <StatusBar barStyle="dark-content" />
+//         {/* Loading overlay ko yahan return ke andar rakhein */}
+//       {loading && (
+//         <View style={styles.loadingOverlay}>
+//           <ActivityIndicator size="large" color="#1E3A8A" />
+//           <Text style={{marginTop: 10, color: '#1E3A8A', fontWeight: '600'}}>
+//             Processing...
+//           </Text>
+//         </View>
+//       )}
+//         <WebView
+//           source={{ uri: googleViewerUrl }}
+//           startInLoadingState
+//           renderLoading={() => (
+//             <View style={styles.center}>
+//               <ActivityIndicator size="large" color="#1E3A8A" />
+//             </View>
+//           )}
+//           style={{ flex: 1 }}
+//         />
+//       </View>
+//     );
+//   }
+
+
 const signContract = async (
   tenantPath = tenantSignaturePath,
   guardianPath = guardianSignaturePath
 ) => {
 
+  console.log("\n========== SIGN CONTRACT START ==========");
+
   if (!tenantPath) {
+    console.log("❌ Tenant signature missing");
     Toast.show({
       type: "error",
       text1: "User signature required",
@@ -334,7 +462,8 @@ const signContract = async (
     return;
   }
 
-  if (isStudent && !guardianSignaturePath) {
+  if (isStudent && !guardianPath) {
+    console.log("❌ Guardian signature missing (Student case)");
     Toast.show({
       type: "error",
       text1: "Guardian signature required",
@@ -342,109 +471,105 @@ const signContract = async (
     return;
   }
 
+  console.log("✅ Tenant Path:", tenantPath);
+  console.log("✅ Guardian Path:", guardianPath);
+  console.log("✅ Booking ID:", bookingId);
+  console.log("✅ API URL:", `${API_BASE}/api/contracts/${bookingId}/sign`);
+
   const formData = new FormData();
 
-  formData.append("tenantSignature", {
+  const tenantFile = {
     uri: `file://${tenantPath}`,
     type: "image/png",
     name: "tenant_signature.png",
-  });
+  };
 
- if (isStudent && guardianPath) {
-  formData.append("guardianSignature", {
-    uri: `file://${guardianPath}`,
-    type: "image/png",
-    name: "guardian_signature.png",
-  });
-}
+  formData.append("tenantSignature", tenantFile);
 
-try {
-  setLoading(true);
-  console.log("API SIGN CONTRACT: ",API_BASE)
-  const res = await axios.post(
-    `${API_BASE}/api/contracts/${bookingId}/sign`,
-    formData,
-    {
-      headers: {
-        Authorization: `Bearer ${user?.token}`,
-        "Content-Type": "multipart/form-data",
-      },
-    }
-  );
+  let guardianFile = null;
 
-  console.log("response: ",res)
+  if (isStudent && guardianPath) {
+    guardianFile = {
+      uri: `file://${guardianPath}`,
+      type: "image/png",
+      name: "guardian_signature.png",
+    };
 
-  setLoading(false);
-
-  // Toast ki jagah Alert
-  Alert.alert(
-    "Success!",
-    "Contract signed successfully. Redirecting to home...",
-    [
-      {
-        text: "OK",
-        onPress: () => {
-          // Thoda delay de sakte ho agar chahiye, lekin zaruri nahi
-          setTimeout(() => {
-            navigation.reset({
-              index: 0,
-              routes: [{ name: "HomeTabs" }],
-            });
-          }, 800); // 0.8 second ka chhota sa buffer, smooth feel ke liye
-        }
-      }
-    ],
-    { cancelable: false } // user ko dismiss na kar sake
-  );
-
-} catch (err) {
-  setLoading(false);
-
-  // Error ke liye bhi Alert rakh sakte ho (optional)
-  Alert.alert(
-    "Error",
-    err?.response?.data?.message || "Failed to sign contract",
-    [{ text: "OK" }]
-  );
-} finally {
-  setLoading(false);
-}
-
-  /* ================== PDF VIEW ================== */
-  // if (signed && contractUrl) {
-  //   const googleViewerUrl = `https://docs.google.com/gview?embedded=true&url=${encodeURIComponent(
-  //     contractUrl
-  //   )}`;
-
-  
-
-
-    return (
-      <View style={{ flex: 1 }}>
-        <StatusBar barStyle="dark-content" />
-        {/* Loading overlay ko yahan return ke andar rakhein */}
-      {loading && (
-        <View style={styles.loadingOverlay}>
-          <ActivityIndicator size="large" color="#1E3A8A" />
-          <Text style={{marginTop: 10, color: '#1E3A8A', fontWeight: '600'}}>
-            Processing...
-          </Text>
-        </View>
-      )}
-        <WebView
-          source={{ uri: googleViewerUrl }}
-          startInLoadingState
-          renderLoading={() => (
-            <View style={styles.center}>
-              <ActivityIndicator size="large" color="#1E3A8A" />
-            </View>
-          )}
-          style={{ flex: 1 }}
-        />
-      </View>
-    );
+    formData.append("guardianSignature", guardianFile);
   }
 
+  // 🔥 IMPORTANT: Log FormData manually
+  console.log("📦 FormData Content:");
+  console.log({
+    tenantSignature: tenantFile,
+    guardianSignature: guardianFile,
+  });
+
+  try {
+    setLoading(true);
+
+    console.log("🚀 Sending request...");
+    console.log("Headers:", {
+      Authorization: `Bearer ${user?.token}`,
+      "Content-Type": "multipart/form-data",
+    });
+
+    const res = await axios.post(
+      `${API_BASE}/api/contracts/${bookingId}/sign`,
+      formData,
+      {
+        headers: {
+          Authorization: `Bearer ${user?.token}`,
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
+
+    console.log("✅ RESPONSE RECEIVED");
+    console.log("Status:", res.status);
+    console.log("Data:", res.data);
+
+    setLoading(false);
+
+    Alert.alert(
+      "Success!",
+      "Contract signed successfully. Redirecting to home...",
+      [
+        {
+          text: "OK",
+          onPress: () => {
+            setTimeout(() => {
+              navigation.reset({
+                index: 0,
+                routes: [{ name: "HomeTabs" }],
+              });
+            }, 800);
+          }
+        }
+      ],
+      { cancelable: false }
+    );
+
+  } catch (err) {
+    setLoading(false);
+
+    console.log("❌ ERROR OCCURRED");
+    console.log("Full Error:", err);
+    console.log("Response:", err?.response);
+    console.log("Status Code:", err?.response?.status);
+    console.log("Error Data:", err?.response?.data);
+
+    Alert.alert(
+      "Error",
+      err?.response?.data?.message || "Failed to sign contract",
+      [{ text: "OK" }]
+    );
+
+  } finally {
+    console.log("========== SIGN CONTRACT END ==========\n");
+    setLoading(false);
+  }
+};
 
 if (contractLoaded && step === 0) {
   return <AgreementScreen onAccept={() => setStep(1)} />;

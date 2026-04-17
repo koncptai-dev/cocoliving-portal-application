@@ -263,8 +263,29 @@ return (
       contentContainerStyle={{ paddingBottom: 40 }}
     >
       {/* MENU CARD */}
+
+
+
       <View style={styles.mainCard}>
         {hasActiveBooking ? bookedMenu : nonBookedMenu}
+
+<MenuItem
+  icon="document-text-outline"
+  label="Privacy Policy"
+  onPress={() => navigation.navigate("PrivacyPolicy")}
+/>
+
+<MenuItem
+  icon="document-outline"
+  label="Terms & Conditions"
+  onPress={() => navigation.navigate("Terms")}
+/>
+
+<MenuItem
+  icon="refresh-circle-outline"
+  label="Refund & Cancellation Policy"
+  onPress={() => navigation.navigate("RefundPolicy")}
+/>
 
         <MenuItem
           icon="log-out-outline"

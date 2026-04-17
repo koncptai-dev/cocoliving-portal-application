@@ -218,27 +218,27 @@ const AboutUsScreen = ({ navigation }) => {
   info@cocoliving.in
 </Text>
 
-  <Text style={styles.footerHeading}>Policy</Text>
+  {/* <Text style={styles.footerHeading}>Policy</Text>
 <Text
   style={styles.footerText}
   onPress={() => Linking.openURL('https://www.cocoliving.in/privacy-policy')}
 >
   Privacy Policy
-</Text>
+</Text> */}
 
-<Text
+{/* <Text
   style={styles.footerText}
   onPress={() => Linking.openURL('https://www.cocoliving.in/terms-and-conditions')}
 >
   Terms & Conditions
-</Text>
+</Text> */}
 
-<Text
+{/* <Text
   style={styles.footerText}
   onPress={() => Linking.openURL('https://www.cocoliving.in/refund-and-cancellation')}
 >
   Refund & Cancellation Policy
-</Text>
+</Text> */}
 
  <Text style={styles.footerCopyright}>
   © {new Date().getFullYear()} COCO LIVING. All rights reserved.

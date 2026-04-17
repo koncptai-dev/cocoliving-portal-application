@@ -5,6 +5,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 import axios from 'axios';
+import 'react-native-reanimated';
 import { View, Text } from 'react-native';
 
 import './global.css';
@@ -57,6 +58,9 @@ import {
 import SupportScreen from './src/user/Support';
 import { navigationRef } from './src/user/NavigationService';
 import Config from 'react-native-config';
+import PrivacyPolicyScreen from './src/components/privacy';
+import TermsScreen from './src/components/terms';
+import RefundPolicyScreen from './src/components/refund';
 
 const Stack = createNativeStackNavigator();
  export const API_BASE_URL = Config.API_BASE_URL;
@@ -82,7 +86,7 @@ const AppNavigator = () => {
     try {
 
       const response = await axios.get(
-        `${API_BASE_URL}/api/book-room/getUserBookings?page=1&limit=10`,
+        `${API_BASE_URL}/api/book-room/getUserBookings?page=1&limit=100`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -97,6 +101,9 @@ const AppNavigator = () => {
 
     } catch (error) {
       console.log("Booking check error:", error);
+ console.log("STATUS:", error?.response?.status);
+  console.log("DATA:", error?.response?.data);
+  console.log("HEADERS SENT:", error?.config?.headers);
     } finally {
       setLoadingInitial(false);
     }
@@ -169,6 +176,23 @@ const AppNavigator = () => {
           <Stack.Screen name="GuestVisit" component={GuestVisit} />
           <Stack.Screen name="Support" component ={SupportScreen}/>
           <Stack.Screen name="ContractSign" component={ContractSignScreen} />
+          <Stack.Screen
+    name="PrivacyPolicy"
+    component={PrivacyPolicyScreen}
+    options={{ headerShown: false }}
+  />
+
+  <Stack.Screen
+    name="Terms"
+    component={TermsScreen}
+    options={{ headerShown: false }}
+  />
+
+  <Stack.Screen
+    name="RefundPolicy"
+    component={RefundPolicyScreen}
+    options={{ headerShown: false }}
+  />
         </>
       ) : (
         <Stack.Screen name="Auth" component={AuthStack} />

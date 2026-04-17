@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   View,
   Text,
@@ -54,6 +54,19 @@ const PayableAmountScreen = ({ route, navigation }) => {
   const [discount ,setDiscount] = useState(0);
 const [appliedCoupon, setAppliedCoupon] = useState("");
 
+const [paymentMode, setPaymentMode] = useState("FULL"); 
+// FULL | MONTHLY
+
+//const [paymentMode, setPaymentMode] = useState("FULL"); // 👈 ADD THIS
+
+useEffect(() => {
+  if (paymentMode === "MONTHLY") {
+    setCouponCode("");
+    setDiscount(0);
+    setDiscountType(null);
+    setAppliedCoupon("");
+  }
+}, [paymentMode]);
 
   // Function to apply coupon
 // Function to apply coupon
@@ -109,6 +122,7 @@ const applyCoupon = async () => {
 
 
 
+
   /* =====================
      CALCULATIONS
   ===================== */
@@ -116,29 +130,115 @@ const applyCoupon = async () => {
    CALCULATIONS
 ===================== */
 const securityDeposit = rent * 2;
-const finalPayable = actionType === "PreBook" ? preBookAmount : netPayable;
+//const finalPayable = actionType === "PreBook" ? preBookAmount : netPayable;
 
-const discountedAmount = React.useMemo(() => {
-  const base = Number(finalPayable) || 0;
+const finalPayable =
+  actionType === "PreBook"
+    ? preBookAmount
+    : paymentMode === "MONTHLY"
+    ? securityDeposit
+    : netPayable;
+
+    const discountedAmount = React.useMemo(() => {
   const dVal = Number(discount) || 0;
   const dType = discountType?.toUpperCase();
 
-  // DEBUG: Check if values are reaching here
-  console.log("Memo Input:", { base, dVal, dType });
+  // ✅ PREBOOK CASE (FIXED)
+  if (actionType === "PreBook") {
+    const base = preBookAmount;
 
-  if (dVal <= 0 || !dType) return base;
+    if (dVal <= 0 || !dType) return base;
 
-  let result = base;
-  if (dType === "PERCENTAGE") {
-    result = base - (base * dVal) / 100;
-  } else {
-    // FLAT / AMOUNT / FIXED
-    result = base - dVal;
+    let result = base;
+
+    if (dType === "PERCENTAGE") {
+      result = base - (base * dVal) / 100;
+    } else {
+      result = base - dVal;
+    }
+
+    return Math.max(0, Math.round(result));
   }
 
-  console.log("Memo Result:", result);
-  return Math.max(0, Math.round(result));
-}, [finalPayable, discount, discountType]);
+  // ✅ BOOK CASE (your custom logic)
+  const rentTotal = rent * monthsNumber;
+  const deposit = securityDeposit;
+
+  if (dVal <= 0 || !dType) {
+    return paymentMode === "FULL"
+      ? rentTotal + deposit
+      : deposit;
+  }
+
+  let discountedRent = rentTotal;
+
+  if (dType === "PERCENTAGE") {
+    discountedRent = rentTotal - (rentTotal * dVal) / 100;
+  } else {
+    discountedRent = rentTotal - dVal;
+  }
+
+  return Math.max(0, Math.round(discountedRent + deposit));
+}, [
+  actionType,
+  preBookAmount,
+  rent,
+  monthsNumber,
+  securityDeposit,
+  discount,
+  discountType,
+  paymentMode,
+]);
+
+//   const base = Number(finalPayable) || 0;
+//   const dVal = Number(discount) || 0;
+//   const dType = discountType?.toUpperCase();
+
+//   // DEBUG: Check if values are reaching here
+//   console.log("Memo Input:", { base, dVal, dType });
+
+//   if (dVal <= 0 || !dType) return base;
+
+//   let result = base;
+//   if (dType === "PERCENTAGE") {
+//     result = base - (base * dVal) / 100;
+//   } else {
+//     // FLAT / AMOUNT / FIXED
+//     result = base - dVal;
+//   }
+
+//   console.log("Memo Result:", result);
+//   return Math.max(0, Math.round(result));
+// }, [finalPayable, discount, discountType]);
+
+
+// const discountedAmount = React.useMemo(() => {
+//   const rentTotal = rent * monthsNumber;   // ✅ only rent
+//   const deposit = securityDeposit;
+
+//   const dVal = Number(discount) || 0;
+//   const dType = discountType?.toUpperCase();
+
+//   if (dVal <= 0 || !dType) {
+//     return paymentMode === "FULL"
+//       ? rentTotal + deposit
+//       : finalPayable;
+//   }
+
+//   let discountedRent = rentTotal;
+
+//   if (dType === "PERCENTAGE") {
+//     discountedRent = rentTotal - (rentTotal * dVal) / 100;
+//   } else {
+//     discountedRent = rentTotal - dVal;
+//   }
+
+//   const final = discountedRent + deposit;
+
+//   return Math.max(0, Math.round(final));
+// }, [rent, monthsNumber, securityDeposit, discount, discountType, paymentMode]);
+
+
 console.log("Current Discount State:", discount);
 console.log("Current DiscountedAmount:", discountedAmount);
   const proceedBtnText =
@@ -152,6 +252,10 @@ console.log("Current DiscountedAmount:", discountedAmount);
   const startPayment = async () => {
     let merchantOrderId = null;
 
+    console.log("ENVIRONMENT:", ENVIRONMENT);
+console.log("MERCHANT_ID:", MERCHANT_ID);
+console.log("API_BASE_URL:", API_BASE_URL);
+
     try {
       setLoading(true);
 
@@ -159,21 +263,36 @@ console.log("Current DiscountedAmount:", discountedAmount);
 
       // 1️⃣ SDK Init
       console.log("[PhonePe] Initializing SDK");
-      await PhonePePaymentSDK.init(
-        ENVIRONMENT,
-        MERCHANT_ID,
-        `FLOW_${Date.now()}`,
-        true
-      ).then(result => { console.log("result" + JSON.stringify(result)); }).catch(error => {   console.log("error:" + error.message); });
-      console.log("[PhonePe] SDK initialized");
+      // await PhonePePaymentSDK.init(
+      //   ENVIRONMENT,
+      //   MERCHANT_ID,
+      //   `FLOW_${Date.now()}`,
+      //   true
+      // ).then(result => { console.log("result" + JSON.stringify(result)); }).catch(error => {   console.log("error:" + error.message); });
+      // console.log("[PhonePe] SDK initialized");
+try {
+  const initResult = await PhonePePaymentSDK.init(
+    ENVIRONMENT,
+    MERCHANT_ID,
+    `FLOW_${Date.now()}`,
+    true
+  );
 
+  console.log("[PhonePe] SDK init success:", initResult);
+} catch (error) {
+  console.log("[PhonePe] SDK init error:", error?.message || error);
+}
+
+//console.log("[PhonePe] SDK initialized");
       // 2️⃣ Initiate API
           // 2️⃣ Initiate API
       const payload = {
         userId: Number(user.id),
         bookingType: actionType === "PreBook" ? "PREBOOK" : "BOOK",
-        
-        couponCode: discount > 0 ? appliedCoupon : null,   // ← Yeh sahi rahega
+        paymentMode: actionType === "Book" ? paymentMode : undefined,
+        //couponCode: discount > 0 ? appliedCoupon : null,   // ← Yeh sahi rahega
+         // ❌ coupon not allowed in MONTHLY
+        couponCode: paymentMode === "MONTHLY" ? null : discount > 0 ? appliedCoupon: null,
         amount: discountedAmount,                          // ← Yeh important hai (backend ko discounted amount bhejo)
 
         metadata: {
@@ -195,7 +314,7 @@ console.log("Current DiscountedAmount:", discountedAmount);
       };
       console.log("Payload which will sent: ",payload)
 
-      console.log("[PhonePe] Sending initiate payload:", payload);
+      //console.log("[PhonePe] Sending initiate payload:", payload);
 
       const res = await axios.post(
         `${API_BASE_URL}/api/booking-payments/initiate`,
@@ -305,26 +424,52 @@ console.log("Current DiscountedAmount:", discountedAmount);
         if (state === "FAILED" || state === "DECLINED" || state === "TIMED_OUT") {
           console.log("[PhonePe] Payment FAILED confirmed");
           stopped = true;
-          navigation.reset({
-      index: 0,
-      routes: [
-        {
-          name: "PaymentFailedScreen",
-          params: {
-            room,
-  property,
-  amountPaid: discountedAmount,
-  rent,
-  monthsNumber,
-  isoDate,
-  netPayable,
-  preBookAmount,
-  actionType,
-          },
-        },
-      ],
-    });
+       
+  //         navigation.reset({
+  //     index: 0,
+  //     routes: [
+  //       {
+  //         name: "PaymentFailedScreen",
+  //         params: {
+  //           room,
+  // property,
+  // amountPaid: discountedAmount,
+  // rent,
+  // monthsNumber,
+  // isoDate,
+  // netPayable,
+  // preBookAmount,
+  // actionType,
+  //         },
+  //       },
+  //     ],
+  //   });
 
+  navigation.reset({
+  index: 0,
+  routes: [
+    {
+      name: "PaymentFailedScreen",
+      params: {
+        room,
+        property,
+        amountPaid: discountedAmount,
+        rent,
+        monthsNumber,
+        isoDate,
+        netPayable,
+        preBookAmount,
+        actionType,
+
+        // ✅ ADD THESE (MISSING)
+        preferredFloor,
+        preferredRoomNumber,
+        preferredBed,
+        paymentMode,
+      },
+    },
+  ],
+});
     return;
   }
 
@@ -335,11 +480,30 @@ console.log("Current DiscountedAmount:", discountedAmount);
       // Timeout
       if (!stopped) {
         console.log("[PhonePe] Polling timeout");
+        // navigation.replace("PaymentFailedScreen", {
+        //   transactionId: merchantOrderId,
+        //   amountPaid: discountedAmount,        // ← change kiya
+        //   reason: "Timeout while waiting for status. Check My Bookings later.",
+        // });
         navigation.replace("PaymentFailedScreen", {
-          transactionId: merchantOrderId,
-          amountPaid: discountedAmount,        // ← change kiya
-          reason: "Timeout while waiting for status. Check My Bookings later.",
-        });
+  room,
+  property,
+  amountPaid: discountedAmount,
+  rent,
+  monthsNumber,
+  isoDate,
+  netPayable,
+  preBookAmount,
+  actionType,
+
+  preferredFloor,
+  preferredRoomNumber,
+  preferredBed,
+  paymentMode,
+
+  transactionId: merchantOrderId,
+  reason: "Timeout while waiting for status. Check My Bookings later.",
+});
       }
 
 } catch (err: any) {
@@ -379,16 +543,36 @@ console.log("Current DiscountedAmount:", discountedAmount);
   });
 
   // ✅ FIXED
+// navigation.replace("PaymentFailedScreen", {
+//   room,
+//   property,
+//   amountPaid: discountedAmount,             // ← yahan bhi amountPaid
+//   rent,
+//   monthsNumber,
+//   isoDate,
+//   netPayable,
+//   preBookAmount,
+//   actionType,
+//   transactionId: merchantOrderId || "unknown",
+//   reason: backendMessage,
+// });
 navigation.replace("PaymentFailedScreen", {
   room,
   property,
-  amountPaid: discountedAmount,             // ← yahan bhi amountPaid
+  amountPaid: discountedAmount,
   rent,
   monthsNumber,
   isoDate,
   netPayable,
   preBookAmount,
   actionType,
+
+  // ✅ ADD THESE
+  preferredFloor,
+  preferredRoomNumber,
+  preferredBed,
+  paymentMode,
+
   transactionId: merchantOrderId || "unknown",
   reason: backendMessage,
 });
@@ -465,14 +649,66 @@ return (
 
         <View style={styles.dashedLine} />
 
-        {actionType === "Book" && (
-         <Row
-  title="Net Payable"
-  subtitle="Total Booking Value"
-  value={`₹ ${netPayable.toLocaleString()}`}
-  bold
-/>
-        )}
+       {actionType === "Book" && (
+  <>
+    <Row
+      title="Net Payable"
+      subtitle="Total Booking Value"
+      value={`₹ ${netPayable.toLocaleString()}`}
+      bold
+    />
+
+    <View style={styles.dashedLine} />
+
+    {/* PAYMENT MODE */}
+    <View style={{ marginTop: 20 }}>
+      <Text style={styles.couponTitle}>Choose Rent Payment Mode</Text>
+
+      <View style={styles.paymentModeBox}>
+
+        <TouchableOpacity
+          style={[
+            styles.modeBtn,
+            paymentMode === "FULL" && styles.activeModeBtn
+          ]}
+          onPress={() => setPaymentMode("FULL")}
+        >
+          <Text
+            style={[
+              styles.modeText,
+              paymentMode === "FULL" && styles.activeModeText
+            ]}
+          >
+            Pay in Full
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[
+            styles.modeBtn,
+            paymentMode === "MONTHLY" && styles.activeModeBtn
+          ]}
+          onPress={() => setPaymentMode("MONTHLY")}
+        >
+          <Text
+            style={[
+              styles.modeText,
+              paymentMode === "MONTHLY" && styles.activeModeText
+            ]}
+          >
+            Pay Monthly
+          </Text>
+        </TouchableOpacity>
+
+      </View>
+    </View>
+
+    <View style={styles.dashedLine} />
+  </>
+)}
+
+
+
 
         {actionType === "PreBook" && (
           <>
@@ -489,13 +725,18 @@ return (
   bold
 />
 
+
+
+
+
+
 <View style={styles.dashedLine} />
 
           </>
         )}
 
 
-       {discount > 0 && (
+       {discount > 0 && paymentMode !== "MONTHLY" && (
   <>
     <Row
       title="Coupon Discount"
@@ -504,18 +745,36 @@ return (
           ? `${discount}% OFF`
           : "Coupon Applied"
       }
-      value={`- ₹ ${
-        discountType === "PERCENTAGE"
-          ? ((finalPayable * discount) / 100).toLocaleString()
-          : discount.toLocaleString()
-      }`}
+      // value={`- ₹ ${
+      //   discountType === "PERCENTAGE"
+      //     ? (
+      //       //(finalPayable * discount) / 100)
+      //       (rent * monthsNumber * discount) / 100).toLocaleString()
+      //     : discount.toLocaleString()
+      // }`}
+value={`- ₹ ${
+  discountType === "PERCENTAGE"
+    ? (
+        actionType === "PreBook"
+          ? (preBookAmount * discount) / 100
+          : (rent * monthsNumber * discount) / 100
+      ).toLocaleString()
+    : discount.toLocaleString()
+}`}
+
+      
     />
     <View style={styles.dashedLine} />
   </>
 )}
 
 {/* FINAL PAYABLE — ALWAYS SHOW */}
-
+<Row
+  title="Final Payable"
+  subtitle="Amount to be paid now"
+  value={`₹ ${discountedAmount.toLocaleString()}`}
+  bold
+/>
       </View>
 
 
@@ -526,24 +785,42 @@ return (
 
   <View style={styles.couponRow}>
     
-    <TextInput
-      placeholder="Enter coupon code"
-      value={couponCode}
-      onChangeText={(text) => setCouponCode(text.replace(/\s/g, '').toUpperCase())}
-      style={styles.couponInput}
-      autoCapitalize="characters"
-      autoCorrect={false}
-    />
+    
 
-    <TouchableOpacity
-      style={styles.applyBtn}
-      onPress={applyCoupon}
-      disabled={couponLoading}
-    >
-      <Text style={styles.applyText}>
-        {couponLoading ? "..." : "Apply"}
-      </Text>
-    </TouchableOpacity>
+<TextInput
+  placeholder={
+    paymentMode === "MONTHLY"
+      ? "Coupon not applicable for monthly plan"
+      : "Enter coupon code"
+  }
+  value={couponCode}
+  editable={paymentMode !== "MONTHLY"}   // ❗ disable input
+  onChangeText={(text) =>
+    setCouponCode(text.replace(/\s/g, '').toUpperCase())
+  }
+  style={[
+    styles.couponInput,
+    paymentMode === "MONTHLY" && { backgroundColor: "#eee" }
+  ]}
+/>
+
+
+   
+<TouchableOpacity
+  style={[
+    styles.applyBtn,
+    paymentMode === "MONTHLY" && { opacity: 0.5 }
+  ]}
+  onPress={applyCoupon}
+  disabled={couponLoading || paymentMode === "MONTHLY"}
+>
+  <Text style={styles.applyText}>
+    {couponLoading ? "..." : "Apply"}
+  </Text>
+</TouchableOpacity>
+
+
+
 
   </View>
 
@@ -638,13 +915,13 @@ headerTitle: {
   color: "#4f3421",
 },
 
-proceedBtn: {
-  backgroundColor: "#f6a452",
-  borderRadius: 10,
-  paddingVertical: 14,
-  marginTop: 30,
-  marginBottom: 40,   // 👈 extra margin so it doesn't merge with nav
-},
+// proceedBtn: {
+//   backgroundColor: "#f6a452",
+//   borderRadius: 10,
+//   paddingVertical: 14,
+//   marginTop: 30,
+//   marginBottom: 40,   // 👈 extra margin so it doesn't merge with nav
+// },
 
   roomCard: {
     flexDirection: "row",
@@ -829,4 +1106,34 @@ applyText: {
   color: "#fff",
   fontFamily: "Quicksand-Bold",
 },
+
+paymentModeBox: {
+  flexDirection: "row",
+  gap: 10,
+},
+
+modeBtn: {
+  flex: 1,
+  borderWidth: 1,
+  borderColor: "#D2C3AD",
+  paddingVertical: 12,
+  borderRadius: 8,
+  alignItems: "center",
+},
+
+activeModeBtn: {
+  backgroundColor: "#4F3421",
+},
+
+modeText: {
+  fontFamily: "Quicksand-Regular",
+  color: "#4F3421",
+},
+
+activeModeText: {
+  color: "#fff",
+  fontFamily: "Quicksand-Bold",
+},
+
+
 });

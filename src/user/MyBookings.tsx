@@ -32,6 +32,9 @@ const MyBookings = ({ navigation }: any) => {
   }, [token])
 );
 
+
+
+
   const fetchBookings = async () => {
     try {
       const res = await axios.get(
@@ -40,6 +43,7 @@ const MyBookings = ({ navigation }: any) => {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
+      console.log("FULL BOOKING DATA 👉", res.data.bookings);
       setBookings(res.data?.bookings || []);
     } catch (e) {
       console.log("Booking fetch error", e);
@@ -71,10 +75,23 @@ const currentBooking = bookings.find((b) => {
   );
 });
 
+
+const isWithin7DaysOfCheckout = (checkOutDate) => {
+  if (!checkOutDate) return false;
+
+  const today = new Date();
+  const checkout = new Date(checkOutDate);
+
+  const diff = checkout.getTime() - today.getTime();
+  const days = diff / (1000 * 60 * 60 * 24);
+
+  return days <= 7 && days >= 0;
+};
+
 /* BOOKING TO SHOW */
 const bookingToShow = currentBooking || upcomingBooking;
   const pastBookings = bookings.filter((b) => b !== currentBooking);
-
+ console.log("Days left:", daysLeft(bookingToShow?.checkOutDate));
   if (loading) {
     return (
       <View style={styles.loader}>
@@ -82,6 +99,9 @@ const bookingToShow = currentBooking || upcomingBooking;
       </View>
     );
   }
+
+
+
 
   return (
     <View style={{ flex: 1, backgroundColor: "#F6F3EC" }}>
@@ -119,7 +139,8 @@ const bookingToShow = currentBooking || upcomingBooking;
 
               {/* ACTION BUTTONS */}
 <View style={styles.actionRow}>
-  {bookingToShow.bookingType === "PREBOOK" &&
+  {/* {
+  //bookingToShow.bookingType === "PREBOOK" &&
     bookingToShow.paymentStatus === "PARTIAL" && bookingToShow.contractStatus==="SIGNED" && (
       <PrimaryBtn
         title="Pay Remaining"
@@ -129,10 +150,34 @@ const bookingToShow = currentBooking || upcomingBooking;
           })
         }
       />
-    )}
+    )} */}
 
-  {bookingToShow.bookingType === "BOOK" && (
-    <PrimaryBtn
+
+
+{/* <PrimaryBtn
+    title="Extend Stay"
+    onPress={() =>
+      navigation.navigate("BookingDetails", {
+        booking: bookingToShow,
+      })
+    }
+  /> */}
+
+{/* {isWithin7DaysOfCheckout(bookingToShow?.checkOutDate) && (
+  <PrimaryBtn
+    title="Extend Stay"
+    onPress={() =>
+      navigation.navigate("BookingDetails", {
+        booking: bookingToShow,
+      })
+    }
+  />
+)} */}
+
+
+  {/* {bookingToShow.bookingType === "BOOK" && (
+  
+  <PrimaryBtn
       title="Extend Stay"
       onPress={() =>
         navigation.navigate("BookingDetails", {
@@ -140,7 +185,8 @@ const bookingToShow = currentBooking || upcomingBooking;
         })
       }
     />
-  )}
+  
+  )} */}
 
   {/* SIGN CONTRACT BUTTON */}
   {bookingToShow?.contractStatus !== "SIGNED" && (
@@ -155,7 +201,7 @@ const bookingToShow = currentBooking || upcomingBooking;
   )}
 
   <OutlineBtn
-    title="Cancel"
+    title="View Details"
     onPress={() =>
       navigation.navigate("BookingDetails", {
         booking: bookingToShow,
@@ -176,13 +222,10 @@ const bookingToShow = currentBooking || upcomingBooking;
           contentContainerStyle={{ paddingHorizontal: 16 }}
         >
           {pastBookings.map((b, i) => (
-            <TouchableOpacity
+            <View
               key={i}
               style={styles.historyCard}
-              activeOpacity={0.85}
-              onPress={() =>
-                navigation.navigate("BookingDetails", { booking: b })
-              }
+             
             >
               <Text style={styles.propertyName}>
                 {b.rateCard?.property?.name}
@@ -201,7 +244,7 @@ const bookingToShow = currentBooking || upcomingBooking;
                   {b.displayStatus?.toUpperCase()}
                 </Text>
               </View>
-            </TouchableOpacity>
+            </View>
           ))}
         </ScrollView>
 

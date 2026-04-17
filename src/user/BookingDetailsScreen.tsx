@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+
 import {
   View,
   Text,
@@ -10,6 +11,7 @@ import {
   Linking,
   KeyboardAvoidingView,
   Platform,
+  Alert,
   
 } from "react-native";
 import axios from "axios";
@@ -27,6 +29,10 @@ export const BASE_URL = Config.API_BASE_URL;
 export const MERCHANT_ID = Config.MERCHANT_ID;
 export const ENVIRONMENT = Config.ENVIRONMENT;
 
+const capitalizeFirst = (text: string) => {
+  if (!text) return "--";
+  return text.charAt(0).toUpperCase() + text.slice(1).toLowerCase();
+};
 
 const getNextRentDueDate = (checkInDate, installmentsPaid) => {
 
@@ -42,6 +48,18 @@ const getNextRentDueDate = (checkInDate, installmentsPaid) => {
     year: "numeric"
   });
 
+};
+
+const isWithin7DaysOfCheckout = (checkOutDate) => {
+  if (!checkOutDate) return false;
+
+  const today = new Date();
+  const checkout = new Date(checkOutDate);
+
+  const diff = checkout.getTime() - today.getTime();
+  const days = diff / (1000 * 60 * 60 * 24);
+
+  return days <= 7 && days >= 0;
 };
 
 const isPaymentWindowOpen = () => {
@@ -124,12 +142,14 @@ const unpaidMonths = Math.max(
   0
 );
 
-const canPayRent =
-  bookingData.monthlyPlanSelected &&
-  bookingData.securityDepositPaid &&
-  bookingData.installmentsPaid < bookingData.duration;
+const canPayRent = bookingData.monthlyPlanSelected && bookingData.contractStatus === "SIGNED";
+//&& bookingData.securityDepositPaid && bookingData.installmentsPaid < bookingData.duration;
 
-  
+
+const isContractSigned = bookingData?.contractStatus?.toUpperCase() === "SIGNED";
+ 
+console.log("canPayRent:", canPayRent); 
+console.log("contract Signed:", isContractSigned); 
 
 // 🔥 LATE FEE CALCULATION (backend exact same)
 const calculateLateFeeAndTotal = () => {
@@ -195,9 +215,16 @@ const { lateFee, totalPayable } = calculateLateFeeAndTotal();
      PHONEPE FLOW - FORCE SDK FOR BOTH
   ===================== */
   const startPhonePeFlow = async (initiateUrl, payload, flowType = "Unknown") => {
-    console.log(`\n=== Starting PhonePe Flow: ${flowType} ===`);
-    console.log("Payload:", payload);
-    console.log("Initiate URL:", initiateUrl);
+   
+    // console.log(`\n=== Starting PhonePe Flow: ${flowType} ===`);
+    // console.log("Payload:", payload);
+    // console.log("Initiate URL:", initiateUrl);
+
+
+console.log("🚀 Sending initiate request...");
+console.log("URL:", `${BASE_URL}${initiateUrl}`);
+console.log("Payload:", payload);
+
 
     let merchantOrderId: string | null = null;
 
@@ -228,6 +255,13 @@ const { lateFee, totalPayable } = calculateLateFeeAndTotal();
       );
         console.log("Response of BASE_URL: ",BASE_URL)
       console.log("✅ Initiate Response:", JSON.stringify(res.data, null, 2));
+
+
+  console.log("✅ API SUCCESS");
+  console.log("Status:", res.status);
+  console.log("Data:", res.data);
+
+
 
     if (!res.data?.success) {
 
@@ -282,23 +316,33 @@ const { lateFee, totalPayable } = calculateLateFeeAndTotal();
           null
         );
         console.log("✅ startTransaction called - SDK should open now");
-      } else {
-        if (redirectUrl) {
-          console.log("🟡 Falling back to web redirectUrl");
-          const supported = await Linking.canOpenURL(redirectUrl);
-          if (supported) {
-            await Linking.openURL(redirectUrl);
-            Toast.show({
-              type: "info",
-              text1: "Payment opened in browser",
-              text2: "Complete & return to app",
-            });
-          } else {
-            throw new Error("Cannot open payment URL");
-          }
-        } else {
-          throw new Error("Invalid PhonePe response - no token/orderId");
-        }
+      } 
+      else {
+         // ❌ No browser, show error instead
+  Toast.show({
+    type: "error",
+    text1: "Payment unavailable",
+    text2: "Please try again later",
+  });
+
+  console.error("Missing token/orderId — cannot proceed");
+  return;
+        // if (redirectUrl) {
+        //   console.log("🟡 Falling back to web redirectUrl");
+        //   const supported = await Linking.canOpenURL(redirectUrl);
+        //   if (supported) {
+        //     await Linking.openURL(redirectUrl);
+        //     Toast.show({
+        //       type: "info",
+        //       text1: "Payment opened in browser",
+        //       text2: "Complete & return to app",
+        //     });
+        //   } else {
+        //     throw new Error("Cannot open payment URL");
+        //   }
+        // } else {
+        //   throw new Error("Invalid PhonePe response - no token/orderId");
+        // }
       }
 
       if (!merchantOrderId) {
@@ -349,6 +393,16 @@ if (state === "SUCCESS" || state === "COMPLETED") {
   }
 
   fetchDetails();   // fresh data laao
+  
+  
+    // 🔥 NAVIGATION ADDED HERE
+  setTimeout(() => {
+    navigation.reset({
+      index: 0,
+      routes: [{ name: "MyBookings" }],
+    });
+  }, 1200);
+  
   return;
 }
 
@@ -365,10 +419,13 @@ if (state === "SUCCESS" || state === "COMPLETED") {
         text1: "Payment Pending",
         text2: "Check in My Bookings",
       });
-    } catch (error) {
-      console.error(`❌ ${flowType} Error:`, error);
+    } catch (err) {
+       console.log("❌ API FAILED");
+       console.log("Error:", err?.message);
+       console.log("Response:", err?.response?.data);
+    
       Toast.show({ type: "error", text1: "Payment initiation failed" });
-      throw error;
+      throw err;
     }
   };
 
@@ -392,10 +449,13 @@ if (state === "SUCCESS" || state === "COMPLETED") {
 
     console.log("❌ Pay Remaining Error:", err?.response?.data);
 
-    Toast.show({
-      type: "error",
-      text1: err?.response?.data?.message || "Failed to initiate remaining payment"
-    });
+    const message =
+    err?.response?.data?.message || "Failed to initiate remaining payment";
+
+    Alert.alert(
+    "Payment Error",
+    message
+  );
 
   } finally {
     setRemainingLoading(false);
@@ -414,11 +474,23 @@ const paySecurityDeposit = async () => {
     );
 
   } catch (err) {
-    console.log("❌ Security Deposit Error:", err?.response?.data);
-    Toast.show({
-      type: "error",
-      text1: err?.response?.data?.message || "Failed to initiate security deposit payment"
-    });
+    //console.log("❌ Security Deposit Error:", err?.response?.data);
+   
+  // console.dir(err?.response?.data, { depth: null });
+   console.log(JSON.stringify(err?.response?.data, null, 2));
+   
+    // Toast.show({
+    //   type: "error",
+    //   text1: err?.response?.data?.message || "Failed to initiate security deposit payment"
+    // });
+   const message =
+    err?.response?.data?.message || "Failed to initiate remaining payment";
+
+    Alert.alert(
+    "Payment Error",
+    message
+  );
+ 
   } finally {
     setDepositLoading(false);
   }
@@ -463,10 +535,16 @@ const activateMonthlyPlan = async () => {
 
     console.log("❌ Activate Monthly Plan Error:", err?.response?.data);
 
-    Toast.show({
-      type: "error",
-      text1: err?.response?.data?.message || "Failed to activate monthly plan"
-    });
+    // Toast.show({
+    //   type: "error",
+    //   text1: err?.response?.data?.message || "Failed to activate monthly plan"
+    // });
+      const message = err?.response?.data?.message || "Failed to initiate remaining payment";
+
+    Alert.alert(
+    "Payment Error",
+    message
+  );
 
   } finally {
     setMonthlyPlanLoading(false);
@@ -491,10 +569,16 @@ const payMonthlyRent = async () => {
 
     console.log("❌ Monthly Rent Error:", err?.response?.data);
 
-    Toast.show({
-      type: "error",
-      text1: err?.response?.data?.message || "Failed to initiate monthly rent payment"
-    });
+    // Toast.show({
+    //   type: "error",
+    //   text1: err?.response?.data?.message || "Failed to initiate monthly rent payment"
+    // });
+      const message = err?.response?.data?.message || "Failed to initiate remaining payment";
+
+    Alert.alert(
+    "Payment Error",
+    message
+  );
 
   } finally {
     setMonthlyRentLoading(false);
@@ -502,30 +586,83 @@ const payMonthlyRent = async () => {
 
 };
 
-  const requestExtension = async () => {
-    console.log("\n=== Extend Pressed ===");
-    console.log("Months:", extendMonths);
 
-    if (!isExtendValid) {
-      Toast.show({ type: "info", text1: "Enter valid months (≥1)" });
-      return;
-    }
 
-    try {
-      setExtendLoading(true);
-      await startPhonePeFlow(
-        "/api/booking-payments/initiate-extension",
-        {
-          bookingId: bookingData.id,
-          months: Number(extendMonths),
-        },
-        "Extension"
-      );
-    } catch {
-    } finally {
-      setExtendLoading(false);
-    }
-  };
+
+
+const requestExtension = async () => {
+  console.log("\n=== Extend Pressed ===");
+  console.log("Months:", extendMonths);
+
+  if (!isExtendValid) {
+    Toast.show({
+      type: "info",
+      text1: "Invalid Input",
+      text2: "Enter valid months (≥1)",
+    });
+    return;
+  }
+
+  try {
+    setExtendLoading(true);
+
+    await startPhonePeFlow(
+      "/api/booking-payments/initiate-extension",
+      {
+        bookingId: bookingData.id,
+        months: Number(extendMonths),
+      },
+      "Extension"
+    );
+
+    // ❗ No Toast here → already handled inside flow
+
+  }   
+  catch (error) {
+  console.log("❌ ERROR:", error?.response || error);
+
+  const message =  error?.response?.data?.message || "Something went wrong";
+
+  Alert.alert(
+    "Extension Failed",
+    message
+  );
+}
+  
+  
+  finally {
+    setExtendLoading(false);
+  }
+};
+
+  // const requestExtension = async () => {
+  //   console.log("\n=== Extend Pressed ===");
+  //   console.log("Months:", extendMonths);
+
+  //   if (!isExtendValid) {
+  //     Toast.show({ type: "info", text1: "Enter valid months (≥1)" });
+  //     return;
+  //   }
+
+  //   try {
+  //     setExtendLoading(true);
+  //     await startPhonePeFlow(
+  //       "/api/booking-payments/initiate-extension",
+  //       {
+  //         bookingId: bookingData.id,
+  //         months: Number(extendMonths),
+  //       },
+  //       "Extension"
+  //     );
+  //   } catch {
+  //   } finally {
+  //     setExtendLoading(false);
+  //   }
+  // };
+
+
+
+
 
   const requestCancellation = async () => {
     try {
@@ -535,19 +672,46 @@ const payMonthlyRent = async () => {
         { reason: cancelReason.trim() || null },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      Toast.show({
-        type: "success",
-        text1: "Success",
-        text2: "Cancellation request sent successfully",
-      });
+      // Toast.show({
+      //   type: "success",
+      //   text1: "Success",
+      //   text2: "Cancellation request sent successfully",
+      // });
+    Alert.alert(
+      "Success",
+      "Cancellation request sent successfully",
+      [
+        {
+          text: "OK",
+          onPress: () => navigation.navigate("MyBookings") // redirect
+        }
+      ]
+    );
+   
+      // ✅ Show Alert instead of Toast
+    // Alert.alert(
+    //   "Success",
+    //   "Cancellation request sent successfully",
+    //   [{ text: "OK" }]
+    // );
       setCancelReason("");
       fetchDetails();
     } catch (error: any) {
-      Toast.show({
-        type: "error",
-        text1: "Error",
-        text2: error?.response?.data?.message || "Failed to request cancellation",
-      });
+      // Toast.show({
+      //   type: "error",
+      //   text1: "Error",
+      //   text2: error?.response?.data?.message || "Failed to request cancellation",
+      // });
+
+  const message =
+    error?.response?.data?.message || "Failed to initiate remaining payment";
+
+    Alert.alert(
+    "Payment Error",
+    message
+  );
+
+
     } finally {
       setCancelLoading(false);
     }
@@ -605,9 +769,9 @@ return (
 
       <InfoCard label="Property" value={bookingData.rateCard?.property?.name} />
       <InfoCard label="Room Type" value={bookingData.rateCard?.roomType} />
-      <InfoCard label="Status" value={bookingData.displayStatus} />
+      <InfoCard label="Status" value={capitalizeFirst(bookingData.displayStatus)} />
 
- {paymentSummary && (
+ {paymentSummary && bookingData.monthlyPlanSelected &&(
   <View style={styles.card}>
     <Text style={styles.section}>Payments</Text>
 
@@ -699,8 +863,12 @@ return (
   // </Text>
 
 )} */}
-      {/* PAY REMAINING */}
-     {bookingData.bookingType === "PREBOOK" && bookingData.contractStatus==="SIGNED" && (
+      {/* PAY REMAINING new*/}
+    
+     {
+    bookingData.bookingType === "PREBOOK" &&
+    bookingData.paymentStatus === "PARTIAL" && 
+    bookingData.contractStatus==="SIGNED" && (
 
   <>
   
@@ -719,20 +887,34 @@ return (
   {bookingData.securityDepositPaid && !bookingData.monthlyPlanSelected && (
 
     <>
+    <View style={{ marginBottom: 10 }}>
       <PrimaryButton
         text={remainingLoading ? "Processing..." : "Pay Remaining Amount"}
         onPress={payRemaining}
         disabled={remainingLoading}
       />
-        <Text style={styles.or}>OR</Text>
+      </View>
+    
+     <Text style={[styles.or, { marginVertical: 5 }]}>OR</Text>
+
+      <View style={{ marginBottom: 10 }}>
       <PrimaryButton
         text={monthlyPlanLoading ? "Processing..." : "Activate Monthly Plan"}
         onPress={activateMonthlyPlan}
         disabled={monthlyPlanLoading}
       />
+      </View>
     </>
 
   )}
+
+
+
+  </>
+
+  
+
+)}
 
   {/* MONTHLY PLAN ACTIVE */}
 {canPayRent && (
@@ -744,14 +926,6 @@ return (
   />
 
 )}
-
-  </>
-
-  
-
-)}
-
-
 
       {/* CANCELLATION REQUEST */}
       {bookingData.status && ["approved", "cancelled"].includes(bookingData.status.toLowerCase()) && (
@@ -801,27 +975,77 @@ return (
         </View>
       )}
 
-      {/* EXTEND STAY */}
-      <View style={styles.card}>
-        <Text style={styles.section}>Extend Stay</Text>
-        <Text style={styles.helper}>Enter months to extend (minimum 1)</Text>
+     
+{/* <View style={styles.card}>
+    <Text style={styles.section}>Extend Stay</Text>
+    <Text style={styles.helper}>Please enter the extension duration (6 or 12 months only)</Text>
 
-        <TextInput
-          style={styles.input}
-          placeholder="e.g. 1"
-          keyboardType="numeric"
-          value={extendMonths}
-          onChangeText={(text) => {
-            if (text === "" || /^\d+$/.test(text)) setExtendMonths(text);
-          }}
-        />
+    <TextInput
+      style={styles.input}
+      placeholder="e.g. 6"
+      keyboardType="numeric"
+      value={extendMonths}
+      onChangeText={(text) => {
+        if (text === "" || /^\d+$/.test(text)) setExtendMonths(text);
+      }}
+    />
 
-        <PrimaryButton
-          text={extendLoading ? "Processing..." : "Pay & Extend"}
-          onPress={requestExtension}
-          disabled={extendLoading || !isExtendValid}
-        />
-      </View>
+    <PrimaryButton
+      text={extendLoading ? "Processing..." : "Pay & Extend"}
+      onPress={requestExtension}
+      disabled={extendLoading || !isExtendValid}
+    />
+  </View> */}
+
+{isContractSigned && (
+  <View style={styles.card}>
+    <Text style={styles.section}>Extend Stay</Text>
+    <Text style={styles.helper}>
+      Please enter the extension duration (6 or 12 months only)
+    </Text>
+
+    <TextInput
+      style={styles.input}
+      placeholder="e.g. 6"
+      keyboardType="numeric"
+      value={extendMonths}
+      onChangeText={(text) => {
+        if (text === "" || /^\d+$/.test(text)) setExtendMonths(text);
+      }}
+    />
+
+    <PrimaryButton
+      text={extendLoading ? "Processing..." : "Pay & Extend"}
+      onPress={requestExtension}
+      disabled={extendLoading || !isExtendValid}
+    />
+  </View>
+)}
+
+{/* 
+{isWithin7DaysOfCheckout(bookingData.checkOutDate) && (
+  <View style={styles.card}>
+    <Text style={styles.section}>Extend Stay</Text>
+    <Text style={styles.helper}>Enter months to extend (minimum 1)</Text>
+
+    <TextInput
+      style={styles.input}
+      placeholder="e.g. 1"
+      keyboardType="numeric"
+      value={extendMonths}
+      onChangeText={(text) => {
+        if (text === "" || /^\d+$/.test(text)) setExtendMonths(text);
+      }}
+    />
+
+    <PrimaryButton
+      text={extendLoading ? "Processing..." : "Pay & Extend"}
+      onPress={requestExtension}
+      disabled={extendLoading || !isExtendValid}
+    />
+  </View>
+)} */}
+
 
       <View style={{ height: 40 }} />
     </ScrollView>

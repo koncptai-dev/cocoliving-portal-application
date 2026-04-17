@@ -83,11 +83,11 @@ const MyVisit = () => {
         email: form.email.trim(),
         phone: form.phone.trim(),
         visitDate: form.visitDate,
-        propertyId: "", // force empty like web (or use form.propertyId if you want dynamic later)
+        propertyId: null, // force empty like web (or use form.propertyId if you want dynamic later)
       };
 
       console.log("Submitting Payload:", JSON.stringify(payload, null, 2));
-
+        console.log("TOKEN:", user?.token);
        const response = await axios.post(
       `${BASE_URL}/api/scheduled-visits/make-a-visit`,
       payload,
@@ -96,7 +96,7 @@ const MyVisit = () => {
           "Content-Type": "application/json",
           Authorization: `Bearer ${user?.token}`, // ✅ important change
         },
-        timeout: 5000, // thoda safe timeout
+        timeout: 15000, // thoda safe timeout
       }
     );
 
@@ -136,6 +136,7 @@ const MyVisit = () => {
       } else if (err.request) {
         // No response received (network issue, CORS, timeout, SSL, etc.)
         errorMsg = "Network error – check internet or try later";
+        
       } else {
         errorMsg = err.message;
       }
@@ -151,6 +152,120 @@ const MyVisit = () => {
     }
   };
 
+
+
+
+
+// const handleSubmit = async () => {
+//   // ✅ Validation
+//   if (!form.name.trim()) {
+//     Toast.show({ type: "error", text1: "Name is required" });
+//     return;
+//   }
+//   if (!form.email.trim() || !form.email.includes("@")) {
+//     Toast.show({ type: "error", text1: "Valid email is required" });
+//     return;
+//   }
+//   if (!form.phone.trim() || form.phone.length !== 10) {
+//     Toast.show({ type: "error", text1: "Phone must be 10 digits" });
+//     return;
+//   }
+//   if (!form.visitDate) {
+//     Toast.show({ type: "error", text1: "Please select visit date" });
+//     return;
+//   }
+
+//   setLoading(true);
+
+//   try {
+//     const payload = {
+//       name: form.name.trim(),
+//       email: form.email.trim(),
+//       phone: form.phone.trim(),
+//       visitDate: form.visitDate,
+//       propertyId: null, // ✅ correct
+//     };
+
+//     console.log("Submitting Payload:", payload);
+//     console.log("TOKEN:", user?.token);
+
+//     const response = await axios.post(
+//       `${BASE_URL}/api/scheduled-visits/make-a-visit`,
+//       payload,
+//       {
+//         headers: {
+//           "Content-Type": "application/json",
+//           Authorization: `Bearer ${user?.token}`,
+//         },
+//         timeout: 15000, // ✅ increased timeout
+//       }
+//     );
+
+//     console.log("✅ API SUCCESS:", response.status, response.data);
+
+//     // ✅ Handle success properly (200 + 201)
+//     if (response.status === 200 || response.status === 201) {
+//       Toast.show({
+//         type: "success",
+//         text1: "Success!",
+//         text2: "Visit scheduled successfully",
+//         visibilityTime: 4000,
+//       });
+
+//       // ✅ Reset form safely
+//       setForm({
+//         name: "",
+//         email: "",
+//         phone: "",
+//         visitDate: "",
+//         propertyId: "",
+//       });
+//     } else {
+//       // ⚠️ unexpected status
+//       Toast.show({
+//         type: "error",
+//         text1: "Unexpected response",
+//         text2: `Status: ${response.status}`,
+//       });
+//     }
+
+//   } catch (err) {
+//     console.log("❌ CATCH HIT");
+
+//     // 🔍 Detailed logging
+//     console.log("ERROR MESSAGE:", err.message);
+//     console.log("ERROR CODE:", err.code);
+//     console.log("ERROR RESPONSE:", err.response);
+//     console.log("ERROR REQUEST:", err.request);
+
+//     let errorMsg = "Failed to schedule visit. Please try again.";
+
+//     if (err.response) {
+//       // ✅ Server responded (4xx / 5xx)
+//       errorMsg =
+//         err.response.data?.message ||
+//         `Server error (${err.response.status})`;
+
+//     } else if (err.request) {
+//       // 🚨 No response from server
+//       errorMsg = "Server not responding. Please try again.";
+
+//     } else {
+//       // ❌ Request setup issue
+//       errorMsg = err.message;
+//     }
+
+//     Toast.show({
+//       type: "error",
+//       text1: "Error",
+//       text2: errorMsg,
+//       visibilityTime: 6000,
+//     });
+
+//   } finally {
+//     setLoading(false);
+//   }
+// };
   const getDisplayDate = () => {
     if (!form.visitDate) return "Select Visit Date";
     const [y, m, d] = form.visitDate.split("-");
