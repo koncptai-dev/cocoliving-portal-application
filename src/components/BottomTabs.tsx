@@ -39,7 +39,7 @@ import PaymentHistoryScreen from '../user/PaymentsScreen';
 import GatepassScreen from '../user/GatePassScreen';
 import EditProfileScreen from '../user/EditProfileScreen';
 import AboutUsScreen from '../components/AboutUsScreen';
-import NotificationListScreen from '../components/notificationIcon';
+import NotificationListScreen from './notificationScreen';
 import Myvisit from '../components/Myvisit';
 import GuestVisit from '../components/GuestVisit';
 import Config from "react-native-config";

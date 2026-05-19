@@ -42,7 +42,7 @@ import PaymentHistoryScreen from './src/user/PaymentsScreen';
 import GatepassScreen from './src/user/GatePassScreen';
 import EditProfileScreen from './src/user/EditProfileScreen';
 import AboutUsScreen from './src/components/AboutUsScreen';
-import NotificationListScreen from './src/components/notificationIcon';
+import NotificationListScreen from './src/components/notificationScreen';
 import Myvisit from './src/components/Myvisit';
 import GuestVisit from './src/components/GuestVisit';
 import VideoSplash from './src/components/AnimatedSplash';

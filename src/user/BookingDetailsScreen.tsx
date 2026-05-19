@@ -114,6 +114,33 @@ const [monthlyPlanLoading, setMonthlyPlanLoading] = useState(false);
 const [monthlyRentLoading, setMonthlyRentLoading] = useState(false);
 
 
+
+//const isOfflineOnly = bookingData?.offlinePaymentsRecieved === true;
+
+const isOfflineOnly =
+  bookingData?.bookingSource === "OFFLINE";
+
+
+
+// const showOfflinePaymentAlert = () => {
+//   Alert.alert(
+//     "Offline Payments Only",
+//     "All payments should be done offline"
+//   );
+// };
+
+
+
+const showOfflinePaymentAlert = () => {
+  Alert.alert(
+    "Offline Payment",
+    "Payments will be done offline",
+    [{ text: "OK" }],
+    { cancelable: true }
+  );
+};
+
+
   const navigation = useNavigation();
 
 
@@ -175,6 +202,17 @@ const calculateLateFeeAndTotal = () => {
 
 const { lateFee, totalPayable } = calculateLateFeeAndTotal();
 
+useEffect(() => {
+  if (bookingData) {
+    console.log(
+      "========== FIRST BOOKING DETAILS =========="
+    );
+
+    console.log(
+      JSON.stringify(bookingData, null, 2)
+    );
+  }
+}, []);
 
 
   /* =====================
@@ -261,6 +299,20 @@ console.log("Payload:", payload);
   console.log("Status:", res.status);
   console.log("Data:", res.data);
 
+
+  // ✅ HANDLE OFFLINE FLOW HERE
+if (res.data?.success && res.data?.isOfflineFlow) {
+
+  Alert.alert(
+    "Success",
+    res.data?.message ||
+      "Extension request submitted successfully"
+  );
+
+  fetchDetails();
+
+  return;
+}
 
 
     if (!res.data?.success) {
@@ -432,7 +484,44 @@ if (state === "SUCCESS" || state === "COMPLETED") {
   /* =====================
      ACTIONS
   ===================== */
- const payRemaining = async () => {
+//  const payRemaining = async () => {
+//   console.log("\n=== Pay Remaining Pressed ===");
+
+//   try {
+
+//     setRemainingLoading(true);
+
+//     await startPhonePeFlow(
+//       "/api/booking-payments/initiate-remaining",
+//       { bookingId: bookingData.id },
+//       "Pay Remaining"
+//     );
+
+//   } catch (err) {
+
+//     console.log("❌ Pay Remaining Error:", err?.response?.data);
+
+//     const message =
+//     err?.response?.data?.message || "Failed to initiate remaining payment";
+
+//     Alert.alert(
+//     "Payment Error",
+//     message
+//   );
+
+//   } finally {
+//     setRemainingLoading(false);
+//   }
+// };
+
+//new
+const payRemaining = async () => {
+
+  if (isOfflineOnly) {
+    showOfflinePaymentAlert();
+    return;
+  }
+
   console.log("\n=== Pay Remaining Pressed ===");
 
   try {
@@ -450,21 +539,73 @@ if (state === "SUCCESS" || state === "COMPLETED") {
     console.log("❌ Pay Remaining Error:", err?.response?.data);
 
     const message =
-    err?.response?.data?.message || "Failed to initiate remaining payment";
+      err?.response?.data?.message ||
+      "Failed to initiate remaining payment";
 
-    Alert.alert(
-    "Payment Error",
-    message
-  );
+    Alert.alert("Payment Error", message);
 
   } finally {
     setRemainingLoading(false);
   }
 };
 
+
+
+
+
+
   //pay security deposte
+
+
+
+
+
+
+
+
+//   const paySecurityDeposit = async () => {
+//   try {
+//     setDepositLoading(true);
+
+//     await startPhonePeFlow(
+//       "/api/booking-payments/initiate-security-deposit",
+//       { bookingId: bookingData.id },
+//       "Security Deposit"
+//     );
+
+//   } catch (err) {
+//     //console.log("❌ Security Deposit Error:", err?.response?.data);
+   
+//   // console.dir(err?.response?.data, { depth: null });
+//    console.log(JSON.stringify(err?.response?.data, null, 2));
+   
+//     // Toast.show({
+//     //   type: "error",
+//     //   text1: err?.response?.data?.message || "Failed to initiate security deposit payment"
+//     // });
+//    const message =
+//     err?.response?.data?.message || "Failed to initiate remaining payment";
+
+//     Alert.alert(
+//     "Payment Error",
+//     message
+//   );
+ 
+//   } finally {
+//     setDepositLoading(false);
+//   }
+// };
+
+
 const paySecurityDeposit = async () => {
+
+  if (isOfflineOnly) {
+    showOfflinePaymentAlert();
+    return;
+  }
+
   try {
+
     setDepositLoading(true);
 
     await startPhonePeFlow(
@@ -474,30 +615,88 @@ const paySecurityDeposit = async () => {
     );
 
   } catch (err) {
-    //console.log("❌ Security Deposit Error:", err?.response?.data);
-   
-  // console.dir(err?.response?.data, { depth: null });
-   console.log(JSON.stringify(err?.response?.data, null, 2));
-   
-    // Toast.show({
-    //   type: "error",
-    //   text1: err?.response?.data?.message || "Failed to initiate security deposit payment"
-    // });
-   const message =
-    err?.response?.data?.message || "Failed to initiate remaining payment";
 
-    Alert.alert(
-    "Payment Error",
-    message
-  );
- 
+    console.log(JSON.stringify(err?.response?.data, null, 2));
+
+    const message =
+      err?.response?.data?.message ||
+      "Failed to initiate remaining payment";
+
+    Alert.alert("Payment Error", message);
+
   } finally {
     setDepositLoading(false);
   }
 };
 
+
+
+
+
+
 //monthly plan activate function
+// const activateMonthlyPlan = async () => {
+
+//   try {
+
+//     setMonthlyPlanLoading(true);
+
+//     const res = await axios.post(
+//       `${BASE_URL}/api/booking-payments/initiate-remaining`,
+//       {
+//         bookingId: bookingData.id,
+//         paymentMode: "MONTHLY"
+//       },
+//       {
+//         headers: {
+//           Authorization: `Bearer ${token}`,
+//           "x-client": "mobile"
+//         }
+//       }
+//     );
+
+//     console.log("Monthly plan response:", res.data);
+
+//     Toast.show({
+//       type: "success",
+//       text1: res.data?.message || "Monthly plan activated"
+//     });
+
+//     // UI update
+//     setBookingData(prev => ({
+//       ...prev,
+//       monthlyPlanSelected: true,
+//       monthlyInstallment: prev.monthlyRent
+//     }));
+
+//   } catch (err) {
+
+//     console.log("❌ Activate Monthly Plan Error:", err?.response?.data);
+
+//     // Toast.show({
+//     //   type: "error",
+//     //   text1: err?.response?.data?.message || "Failed to activate monthly plan"
+//     // });
+//       const message = err?.response?.data?.message || "Failed to initiate remaining payment";
+
+//     Alert.alert(
+//     "Payment Error",
+//     message
+//   );
+
+//   } finally {
+//     setMonthlyPlanLoading(false);
+//   }
+
+// };
+
+
 const activateMonthlyPlan = async () => {
+
+  if (isOfflineOnly) {
+    showOfflinePaymentAlert();
+    return;
+  }
 
   try {
 
@@ -524,7 +723,6 @@ const activateMonthlyPlan = async () => {
       text1: res.data?.message || "Monthly plan activated"
     });
 
-    // UI update
     setBookingData(prev => ({
       ...prev,
       monthlyPlanSelected: true,
@@ -535,25 +733,65 @@ const activateMonthlyPlan = async () => {
 
     console.log("❌ Activate Monthly Plan Error:", err?.response?.data);
 
-    // Toast.show({
-    //   type: "error",
-    //   text1: err?.response?.data?.message || "Failed to activate monthly plan"
-    // });
-      const message = err?.response?.data?.message || "Failed to initiate remaining payment";
+    const message =
+      err?.response?.data?.message ||
+      "Failed to initiate remaining payment";
 
-    Alert.alert(
-    "Payment Error",
-    message
-  );
+    Alert.alert("Payment Error", message);
 
   } finally {
     setMonthlyPlanLoading(false);
   }
-
 };
 
-//pay monthky rent function 
+
+
+
+
+
+
+
+//pay monthly rent function 
+// const payMonthlyRent = async () => {
+
+//   try {
+
+//     setMonthlyRentLoading(true);
+
+//     await startPhonePeFlow(
+//       "/api/booking-payments/initiate-monthly-rent",
+//       { bookingId: bookingData.id },
+//       "Monthly Rent"
+//     );
+
+//   } catch (err) {
+
+//     console.log("❌ Monthly Rent Error:", err?.response?.data);
+
+//     // Toast.show({
+//     //   type: "error",
+//     //   text1: err?.response?.data?.message || "Failed to initiate monthly rent payment"
+//     // });
+//       const message = err?.response?.data?.message || "Failed to initiate remaining payment";
+
+//     Alert.alert(
+//     "Payment Error",
+//     message
+//   );
+
+//   } finally {
+//     setMonthlyRentLoading(false);
+//   }
+
+// };
+
+
 const payMonthlyRent = async () => {
+
+  if (isOfflineOnly) {
+    showOfflinePaymentAlert();
+    return;
+  }
 
   try {
 
@@ -569,28 +807,76 @@ const payMonthlyRent = async () => {
 
     console.log("❌ Monthly Rent Error:", err?.response?.data);
 
-    // Toast.show({
-    //   type: "error",
-    //   text1: err?.response?.data?.message || "Failed to initiate monthly rent payment"
-    // });
-      const message = err?.response?.data?.message || "Failed to initiate remaining payment";
+    const message =
+      err?.response?.data?.message ||
+      "Failed to initiate remaining payment";
 
-    Alert.alert(
-    "Payment Error",
-    message
-  );
+    Alert.alert("Payment Error", message);
 
   } finally {
     setMonthlyRentLoading(false);
   }
-
 };
 
 
 
 
 
+
+
+// const requestExtension = async () => {
+//   console.log("\n=== Extend Pressed ===");
+//   console.log("Months:", extendMonths);
+
+//   if (!isExtendValid) {
+//     Toast.show({
+//       type: "info",
+//       text1: "Invalid Input",
+//       text2: "Enter valid months (≥1)",
+//     });
+//     return;
+//   }
+
+//   try {
+//     setExtendLoading(true);
+
+//     await startPhonePeFlow(
+//       "/api/booking-payments/initiate-extension",
+//       {
+//         bookingId: bookingData.id,
+//         months: Number(extendMonths),
+//       },
+//       "Extension"
+//     );
+
+//     // ❗ No Toast here → already handled inside flow
+
+//   }   
+//   catch (error) {
+//   console.log("❌ ERROR:", error?.response || error);
+
+//   const message =  error?.response?.data?.message || "Something went wrong";
+
+//   Alert.alert(
+//     "Extension Failed",
+//     message
+//   );
+// }
+  
+  
+//   finally {
+//     setExtendLoading(false);
+//   }
+// };
+
+
 const requestExtension = async () => {
+
+  // if (isOfflineOnly) {
+  //   showOfflinePaymentAlert();
+  //   return;
+  // }
+
   console.log("\n=== Extend Pressed ===");
   console.log("Months:", extendMonths);
 
@@ -604,6 +890,7 @@ const requestExtension = async () => {
   }
 
   try {
+
     setExtendLoading(true);
 
     await startPhonePeFlow(
@@ -615,50 +902,20 @@ const requestExtension = async () => {
       "Extension"
     );
 
-    // ❗ No Toast here → already handled inside flow
+  } catch (error) {
 
-  }   
-  catch (error) {
-  console.log("❌ ERROR:", error?.response || error);
+    console.log("❌ ERROR:", error?.response || error);
 
-  const message =  error?.response?.data?.message || "Something went wrong";
+    const message =
+      error?.response?.data?.message ||
+      "Something went wrong";
 
-  Alert.alert(
-    "Extension Failed",
-    message
-  );
-}
-  
-  
-  finally {
+    Alert.alert("Extension Failed", message);
+
+  } finally {
     setExtendLoading(false);
   }
 };
-
-  // const requestExtension = async () => {
-  //   console.log("\n=== Extend Pressed ===");
-  //   console.log("Months:", extendMonths);
-
-  //   if (!isExtendValid) {
-  //     Toast.show({ type: "info", text1: "Enter valid months (≥1)" });
-  //     return;
-  //   }
-
-  //   try {
-  //     setExtendLoading(true);
-  //     await startPhonePeFlow(
-  //       "/api/booking-payments/initiate-extension",
-  //       {
-  //         bookingId: bookingData.id,
-  //         months: Number(extendMonths),
-  //       },
-  //       "Extension"
-  //     );
-  //   } catch {
-  //   } finally {
-  //     setExtendLoading(false);
-  //   }
-  // };
 
 
 
@@ -767,9 +1024,36 @@ return (
       }}
     >
 
-      <InfoCard label="Property" value={bookingData.rateCard?.property?.name} />
-      <InfoCard label="Room Type" value={bookingData.rateCard?.roomType} />
-      <InfoCard label="Status" value={capitalizeFirst(bookingData.displayStatus)} />
+      
+
+<InfoCard
+  label="Property"
+  value={bookingData.rateCard?.property?.name}
+/>
+
+<InfoCard
+  label="Room Type"
+  value={bookingData.rateCard?.roomType}
+/>
+
+<InfoCard
+      label="Status"
+      value={capitalizeFirst(bookingData.displayStatus   )}
+/>
+
+{bookingData?.bookingSource === "OFFLINE" && (
+  <InfoCard
+    label="Booking Payment Mode"
+    value="Offline"
+  />
+)}
+
+
+
+
+
+
+
 
  {paymentSummary && bookingData.monthlyPlanSelected &&(
   <View style={styles.card}>
@@ -865,44 +1149,89 @@ return (
 )} */}
       {/* PAY REMAINING new*/}
     
-     {
+     {/* {
     bookingData.bookingType === "PREBOOK" &&
     bookingData.paymentStatus === "PARTIAL" && 
-    bookingData.contractStatus==="SIGNED" && (
+    bookingData.contractStatus==="SIGNED" && ( */}
+
+
+{
+  (
+    isOfflineOnly ||
+
+    (
+      bookingData.bookingType === "PREBOOK" &&
+      bookingData.paymentStatus === "PARTIAL" &&
+      bookingData.contractStatus === "SIGNED"
+    )
+  ) && (
 
   <>
   
   {/* SECURITY DEPOSIT */}
-  {!bookingData.securityDepositPaid && (
+  {/* {!bookingData.securityDepositPaid && ( */}
 
-    <PrimaryButton
+{(isOfflineOnly || !bookingData.securityDepositPaid) && (
+    <View style={{ marginBottom: 10 }}>
+   {/* <PrimaryButton
       text={depositLoading ? "Processing..." : "Pay Security Deposit"}
       onPress={paySecurityDeposit}
       disabled={depositLoading}
-    />
+    /> */}
 
+<PrimaryButton
+  text={depositLoading ? "Processing..." : "Pay Security Deposit"}
+  onPress={paySecurityDeposit}
+  disabled={depositLoading}
+  offlineDisabled={isOfflineOnly}
+/>
+
+</View>
   )}
 
   {/* AFTER DEPOSIT PAID */}
-  {bookingData.securityDepositPaid && !bookingData.monthlyPlanSelected && (
+  {/* {bookingData.securityDepositPaid && !bookingData.monthlyPlanSelected && ( */}
 
+{(
+  isOfflineOnly ||
+  (
+    bookingData.securityDepositPaid &&
+    !bookingData.monthlyPlanSelected
+  )
+) && (
     <>
     <View style={{ marginBottom: 10 }}>
-      <PrimaryButton
+      {/* <PrimaryButton
         text={remainingLoading ? "Processing..." : "Pay Remaining Amount"}
         onPress={payRemaining}
         disabled={remainingLoading}
-      />
+      /> */}
+
+<PrimaryButton
+  text={remainingLoading ? "Processing..." : "Pay Remaining Amount"}
+  onPress={payRemaining}
+  disabled={remainingLoading}
+  offlineDisabled={isOfflineOnly}
+/>
+
       </View>
     
      <Text style={[styles.or, { marginVertical: 5 }]}>OR</Text>
 
       <View style={{ marginBottom: 10 }}>
-      <PrimaryButton
+      {/* <PrimaryButton
         text={monthlyPlanLoading ? "Processing..." : "Activate Monthly Plan"}
         onPress={activateMonthlyPlan}
         disabled={monthlyPlanLoading}
-      />
+      /> */}
+
+<PrimaryButton
+  text={monthlyPlanLoading ? "Processing..." : "Activate Monthly Plan"}
+  onPress={activateMonthlyPlan}
+  disabled={monthlyPlanLoading}
+  offlineDisabled={isOfflineOnly}
+/>
+
       </View>
     </>
 
@@ -917,13 +1246,20 @@ return (
 )}
 
   {/* MONTHLY PLAN ACTIVE */}
-{canPayRent && (
+{/* {canPayRent && ( */}
+{(isOfflineOnly || canPayRent) && (
+  // <PrimaryButton
+  //   text={monthlyRentLoading ? "Processing..." : "Pay Monthly Rent"}
+  //   onPress={payMonthlyRent}
+  //   disabled={monthlyRentLoading}
+  // />
 
   <PrimaryButton
-    text={monthlyRentLoading ? "Processing..." : "Pay Monthly Rent"}
-    onPress={payMonthlyRent}
-    disabled={monthlyRentLoading}
-  />
+  text={monthlyRentLoading ? "Processing..." : "Pay Monthly Rent"}
+  onPress={payMonthlyRent}
+  disabled={monthlyRentLoading}
+  offlineDisabled={isOfflineOnly}
+/>
 
 )}
 
@@ -1073,9 +1409,107 @@ const Row = ({ label, value }) => (
   </View>
 );
 
-const PrimaryButton = ({ text, onPress, disabled }) => (
+// const PrimaryButton = ({ text, onPress, disabled }) => (
+//   <TouchableOpacity
+//     style={[styles.btn, disabled && { opacity: 0.6 }]}
+//     onPress={onPress}
+//     disabled={disabled}
+//   >
+//     <Text style={styles.btnText}>{text}</Text>
+//   </TouchableOpacity>
+// );
+
+
+// const PrimaryButton = ({
+//   text,
+//   onPress,
+//   disabled,
+//   offlineDisabled = false,
+// }) => (
+//   <View style={{ marginBottom: 10 }}>
+//     <TouchableOpacity
+//       activeOpacity={offlineDisabled ? 1 : 0.7}
+//       style={[
+//         styles.btn,
+//         offlineDisabled && styles.offlineBtn,
+//         disabled && { opacity: 0.6 },
+//       ]}
+//       onPress={offlineDisabled ? undefined : onPress}
+//       disabled={disabled}
+//     >
+//       <Text
+//         style={[
+//           styles.btnText,
+//           offlineDisabled && styles.offlineBtnText,
+//         ]}
+//       >
+//         {text}
+//       </Text>
+//     </TouchableOpacity>
+
+//     {offlineDisabled && (
+//       <Text style={styles.offlineNote}>
+//         Payments will be done offline
+//       </Text>
+//     )}
+//   </View>
+// );
+
+
+const PrimaryButton = ({
+  text,
+  onPress,
+  disabled,
+  offlineDisabled = false,
+}) => (
+  <View style={styles.primaryBtnWrapper}>
+    <TouchableOpacity
+      activeOpacity={offlineDisabled ? 1 : 0.7}
+      style={[
+        styles.btn,
+        offlineDisabled && styles.offlineBtn,
+        disabled && { opacity: 0.6 },
+      ]}
+      onPress={offlineDisabled ? undefined : onPress}
+      disabled={disabled}
+    >
+      <Text
+        style={[
+          styles.btnText,
+          offlineDisabled && styles.offlineBtnText,
+        ]}
+      >
+        {text}
+      </Text>
+    </TouchableOpacity>
+
+    {offlineDisabled && (
+      <Text style={styles.offlineNote}>
+        Payments will be done offline
+      </Text>
+    )}
+  </View>
+);
+
+
+// const DestructiveButton = ({ text, onPress, disabled }) => (
+//   <TouchableOpacity
+//     style={[styles.btn, { backgroundColor: "#d32f2f" }, disabled && { opacity: 0.6 }]}
+//     onPress={onPress}
+//     disabled={disabled}
+//   >
+//     <Text style={styles.btnText}>{text}</Text>
+//   </TouchableOpacity>
+// );
+
+const DestructiveButton = ({ text, onPress, disabled }) => (
   <TouchableOpacity
-    style={[styles.btn, disabled && { opacity: 0.6 }]}
+    activeOpacity={0.7}
+    style={[
+      styles.btn,
+      { backgroundColor: "#d32f2f" },
+      disabled && { opacity: 0.6 },
+    ]}
     onPress={onPress}
     disabled={disabled}
   >
@@ -1083,15 +1517,9 @@ const PrimaryButton = ({ text, onPress, disabled }) => (
   </TouchableOpacity>
 );
 
-const DestructiveButton = ({ text, onPress, disabled }) => (
-  <TouchableOpacity
-    style={[styles.btn, { backgroundColor: "#d32f2f" }, disabled && { opacity: 0.6 }]}
-    onPress={onPress}
-    disabled={disabled}
-  >
-    <Text style={styles.btnText}>{text}</Text>
-  </TouchableOpacity>
-);
+
+
+
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F2F2F2", padding: 16 },
@@ -1104,6 +1532,26 @@ const styles = StyleSheet.create({
   paddingHorizontal: 16,
   marginBottom: 10,
   gap: 20, // 👈 as requested
+},
+primaryBtnWrapper: {
+  marginBottom: 10,
+  width: "100%",
+},
+offlineBtn: {
+  backgroundColor: "#f0e2d3ff",
+},
+
+offlineBtnText: {
+  color: "#8A5A2B",
+},
+
+offlineNote: {
+  marginTop: 6,
+  fontSize: 12,
+  fontFamily: "Quicksand-Bold",
+  color: "#d32f2f",
+  textAlign: "center",
+
 },
 
 headerTitle: {

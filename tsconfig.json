@@ -1,5 +1,12 @@
 {
   "extends": "@react-native/typescript-config",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "allowJs": true,
+    "esModuleInterop": true,
+    "isolatedModules": true,
+    "types": ["jest"]
+  },
   "include": [
     "**/*.ts",
     "**/*.tsx",

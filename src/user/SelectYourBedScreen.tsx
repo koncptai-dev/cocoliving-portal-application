@@ -106,6 +106,39 @@ useEffect(() => {
 }, [preferredRoomId]);
 
 
+
+//new date
+
+const today = new Date();
+today.setHours(0, 0, 0, 0);
+
+const juneFirst2026 = new Date(2026, 5, 1);
+const augustFirst2026 = new Date(2026, 7, 1);
+
+let maxDate;
+
+if (today <= juneFirst2026) {
+  maxDate = augustFirst2026;
+} else {
+  const tempDate = new Date(today);
+  tempDate.setDate(1); // prevent overflow issue
+  tempDate.setMonth(tempDate.getMonth() + 2);
+  maxDate = tempDate;
+}
+
+
+
+
+
+
+const formatLocalDate = (date: Date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+
  return (
   <View style={{ flex: 1, backgroundColor: "#F5F5F5" }}>
 
@@ -392,6 +425,9 @@ useEffect(() => {
           const netPayable = rent * monthsNumber + securityDeposit;
           const preBookAmount = 5000;
 
+
+console.log("📅 Selected ISO Date:", isoDate);
+
           navigation.navigate("PayableAmountScreen", {
   room,
   property,
@@ -422,30 +458,27 @@ useEffect(() => {
 
       {/* ================= CALENDAR ================= */}
     {showCalendar && (
-  <DateTimePicker
-    value={new Date()}
-    mode="date"
-    display={Platform.OS === "ios" ? "spinner" : "default"}
-    minimumDate={new Date()}
-    maximumDate={
-      new Date(
-        new Date().setMonth(new Date().getMonth() + 1)
-      )
+      <DateTimePicker
+  value={isoDate ? new Date(isoDate) : today}
+  minimumDate={today}
+  maximumDate={maxDate}
+  mode="date"
+  display={Platform.OS === "ios" ? "spinner" : "default"}
+  onChange={(event, date) => {
+    setShowCalendar(false);
+    if (date) {
+      const formattedUI = date.toLocaleDateString("en-IN", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      });
+      setStartDate(formattedUI);
+      setIsoDate(formatLocalDate(date));   // ✅ FIXED
+      setDateSelected(true);
     }
-    onChange={(event, date) => {
-      setShowCalendar(false);
-      if (date) {
-        const formattedUI = date.toLocaleDateString("en-IN", {
-          day: "numeric",
-          month: "long",
-          year: "numeric",
-        });
-        setStartDate(formattedUI);
-        setIsoDate(date.toISOString().split("T")[0]);
-        setDateSelected(true);
-      }
-    }}
-  />
+  }}
+/>
+
 )}
     </ScrollView>
     </View>

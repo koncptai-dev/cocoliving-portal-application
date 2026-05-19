@@ -587,6 +587,7 @@ const startFiveSecLoader = () => {
     <Animated.View style={{ transform: [{ translateX: shakeAnim }] }}>
       <OTPTextInput
   key={medium === 'phone' && isAutoOtp ? otp : 'manual'}
+  testID="otp-input"  
   inputCount={6}
   handleTextChange={handleOtpChange}
   defaultValue={otp}
@@ -637,7 +638,7 @@ const startFiveSecLoader = () => {
   activeOpacity={0.8}
 >
   {isButtonLoading ? (
-    <ActivityIndicator size="small" color="#fff" />
+    <ActivityIndicator  testID="loading-indicator" size="small" color="#fff" />
   ) : (
     <Text style={styles.buttonText}>
       {isOTPSent ? 'Verify' : 'Login'}

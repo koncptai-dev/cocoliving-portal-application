@@ -303,6 +303,7 @@ setNotificationCount(unread.length);
         <View style={styles.searchBox}>
           <Ionicons name="search-outline" size={18} color="#999" />
           <TextInput
+            testID="searchInput"
             value={search}
             onChangeText={setSearch}
             style={styles.searchInput}
