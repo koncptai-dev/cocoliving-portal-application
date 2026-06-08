@@ -262,7 +262,7 @@ setNotificationCount(unread.length);
 
   return (
     <View style={styles.container}>
-      {/* HEADER + SEARCH (same) */}
+      {/* HEADER + SEARCH (same) exact */}
       <View style={styles.header}>
         <View style={styles.headerRow}>
           <Text style={styles.hey}>Hey there 👋</Text>

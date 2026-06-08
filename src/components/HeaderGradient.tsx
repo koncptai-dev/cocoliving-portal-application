@@ -88,13 +88,31 @@ const HeaderGradient: React.FC<Props> = ({ title, image }) => {
           {/* Top Row */}
           <View style={styles.headerRow}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <TouchableOpacity
+              {/* <TouchableOpacity
                 onPress={() => navigation.goBack()}
                 style={{ padding: 5 }}
                 activeOpacity={0.3}
               >
                 <Ionicons name="chevron-back" size={25} color="#fff" />
-              </TouchableOpacity>
+              </TouchableOpacity> */}
+
+
+<TouchableOpacity
+  onPress={() => {
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+    } else {
+      navigation.reset({
+        index: 0,
+        routes: [{ name: "HomeTabs" }],
+      });
+    }
+  }}
+  style={{ padding: 5 }}
+  activeOpacity={0.3}
+>
+  <Ionicons name="chevron-back" size={25} color="#fff" />
+</TouchableOpacity>
 
               <View style={{ marginLeft: 8 }}>
                 <Text style={styles.hello}>Hey {firstName}!</Text>

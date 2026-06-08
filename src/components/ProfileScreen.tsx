@@ -21,13 +21,21 @@ import Config from "react-native-config";
 export const BASE_URL = Config.API_BASE_URL;
 
 const ProfileScreen = () => {
-  const navigation = useNavigation();
-  const { user, logout } = useAuth();
+ // const navigation = useNavigation();
+ 
+ const navigation: any = useNavigation();
+ const { user, logout } = useAuth();
   const token = user?.token;
 
   const [hasActiveBooking, setHasActiveBooking] = useState(false);
   const [loadingBooking, setLoadingBooking] = useState(true);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+
+//const [activeRoomId, setActiveRoomId] = useState(null);
+//const [activeRoomId, setActiveRoomId] = useState<number | null>(null);
+
+const [activeRoomId, setActiveRoomId] = useState<number | null>(null);
+const [activeBooking, setActiveBooking] = useState<any>(null);
 
   const userName = user?.fullName || "User";
   const userType = user?.userType || "Professional";
@@ -50,12 +58,23 @@ const ProfileScreen = () => {
       const bookings = response?.data?.bookings || [];
 
       const active = bookings.find(
-        (b: any) =>
-          b.displayStatus?.toLowerCase() === "active" ||
-          b.displayStatus?.toLowerCase() === "approved"
-      );
+  (b: any) =>
+    b.displayStatus?.toLowerCase() === "active" ||
+    b.displayStatus?.toLowerCase() === "approved"
+);
 
-      setHasActiveBooking(!!active);
+setHasActiveBooking(!!active);
+
+// if (active?.roomId) {
+//   setActiveRoomId(active.roomId);
+// }
+
+
+if (active?.roomId) {
+  setActiveRoomId(active.roomId);
+  setActiveBooking(active);
+}
+
     } catch (error) {
       console.log("Booking check error:", error);
       setHasActiveBooking(false);
@@ -130,6 +149,21 @@ const openWhatsApp = async () => {
         label="Payment history"
         onPress={() => navigation.navigate("PaymentScreen")}
       />
+   {/* <MenuItem
+  icon="flash-outline"
+  label="Room Recharge History"
+  onPress={() =>
+    navigation.navigate("RoomRechargeHistory", {
+      roomId: activeRoomId,
+      booking: activeBooking,
+    })
+  }
+/> */}
+  <MenuItem
+  icon="flash-outline"
+  label="Room Recharge History"
+  onPress={() => navigation.navigate("RoomRechargeHistory")}
+/>
       <MenuItem
         icon="finger-print-outline"
         label="Verification Status"
@@ -155,11 +189,12 @@ const openWhatsApp = async () => {
         label="Rules"
         onPress={() => navigation.navigate("CommunityRules")}
       />
-      <MenuItem
+      {/* <MenuItem
         icon="document-text-outline"
         label="Terms & Conditions"
         onPress={() => navigation.navigate("TermsConditions")}
-      />
+      /> */}
+
       {/* <MenuItem
         icon="car-outline"
         label="Gate Pass"

@@ -183,34 +183,43 @@ describe('ProfileScreen', () => {
     ).toBeTruthy();
   });
 
-  it('logs out successfully', async () => {
-    const mockedGet = axios.get as jest.Mock;
+  
+it('logs out successfully', async () => {
+  const mockedGet = axios.get as jest.Mock;
 
-    mockedGet.mockResolvedValue({
-      data: {
-        bookings: [],
-      },
-    });
-
-    const toast =
-      require('react-native-toast-message').default;
-
-    const { getByText } = render(<ProfileScreen />);
-
-    await waitFor(() => {
-      expect(getByText('Logout')).toBeTruthy();
-    });
-
-    fireEvent.press(getByText('Logout'));
-
-    fireEvent.press(getByText('Logout'));
-
-    expect(mockLogout).toHaveBeenCalled();
-
-    expect(toast.show).toHaveBeenCalledWith(
-      expect.objectContaining({
-        text1: 'Logged out successfully',
-      }),
-    );
+  mockedGet.mockResolvedValue({
+    data: {
+      bookings: [],
+    },
   });
+
+  const toast =
+    require('react-native-toast-message').default;
+
+  const {
+    getByText,
+    getAllByText,
+  } = render(<ProfileScreen />);
+
+  await waitFor(() => {
+    expect(getByText('Logout')).toBeTruthy();
+  });
+
+  // Open modal
+  fireEvent.press(getByText('Logout'));
+
+  // Press modal logout button
+  fireEvent.press(getAllByText('Logout')[1]);
+
+  await waitFor(() => {
+    expect(mockLogout).toHaveBeenCalled();
+  });
+
+  expect(toast.show).toHaveBeenCalledWith(
+    expect.objectContaining({
+      text1: 'Logged out successfully',
+    }),
+  );
+});
+
 });

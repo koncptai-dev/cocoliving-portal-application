@@ -258,9 +258,23 @@ const bookingToShow = currentBooking || upcomingBooking;
   }
 
   // *************WELCOME NOTIFICATION*************//
- else if (
+// *************WELCOME NOTIFICATION*************//
+else if (
   notification.title?.toLowerCase() === "welcome"
 ) {
+
+  const message =
+    notification.message?.toLowerCase() || "";
+
+  // ⚡ Electricity recharge welcome notification
+  if (message.includes("electricity recharge")) {
+
+    navigation.navigate("RoomRechargeHistory");
+
+    return;
+  }
+
+  // Default welcome navigation
   navigation.navigate("HomeTabs", {
     screen: "Center",
   });
@@ -271,6 +285,78 @@ const bookingToShow = currentBooking || upcomingBooking;
   ) {
     navigation.navigate("MyBookings");
   }
+
+else if (
+  notification.title?.toLowerCase().includes("electricity")
+) {
+
+  try {
+
+    const res = await axios.get(
+      `${baseURL}/api/book-room/getUserBookings?page=1&limit=20`,
+      {
+        headers: {
+          Authorization: `Bearer ${user.token}`,
+        },
+      }
+    );
+
+    const bookings = res.data?.bookings || [];
+
+    const today = new Date();
+
+    /* UPCOMING BOOKING */
+    const upcomingBooking = bookings.find((b) => {
+      const status = b.displayStatus?.toLowerCase();
+      const checkIn = new Date(b.checkInDate);
+
+      return status === "approved" && today < checkIn;
+    });
+
+    /* CURRENT BOOKING */
+    const currentBooking = bookings.find((b) => {
+      const status = b.displayStatus?.toLowerCase();
+      const checkIn = new Date(b.checkInDate);
+      const checkOut = b.checkOutDate
+        ? new Date(b.checkOutDate)
+        : null;
+
+      return (
+        ["approved", "active"].includes(status) &&
+        today >= checkIn &&
+        (checkOut ? today <= checkOut : true)
+      );
+    });
+
+    const bookingToShow =
+      currentBooking || upcomingBooking;
+
+    if (!bookingToShow) {
+      Toast.show({
+        type: "info",
+        text1: "No active booking found",
+      });
+      return;
+    }
+
+    navigation.navigate("BookingDetails", {
+      booking: bookingToShow,
+    });
+
+  } catch (error) {
+
+    console.log(
+      "Electricity booking fetch failed:",
+      error
+    );
+
+    Toast.show({
+      type: "error",
+      text1: "Failed to open booking",
+    });
+  }
+}
+
 
   // *************CHECK-IN REMINDER*************//
 else if (

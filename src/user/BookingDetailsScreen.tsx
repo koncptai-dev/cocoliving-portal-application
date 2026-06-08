@@ -22,6 +22,11 @@ import Ionicons from "react-native-vector-icons/Ionicons";
 import { useNavigation } from "@react-navigation/native";
 import Config from "react-native-config";
 
+
+
+import { Modal } from "react-native";
+import { WebView } from "react-native-webview";
+
 /* =====================
    CONSTANTS
 ===================== */
@@ -113,8 +118,11 @@ const BookingDetailsScreen = ({ route }) => {
 const [monthlyPlanLoading, setMonthlyPlanLoading] = useState(false);
 const [monthlyRentLoading, setMonthlyRentLoading] = useState(false);
 
-
-
+//Electricity recharge
+const [electricityLoading, setElectricityLoading] = useState(false);
+const [electricityPaymentUrl, setElectricityPaymentUrl] = useState("");
+const [showElectricityWebview, setShowElectricityWebview] = useState(false);
+const [electricityAmount, setElectricityAmount] = useState("");
 //const isOfflineOnly = bookingData?.offlinePaymentsRecieved === true;
 
 const isOfflineOnly =
@@ -173,6 +181,97 @@ const canPayRent = bookingData.monthlyPlanSelected && bookingData.contractStatus
 //&& bookingData.securityDepositPaid && bookingData.installmentsPaid < bookingData.duration;
 
 
+
+const initiateElectricityRecharge = async () => {
+  try {
+
+    // Validation
+    // if (
+    //   !electricityAmount ||
+    //   Number(electricityAmount) < 300
+    // ) {
+    //   Alert.alert(
+    //     "Invalid Amount",
+    //     "Minimum recharge amount is ₹300"
+    //   );
+    //   return;
+    // }
+
+    if (!electricityAmount || Number(electricityAmount) < 100) {
+  Alert.alert(
+    "Invalid Amount",
+    "Minimum recharge amount is ₹100"
+  );
+  return;
+}
+
+    setElectricityLoading(true);
+
+    // Payload
+    const payload = {
+      amount: Number(electricityAmount),
+    };
+
+    console.log(
+      "⚡ Electricity Recharge Payload:",
+      JSON.stringify(payload, null, 2)
+    );
+
+    const res = await axios.post(
+      `${BASE_URL}/api/booking-payments/initiate-electricity-recharge`,
+      payload,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "x-client": "mobile",
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    console.log(
+      "⚡ Electricity recharge response:",
+      JSON.stringify(res.data, null, 2)
+    );
+
+    // Open payment page
+    if (res.data?.redirectUrl) {
+
+      setElectricityPaymentUrl(
+        res.data.redirectUrl
+      );
+
+      setShowElectricityWebview(true);
+
+    } else {
+
+      Alert.alert(
+        "Error",
+        "Payment URL not received"
+      );
+
+    }
+
+  } catch (error) {
+
+    console.log(
+      "❌ Electricity recharge error:",
+      error?.response?.data || error
+    );
+
+    Alert.alert(
+      "Error",
+      error?.response?.data?.message ||
+      "Failed to initiate recharge"
+    );
+
+  } finally {
+
+    setElectricityLoading(false);
+
+  }
+};
+
 const isContractSigned = bookingData?.contractStatus?.toUpperCase() === "SIGNED";
  
 console.log("canPayRent:", canPayRent); 
@@ -215,6 +314,15 @@ useEffect(() => {
 }, []);
 
 
+
+useEffect(() => {
+  if (
+    electricityPaymentUrl &&
+    electricityPaymentUrl !== ""
+  ) {
+    setElectricityAmount("");
+  }
+}, [electricityPaymentUrl]);
   /* =====================
      FETCH DETAILS
   ===================== */
@@ -1263,6 +1371,65 @@ return (
 
 )}
 
+
+
+{/* ELECTRICITY METER RECHARGE */}
+{new Date() >= new Date(bookingData?.checkInDate) && (
+  <View style={styles.card}>
+
+    <Text style={styles.section}>
+      Electricity Meter Recharge
+    </Text>
+
+    <Text style={styles.helper}>
+      *Minimum recharge amount is ₹100
+    </Text>
+
+
+
+    <TextInput
+      style={styles.input}
+      placeholder="Enter recharge amount"
+      keyboardType="numeric"
+      value={electricityAmount}
+      onChangeText={setElectricityAmount}
+    />
+
+    {electricityAmount !== "" &&
+      Number(electricityAmount) < 100 && (
+        <Text
+          style={{
+            color: "#d32f2f",
+            marginBottom: 10,
+            fontFamily: "Quicksand-Bold",
+            fontSize: 12,
+          }}
+        >
+          Recharge amount must be equal to or greater than ₹100
+        </Text>
+      )}
+
+    <PrimaryButton
+      text={
+        electricityLoading
+          ? "Processing..."
+          : "Recharge Electricity Meter"
+      }
+      disabled={
+        electricityLoading ||
+        !electricityAmount ||
+        Number(electricityAmount) < 100
+      }
+      onPress={initiateElectricityRecharge}
+    />
+
+  </View>
+)}
+
+
+
+
+
       {/* CANCELLATION REQUEST */}
       {bookingData.status && ["approved", "cancelled"].includes(bookingData.status.toLowerCase()) && (
         <View style={styles.card}>
@@ -1385,6 +1552,42 @@ return (
 
       <View style={{ height: 40 }} />
     </ScrollView>
+
+
+
+<Modal
+  visible={showElectricityWebview}
+  animationType="slide"
+>
+  <View style={{ flex: 1 }}>
+
+    <TouchableOpacity
+      onPress={() => setShowElectricityWebview(false)}
+      style={{
+        padding: 15,
+        backgroundColor: "#fff",
+        zIndex: 1,
+      }}
+    >
+      <Text
+        style={{
+          fontSize: 16,
+          fontWeight: "bold",
+          color: "red",
+        }}
+      >
+        Close
+      </Text>
+    </TouchableOpacity>
+
+    <WebView
+      source={{ uri: electricityPaymentUrl }}
+      startInLoadingState={true}
+    />
+
+  </View>
+</Modal>
+
 
     </KeyboardAvoidingView>
   );
@@ -1540,6 +1743,7 @@ primaryBtnWrapper: {
 offlineBtn: {
   backgroundColor: "#f0e2d3ff",
 },
+
 
 offlineBtnText: {
   color: "#8A5A2B",

@@ -30,7 +30,16 @@ const ComplaintHistory = () => {
     "January","February","March","April","May","June",
     "July","August","September","October","November","December",
   ];
-  const statusOptions = ["open", "closed"];
+  const statusOptions = [
+  "open",
+  "in-progress",
+  "resolved",
+  "closed",
+  "inactive",
+  "archived",
+  "onhold",
+  "pending",
+];
 
   const fetchTickets = async () => {
     try {
@@ -192,9 +201,15 @@ const ComplaintHistory = () => {
                 ROOM NO: {item.roomNumber}
               </Text>
 
-              <Text style={styles.status}>
-                Status: {item.status === "open" ? "Open" : "Closed"}
-              </Text>
+             
+
+<Text style={styles.status}>
+  Status: {item.status
+    ?.replace("-", " ")
+    ?.replace(/\b\w/g, c => c.toUpperCase())}
+</Text>
+
+
             </View>
 
             {/* NEW: Category & Sub Category */}

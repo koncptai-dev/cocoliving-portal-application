@@ -83,7 +83,7 @@ android {
          applicationId "com.mycoco"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 42
+        versionCode 45
         versionName "1.0"
     //       ndk {
     //     abiFilters "armeabi-v7a", "arm64-v8a"
