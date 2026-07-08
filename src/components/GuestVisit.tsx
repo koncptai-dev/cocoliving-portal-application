@@ -9,6 +9,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker'; // Yeh wala use kar rahe
 import HeaderGradient from './HeaderGradient';
@@ -119,68 +120,147 @@ useEffect(() => {
     handleChange('visitDate', currentDate);
   };
 
-  const handleSubmit = async () => {
-    if (!bookingId || submitting) return;
+  // const handleSubmit = async () => {
+  //   if (!bookingId || submitting) return;
 
-    if (!form.guestName.trim()) {
-      Toast.show({ type: 'error', text1: 'Guest name daalo' });
-      return;
-    }
+  //   if (!form.guestName.trim()) {
+  //     Toast.show({ type: 'error', text1: 'Guest name daalo' });
+  //     return;
+  //   }
 
-    if (!form.guestPhone.trim() || form.guestPhone.length !== 10) {
-      Toast.show({ type: 'error', text1: 'Valid 10-digit guest phone daalo' });
-      return;
-    }
+  //   if (!form.guestPhone.trim() || form.guestPhone.length !== 10) {
+  //     Toast.show({ type: 'error', text1: 'Valid 10-digit guest phone daalo' });
+  //     return;
+  //   }
 
-    if (!form.visitDate) {
-      Toast.show({ type: 'error', text1: 'please select visit date' });
-      return;
-    }
+  //   if (!form.visitDate) {
+  //     Toast.show({ type: 'error', text1: 'please select visit date' });
+  //     return;
+  //   }
 
-    setSubmitting(true);
+  //   setSubmitting(true);
 
-    try {
-      const payload = {
-        permitType: 'guest',
-        bookingId,
-        guestName: form.guestName.trim(),
-        guestPhone: form.guestPhone.trim(),
-        guestEmail: form.guestEmail.trim() || undefined,
-        visitDate: form.visitDate.toISOString().split('T')[0], // YYYY-MM-DD
-        purpose: form.purpose.trim(),
-      };
+  //   try {
+  //     const payload = {
+  //       permitType: 'guest',
+  //       bookingId,
+  //       guestName: form.guestName.trim(),
+  //       guestPhone: form.guestPhone.trim(),
+  //       guestEmail: form.guestEmail.trim() || undefined,
+  //       visitDate: form.visitDate.toISOString().split('T')[0], // YYYY-MM-DD
+  //       purpose: form.purpose.trim(),
+  //     };
 
-      await axios.post(`${BASE_URL}/api/guest-visits`, payload, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+  //     await axios.post(`${BASE_URL}/api/guest-visits`, payload, {
+  //       headers: { Authorization: `Bearer ${token}` },
+  //     });
 
-      Toast.show({
-        type: 'success',
-        text1: 'Guest Visit Created!',
-        text2: 'QR code sent on Mail',
-      });
+  //     Toast.show({
+  //       type: 'success',
+  //       text1: 'Guest Visit Created!',
+  //       text2: 'QR code sent on Mail',
+  //     });
 
-      setForm({
-        guestName: '',
-        guestPhone: '',
-        guestEmail: '',
-        visitDate: new Date(),
-        purpose: '',
-      });
+  //     setForm({
+  //       guestName: '',
+  //       guestPhone: '',
+  //       guestEmail: '',
+  //       visitDate: new Date(),
+  //       purpose: '',
+  //     });
 
-      navigation.goBack();
+  //     navigation.goBack();
 
-    } catch (err: any) {
-      const msg = err?.response?.data?.message || 'Failed to create guest visit';
-      Toast.show({
-        type: 'error',
-        text1: 'Failed',
-        text2: msg,
-      });
-    } finally {
-      setSubmitting(false);
-    }
-  };
+  //   } catch (err: any) {
+  //     const msg = err?.response?.data?.message || 'Failed to create guest visit';
+  //     Toast.show({
+  //       type: 'error',
+  //       text1: 'Failed',
+  //       text2: msg,
+  //     });
+  //   } finally {
+  //     setSubmitting(false);
+  //   }
+  // };
+
+
+ const handleSubmit = async () => {
+  if (!bookingId || submitting) return;
+
+  if (
+    !form.guestName?.trim() ||
+    !form.guestPhone?.trim() ||
+    !form.guestEmail?.trim() ||
+    !form.purpose?.trim()
+  ) {
+    Alert.alert("Incomplete Form", "Fill all fields.");
+    return;
+  }
+
+  if (form.guestPhone.length !== 10) {
+    Alert.alert("Invalid Phone", "Please enter a valid phone number.");
+    return;
+  }
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(form.guestEmail.trim())) {
+    Alert.alert("Invalid Email", "Enter a valid email address");
+    return;
+  }
+
+  if (!form.visitDate) {
+   Alert.alert("Date Required", "Select a visit date.");
+    return;
+  }
+
+  setSubmitting(true);
+
+  try {
+    const payload = {
+      permitType: "guest",
+      bookingId,
+      guestName: form.guestName.trim(),
+      guestPhone: form.guestPhone.trim(),
+      guestEmail: form.guestEmail.trim(),
+      visitDate: form.visitDate.toISOString().split("T")[0],
+      purpose: form.purpose.trim(),
+    };
+
+    await axios.post(`${BASE_URL}/api/guest-visits`, payload, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    Alert.alert(
+      "Success",
+      "Guest Visit Created!\nQR code sent on Mail",
+      [
+        {
+          text: "OK",
+          onPress: () => {
+            setForm({
+              guestName: "",
+              guestPhone: "",
+              guestEmail: "",
+              visitDate: new Date(),
+              purpose: "",
+            });
+
+            navigation.goBack();
+          },
+        },
+      ]
+    );
+  } catch (err: any) {
+    const msg =
+      err?.response?.data?.message || "Failed to create guest visit";
+
+    Alert.alert("Failed", msg);
+  } finally {
+    setSubmitting(false);
+  }
+};
 
   if (loadingBooking) {
     return (

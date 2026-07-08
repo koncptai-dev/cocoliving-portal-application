@@ -78,7 +78,10 @@ const [allowAutoOtp, setAllowAutoOtp] = useState<boolean | null>(null);
 
   //const isButtonLoading = loading || verifying;
 
-  const isButtonLoading = fakeLoading;
+
+  const isButtonLoading = !isOTPSent && loading;
+
+//  const isButtonLoading = fakeLoading;
 
   const [errors, setErrors] = useState<{ identifier?: string; otp?: string }>({});
   const [timer, setTimer] = useState(OTP_TIMER);
@@ -94,6 +97,8 @@ const [allowAutoOtp, setAllowAutoOtp] = useState<boolean | null>(null);
 const autoOtpRef = useRef(false);
 
 
+//new
+const loginRequestInProgress = useRef(false);
 
   
 
@@ -274,6 +279,10 @@ const startFiveSecLoader = () => {
 
   // ---------------- CHECK & PROCEED ----------------
   const checkAndProceed = async () => {
+
+
+
+    
     Keyboard.dismiss();
     const e = emailRef.current.trim().toLowerCase();
     const p = phoneRef.current.trim();
@@ -311,6 +320,17 @@ const startFiveSecLoader = () => {
       mediumType = 'phone';
     }
 
+
+
+
+  if (loginRequestInProgress.current) return;
+
+  loginRequestInProgress.current = true;
+  
+
+
+
+
     setLoading(true);
 
     try {
@@ -338,32 +358,12 @@ const startFiveSecLoader = () => {
     } catch {
       Toast.show({ type: 'error', text1: 'Something went wrong' });
     } finally {
+      loginRequestInProgress.current = false;
       setLoading(false);
     }
   };
 
-  // ---------------- SEND OTP ----------------
-  // const sendOTP = async (identifier: string, mediumType: 'email' | 'phone', selectedChildId: number | null) => {
-  //  // setLoading(true);
-  //   setOtp('');
-  //   try {
-  //     await axios.post(LOGIN_SEND_OTP, {
-  //       identifier,
-  //       ...(selectedChildId !== null && { childId: selectedChildId }),
-  //     });
 
-  //     setChildId(selectedChildId);
-  //     setIsOTPSent(true);
-  //     setShowChildModal(false);
-  //     resetTimer();
-
-  //     Toast.show({ type: 'success', text1: `OTP sent to your ${mediumType === 'phone' ? 'mobile' : 'email'}` });
-  //   } catch (err: any) {
-  //     Toast.show({ type: 'error', text1: err?.response?.data?.message || 'Failed to send OTP' });
-  //   } finally {
-  //    // setLoading(false);
-  //   }
-  // };
 
  const sendOTP = async (
   identifier: string,
@@ -624,6 +624,8 @@ const startFiveSecLoader = () => {
   </>
 )}
 
+{/*
+
 <TouchableOpacity
   style={[
     styles.button,
@@ -645,6 +647,36 @@ const startFiveSecLoader = () => {
     </Text>
   )}
 </TouchableOpacity>
+
+*/}
+
+
+<TouchableOpacity
+  style={[
+    styles.button,
+    isButtonLoading && { opacity: 0.7 }
+  ]}
+  onPress={() => {
+    Keyboard.dismiss();
+
+    if (isOTPSent) {
+      verifyOTP();
+    } else {
+      checkAndProceed();
+    }
+  }}
+  disabled={isButtonLoading}
+>
+  {isButtonLoading ? (
+    <ActivityIndicator size="small" color="#fff" />
+  ) : (
+    <Text style={styles.buttonText}>
+      {isOTPSent ? 'Verify' : 'Login'}
+    </Text>
+  )}
+</TouchableOpacity>
+
+
 
 
 

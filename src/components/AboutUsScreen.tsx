@@ -13,7 +13,7 @@ import { Linking } from "react-native";
 const AboutUsScreen = ({ navigation }) => {
   return (
     <View style={styles.container}>
-      {/* Curved Brown Header */}
+      {/* Curved Brown Headerhhhhhh */}
            <View style={styles.header}>
   <TouchableOpacity onPress={() => navigation.goBack()}>
     <Ionicons name="chevron-back" size={26} color="#4C3D2A" />

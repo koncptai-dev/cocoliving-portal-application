@@ -57,7 +57,7 @@ const MyVisit = () => {
   };
 
   const handleSubmit = async () => {
-    // Mandatory: validate all fields (web has 'required' attribute)
+  
     if (!form.name.trim()) {
       Toast.show({ type: "error", text1: "Name is required" });
       return;
@@ -378,8 +378,6 @@ return (
           onChange={onDateChange}
         />
       )}
-
-      <Toast />
     </View>
   </KeyboardAvoidingView>
 );

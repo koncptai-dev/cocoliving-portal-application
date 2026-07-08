@@ -202,13 +202,21 @@ console.log("Today's FULL food:", todayMenu);
       );
 
       const tickets = ticketRes.data.tickets || [];
+
       console.log("Tickets fetched successfully. Count:", tickets.length);
 
-    const openCount = tickets.filter(
-  (t) =>
-    t.status?.toLowerCase() === "open" &&
-    t.bookingId === bookingId
+console.log("Tickets API response:", ticketRes.data);
+
+//     const openCount = tickets.filter(
+//   (t) =>
+//     t.status?.toLowerCase() === "open" &&
+//     t.bookingId === bookingId
+// ).length;
+
+const openCount = tickets.filter(
+  (t) => t.status?.toLowerCase() === "open"
 ).length;
+
 
       setOpenRequests(openCount);
       console.log("Open requests count:", openCount);

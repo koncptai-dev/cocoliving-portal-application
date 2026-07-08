@@ -321,7 +321,7 @@ if (isStudent && userPhone && parentPhone && userPhone === parentPhone) {
         {/* SECTION */}
         <Text style={styles.sectionTitle}>Personal & Contact Information</Text>
 
-        {/* FIRST + LAST NAME */}
+        {/* FIRST + LAST NAME hhh */}
         <View style={styles.twoCol}>
           <FloatingInput label="First Name" value={profile.firstName} onChangeText={(v) => update("firstName", v)} />
           <FloatingInput label="Last Name" value={profile.lastName} onChangeText={(v) => update("lastName", v)} />

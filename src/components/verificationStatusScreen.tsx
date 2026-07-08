@@ -151,6 +151,7 @@ useEffect(() => {
 
       } catch (err: any) {
         console.error('DigiLocker callback failed:', err);
+
         Toast.show({
           type: 'error',
           text1: 'Callback Processing Failed',
@@ -504,16 +505,7 @@ console.log('🧪 initiate-session FULL response:', sessionRes.data);
 console.log('🧪 initiate-session data:', sessionRes.data?.data);
 console.log('🧪 DigiLocker URL:', sessionRes.data?.data?.url);
 
-      // const digilockerUrl = sessionRes.data?.data?.url;
-
-      // if (!digilockerUrl) {
-      //   throw new Error('No DigiLocker URL');
-      // }
-
-      // Linking.openURL(digilockerUrl);
-
-//const digilockerUrl = sessionRes.data?.data?.url;
-
+    
 
 const digilockerUrl =
   sessionRes.data?.data?.url ||
@@ -523,19 +515,19 @@ const digilockerUrl =
 console.log('🔗 DigiLocker URL:', digilockerUrl);
 
 if (!digilockerUrl) {
-  throw new Error('No DigiLocker URL');
+  throw new Error("Sorry! can't open digilocker");
 }
 
-const canOpen = await Linking.canOpenURL(digilockerUrl);
-console.log('✅ canOpenURL:', canOpen);
+//const canOpen = await Linking.canOpenURL(digilockerUrl);
+//console.log('✅ canOpenURL:', canOpen);
 
-if (!canOpen) {
-  Alert.alert(
-    'Cannot Open DigiLocker',
-    'Device cannot open DigiLocker link'
-  );
-  return;
-}
+// if (!canOpen) {
+//   Alert.alert(
+//     'Cannot Open DigiLocker',
+//     'Device cannot open DigiLocker link'
+//   );
+//   return;
+// }
 
 await Linking.openURL(digilockerUrl);
 
