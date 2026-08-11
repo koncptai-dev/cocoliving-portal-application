@@ -62,6 +62,7 @@ import PrivacyPolicyScreen from './src/components/privacy';
 import TermsScreen from './src/components/terms';
 import RefundPolicyScreen from './src/components/refund';
 import RoomRechargeHistoryScreen from './src/user/RoomRechargeHistory';
+import MealsScreen from './src/user/Meals';
 
 const Stack = createNativeStackNavigator();
  export const API_BASE_URL = Config.API_BASE_URL;
@@ -178,6 +179,7 @@ const AppNavigator = () => {
           <Stack.Screen name="Support" component ={SupportScreen}/>
           <Stack.Screen name="ContractSign" component={ContractSignScreen} />
           <Stack.Screen name="RoomRechargeHistory" component={RoomRechargeHistoryScreen}/>
+           <Stack.Screen name="Meals" component={MealsScreen}/>
           <Stack.Screen
     name="PrivacyPolicy"
     component={PrivacyPolicyScreen}

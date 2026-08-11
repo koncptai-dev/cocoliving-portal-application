@@ -126,7 +126,7 @@ const openWhatsApp = async () => {
     </TouchableOpacity>
   );
 
-  // Booked User Menu Items
+  // Booked User Menu Items  hgggggg
   const bookedMenu = (
     <>
       <MenuItem
@@ -159,6 +159,18 @@ const openWhatsApp = async () => {
     })
   }
 /> */}
+
+
+
+<MenuItem
+  icon="restaurant-outline"
+  label="Meals"
+  onPress={() =>
+    navigation.navigate("Meals", {
+      bookingId: activeBooking?.id,
+    })
+  }
+/>
   <MenuItem
   icon="flash-outline"
   label="Room Recharge History"
@@ -482,7 +494,7 @@ const styles = StyleSheet.create({
   },
 
   name: {
-    fontSize: 24,
+    fontSize: 20,
     fontFamily: "Quicksand-Bold",
     color: "#fff",
   },

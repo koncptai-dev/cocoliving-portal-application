@@ -67,6 +67,10 @@ const RegisterProfileScreen = ({ navigation, route }) => {
 
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
+
+
+  const [fullName, setFullName] = useState('');
+
   const [email, setEmail] = useState(prefilledEmail);
   const [phone, setPhone] = useState(prefilledPhone);
   const [dob, setDob] = useState('');
@@ -88,6 +92,13 @@ const [canResend, setCanResend] = useState(false);
   const [showDOBPicker, setShowDOBPicker] = useState(false);
 
   const isDefaultAvatar = profilePicUri === AVATAR_PLACEHOLDER;
+
+
+const maxDOB = new Date();
+maxDOB.setFullYear(maxDOB.getFullYear() - 17);
+
+
+
 
   // 🔥 DIRECT CAMERA ONLY (NO GALLERY, NO BOTTOM SHEET)
   const takePhoto = async () => {
@@ -128,21 +139,31 @@ const [canResend, setCanResend] = useState(false);
     }
   };
 
-  const onDOBChange = (_: any, date?: Date) => {
-    setShowDOBPicker(false);
-    if (date) {
-      const d = String(date.getDate()).padStart(2, '0');
-      const m = String(date.getMonth() + 1).padStart(2, '0');
-      const y = date.getFullYear();
-      setDob(`${d}-${m}-${y}`);
-    }
-  };
+  // const onDOBChange = (_: any, date?: Date) => {
+  //   setShowDOBPicker(false);
+  //   if (date) {
+  //     const d = String(date.getDate()).padStart(2, '0');
+  //     const m = String(date.getMonth() + 1).padStart(2, '0');
+  //     const y = date.getFullYear();
+  //     setDob(`${d}-${m}-${y}`);
+  //   }
+  // };
 
   const handleSendOTP = async () => {
-    if (!firstName.trim() || !lastName.trim()) {
-      Toast.show({ type: 'error', text1: 'Enter full name' });
-      return;
-    }
+   
+    // if (!firstName.trim() || !lastName.trim()) {
+    //   Toast.show({ type: 'error', text1: 'Enter full name' });
+    //   return;
+    // }
+
+
+if (!fullName.trim()) {
+  Toast.show({
+    type: 'error',
+    text1: 'Please enter your full name',
+  });
+  return;
+}
 
     if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
       Toast.show({ type: 'error', text1: 'Enter a valid email address' });
@@ -235,10 +256,11 @@ const handleSubmitProfile = async () => {
     //   }
     // }
 
-    const fullName = `${firstName.trim()} ${lastName.trim()}`;
+   // const fullName = `${firstName.trim()} ${lastName.trim()}`;
 
+   
     const formData = new FormData();
-    formData.append('fullName', fullName);
+    formData.append('fullName', fullName.trim());
     formData.append('email', email.trim());
     formData.append('phone', phone);
     formData.append('gender', gender);
@@ -269,10 +291,15 @@ const handleSubmitProfile = async () => {
         Toast.show({ type: 'success', text1: 'Registration successful 🎉' });
         navigation.replace('Login');
       } else {
+        console.log("API_BASE_URL:", API_BASE_URL);
+        console.log("SIGNUP_REGISTER:", SIGNUP_REGISTER);
         Toast.show({ type: 'error', text1: res.data?.message || 'Registration failed' });
       }
     } catch (e: any) {
   console.log("===== REGISTER ERROR START =====");
+
+ console.log("API_BASE_URL:", API_BASE_URL);
+        console.log("SIGNUP_REGISTER:", SIGNUP_REGISTER);
 
   let errorMessage = "Registration failed";
 
@@ -327,6 +354,49 @@ const handleSubmitProfile = async () => {
 }, [otpSent, timer]);
 
 
+
+
+const calculateAge = (birthDate: Date) => {
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+
+  const monthDiff = today.getMonth() - birthDate.getMonth();
+
+  if (
+    monthDiff < 0 ||
+    (monthDiff === 0 && today.getDate() < birthDate.getDate())
+  ) {
+    age--;
+  }
+
+  return age;
+};
+
+const onDOBChange = (_: any, date?: Date) => {
+  setShowDOBPicker(false);
+
+  if (!date) return;
+
+  const age = calculateAge(date);
+
+  if (age < 17) {
+    Toast.show({
+      type: 'error',
+      text1: 'You must be at least 17 years old.',
+    });
+    return;
+  }
+
+  const d = String(date.getDate()).padStart(2, '0');
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const y = date.getFullYear();
+
+  setDob(`${d}-${m}-${y}`);
+};
+
+
+
+
     return (
   <KeyboardAvoidingView
     style={{ flex: 1 }}
@@ -375,10 +445,20 @@ const handleSubmitProfile = async () => {
           </View>
         </View>
 
-        <View style={styles.row}>
-          <FloatingInput label="First Name*" value={firstName} onChangeText={setFirstName} />
-          <FloatingInput label="Last Name*" value={lastName} onChangeText={setLastName} />
-        </View>
+
+
+<View style={styles.infoContainer}>
+  <Ionicons name="information-circle-outline" size={16} color="#2563EB" />
+  <Text style={styles.infoText}>
+    Please enter your name exactly as it appears on your Aadhaar card.
+  </Text>
+</View>
+       
+       <FloatingInput
+  label="Full Name*"
+  value={fullName}
+  onChangeText={setFullName}
+/>
 
         <FloatingInput
           label="Mobile Number*"
@@ -494,7 +574,17 @@ const handleSubmitProfile = async () => {
         <View style={{ height: 80 }} />
 
         {showDOBPicker && (
-          <DateTimePicker value={new Date()} mode="date" maximumDate={new Date()} onChange={onDOBChange} />
+          // <DateTimePicker 
+          // value={new Date()} 
+          // mode="date" 
+          // maximumDate={new Date()} 
+          // onChange={onDOBChange} />
+          <DateTimePicker
+  value={maxDOB}
+  mode="date"
+  maximumDate={maxDOB} // Only dates on or before this are selectable
+  onChange={onDOBChange}
+/>
         )}
       </ScrollView>
 
@@ -521,6 +611,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 24,
   },
+  
  
 avatar: {
   width: 100,
@@ -535,6 +626,26 @@ avatarImageWrapper: {
   height: '100%',
   borderRadius: 50,
   overflow: 'hidden',     // ✅ image yahin clip hogi
+},
+
+
+infoContainer: {
+  flexDirection: "row",
+  alignItems: "flex-start",
+  backgroundColor: "#EFF6FF",
+  borderRadius: 8,
+  padding: 10,
+  marginBottom: 24,
+  borderLeftWidth: 3,
+  borderLeftColor: "#2563EB",
+},
+
+infoText: {
+  flex: 1,
+  marginLeft: 8,
+  fontSize: 13,
+  color: "#1E3A8A",
+  fontFamily: "Quicksand-Medium",
 },
 header: {
   paddingTop: 24,

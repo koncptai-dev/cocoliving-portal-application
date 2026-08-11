@@ -29,14 +29,13 @@ export default function Profile() {
   const isStudent = user?.userType === "student";
   const isProfessional = user?.userType === "professional";
 
-  const name = user?.fullName || "";
-  const first = name.split(" ")[0] || "";
-  const last = name.split(" ").slice(1).join(" ") || "";
+  // const name = user?.fullName || "";
+  // const first = name.split(" ")[0] || "";
+  // const last = name.split(" ").slice(1).join(" ") || "";
 
   // 🔥 Profile State
   const [profile, setProfile] = useState({
-    firstName: first,
-    lastName: last,
+    fullName: user?.fullName || "",
     dateOfBirth: "",
     gender: "",
     email: "",
@@ -100,8 +99,7 @@ export default function Profile() {
 
       setProfile({
         ...profile,
-        firstName: u.fullName?.split(" ")[0] || "",
-        lastName: u.fullName?.split(" ").slice(1).join(" ") || "",
+        fullName: u.fullName || "",
         dateOfBirth: u.dateOfBirth || "",
         gender: u.gender || "",
         email: u.email || "",
@@ -164,6 +162,31 @@ export default function Profile() {
 
   const update = (key, val) => setProfile({ ...profile, [key]: val });
 
+
+
+
+
+  const isAtLeast17YearsOld = (dob: string) => {
+  if (!dob) return false;
+
+  const birthDate = new Date(dob);
+  const today = new Date();
+
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const monthDiff = today.getMonth() - birthDate.getMonth();
+
+  if (
+    monthDiff < 0 ||
+    (monthDiff === 0 && today.getDate() < birthDate.getDate())
+  ) {
+    age--;
+  }
+
+  return age >= 17;
+};
+
+
+
   // 🔥 Save Profile
 const saveProfile = async () => {
   const emailError = validateParentEmail(profile.parentEmail);
@@ -172,6 +195,26 @@ const saveProfile = async () => {
     Toast.show({ type: "error", text1: "Please fix error in parent email" });
     return;
   }
+
+
+   // DOB Validation
+  if (!profile.dateOfBirth) {
+    Toast.show({
+      type: "error",
+      text1: "Date of Birth is required",
+    });
+    return;
+  }
+
+  if (!isAtLeast17YearsOld(profile.dateOfBirth)) {
+    Toast.show({
+      type: "error",
+      text1: "Age Restriction",
+      text2: "You must be at least 17 years old.",
+    });
+    return;
+  }
+
 
   // 🔥 Parent mobile validation
 const userPhone = normalizeNumber(profile.phone);
@@ -187,10 +230,9 @@ if (isStudent && userPhone && parentPhone && userPhone === parentPhone) {
 }
 
   try {
-    const fullName = `${profile.firstName} ${profile.lastName}`.trim();
+   
     const form = new FormData();
-
-    form.append("fullName", fullName);
+    form.append("fullName", profile.fullName.trim());
     form.append("dateOfBirth", profile.dateOfBirth || "");
     form.append("gender", profile.gender || "");
     form.append("phone", profile.phone || "");
@@ -295,7 +337,7 @@ if (isStudent && userPhone && parentPhone && userPhone === parentPhone) {
             ) : (
               <View style={styles.profileCircle}>
                 <Text style={styles.profileLetter}>
-                  {profile.firstName?.charAt(0)?.toUpperCase()}
+                  {profile.fullName?.charAt(0)?.toUpperCase()}
                 </Text>
               </View>
             )}
@@ -322,11 +364,15 @@ if (isStudent && userPhone && parentPhone && userPhone === parentPhone) {
         <Text style={styles.sectionTitle}>Personal & Contact Information</Text>
 
         {/* FIRST + LAST NAME hhh */}
-        <View style={styles.twoCol}>
+        {/* <View style={styles.twoCol}>
           <FloatingInput label="First Name" value={profile.firstName} onChangeText={(v) => update("firstName", v)} />
           <FloatingInput label="Last Name" value={profile.lastName} onChangeText={(v) => update("lastName", v)} />
-        </View>
-
+        </View> */}
+<FloatingInputFull
+  label="Full Name"
+  value={profile.fullName}
+  onChangeText={(v) => update("fullName", v)}
+/>
         {/* DOB + GENDER */}
         <View style={styles.twoCol}>
           <FloatingDropdown
@@ -359,9 +405,14 @@ if (isStudent && userPhone && parentPhone && userPhone === parentPhone) {
 
         {/* DOB Picker */}
         {showDOB && (
-          <DateTimePicker
-            value={profile.dateOfBirth ? new Date(profile.dateOfBirth) : new Date()}
-            mode="date"
+         <DateTimePicker
+  value={profile.dateOfBirth ? new Date(profile.dateOfBirth) : new Date(2000, 0, 1)}
+  mode="date"
+  maximumDate={new Date(
+    new Date().getFullYear() - 17,
+    new Date().getMonth(),
+    new Date().getDate()
+  )}
             onChange={(e, d) => {
               if (d) update("dateOfBirth", d.toISOString().split("T")[0]);
               setShowDOB(false);

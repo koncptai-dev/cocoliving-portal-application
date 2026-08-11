@@ -158,19 +158,33 @@ const todayMenu = dayData
   ? {
       breakfast: dayData.breakfast || [],
       lunch: dayData.lunch || [],
+      eveningSnack: dayData.eveningSnack || [],
       dinner: dayData.dinner || [],
 
       // ✅ images add
       breakfastImg: photoData?.breakfast?.[0] || null,
       lunchImg: photoData?.lunch?.[0] || null,
       dinnerImg: photoData?.dinner?.[0] || null,
+       eveningSnackImg: photoData?.eveningSnack?.[0] || null,
     }
   : null;
 
 setTodayFood(todayMenu);
 
-console.log("Today's FULL food:", todayMenu);
-      console.log("Today's food set:", todayMenu);
+// console.log("Today's FULL food:", todayMenu);
+//       console.log("Today's food set:", todayMenu);
+
+
+
+console.log(
+  "Food API:",
+  JSON.stringify(foodRes.data, null, 2)
+);
+
+console.log("Today Menu:", todayMenu);
+console.log("Evening Snack:", todayMenu?.eveningSnack);
+console.log("Evening Snack Image:", todayMenu?.eveningSnackImg);
+
     } catch (err) {
       console.log("Food menu API failed:", err?.response?.data || err.message || err);
       setTodayFood(null);
@@ -326,7 +340,11 @@ setNotificationCount(unread.length);
         onPress={() => navigation.navigate("FoodMenu")}
       />
 
-      <View style={styles.foodRow}>
+     <ScrollView
+  horizontal
+  showsHorizontalScrollIndicator={false}
+  contentContainerStyle={styles.foodRow}
+>
        <FoodCard
   title="Breakfast"
   subtitle={
@@ -355,6 +373,20 @@ setNotificationCount(unread.length);
   }
 />
 
+
+
+<FoodCard
+  title="Evening Snacks"
+  subtitle={
+    todayFood?.eveningSnack?.length
+      ? todayFood.eveningSnack.join(", ")
+      : "Not available"
+  }
+  image={{
+    uri: `${API_BASE_URL}/uploads/foodMenus/1786087864970-902321067.webp`,
+  }}
+/>
+
         <FoodCard
   title="Dinner"
   subtitle={
@@ -368,7 +400,8 @@ setNotificationCount(unread.length);
       : require("../../assets/images/dinner.png")
   }
 />
-      </View>
+
+     </ScrollView>
 
       {/* ---------------- EVENTS ---------------- */}
       <SectionHeader title="What’s Happening" onPress={() => navigation.navigate("Events")} />
@@ -550,20 +583,39 @@ const styles = StyleSheet.create({
 
   viewAll: { color: "#ffffff", backgroundColor: colors.nOrange, padding: 5, borderRadius: 8, fontFamily: "RethinkSans-Bold" },
 
-  foodRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginHorizontal: 16,
-    marginTop: 14,
-  },
-
+  // foodRow: {
+  //   flexDirection: "row",
+  //   justifyContent: "space-between",
+  //   marginHorizontal: 16,
+  //   marginTop: 14,
+  // },
+// foodRow: {
+//   flexDirection: "row",
+//   paddingHorizontal: 16,
+//   marginTop: 14,
+// },
+foodRow: {
+  flexDirection: "row",
+  paddingHorizontal: 16,
+  marginTop: 14,
+  paddingRight: 16,
+},
+  // foodCard: {
+  //     width: 150,
+  // marginRight: 12,
+  //   backgroundColor: "#EFE8E2",
+  //   borderRadius: 16,
+  //   alignItems: "center",
+  //   paddingVertical: 14,
+  // },
   foodCard: {
-    width: "30%",
-    backgroundColor: "#EFE8E2",
-    borderRadius: 16,
-    alignItems: "center",
-    paddingVertical: 14,
-  },
+  width: 160,
+  backgroundColor: "#EFE8E2",
+  borderRadius: 16,
+  alignItems: "center",
+  paddingVertical: 14,
+  marginRight: 12,
+},
 
   foodImage: { width: 60, height: 60, borderRadius: 30 },
 

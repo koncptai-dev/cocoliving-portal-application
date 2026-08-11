@@ -895,12 +895,7 @@ const activateMonthlyPlan = async () => {
 
 
 const payMonthlyRent = async () => {
-
-  if (isOfflineOnly) {
-    showOfflinePaymentAlert();
-    return;
-  }
-
+  
   try {
 
     setMonthlyRentLoading(true);
@@ -1158,7 +1153,10 @@ return (
 
 
 
-
+<InfoCard
+  label="Meal Subscription"
+  value={bookingData?.mealSubscriptionInfo || "Not Subscribed"}
+/>
 
 
 
@@ -1356,17 +1354,12 @@ return (
   {/* MONTHLY PLAN ACTIVE */}
 {/* {canPayRent && ( */}
 {(isOfflineOnly || canPayRent) && (
-  // <PrimaryButton
-  //   text={monthlyRentLoading ? "Processing..." : "Pay Monthly Rent"}
-  //   onPress={payMonthlyRent}
-  //   disabled={monthlyRentLoading}
-  // />
-
-  <PrimaryButton
+ <PrimaryButton
   text={monthlyRentLoading ? "Processing..." : "Pay Monthly Rent"}
   onPress={payMonthlyRent}
   disabled={monthlyRentLoading}
   offlineDisabled={isOfflineOnly}
+  showOfflineNote={false}
 />
 
 )}
@@ -1659,11 +1652,13 @@ const Row = ({ label, value }) => (
 // );
 
 
+
 const PrimaryButton = ({
   text,
   onPress,
   disabled,
   offlineDisabled = false,
+  showOfflineNote = true,
 }) => (
   <View style={styles.primaryBtnWrapper}>
     <TouchableOpacity
@@ -1686,7 +1681,7 @@ const PrimaryButton = ({
       </Text>
     </TouchableOpacity>
 
-    {offlineDisabled && (
+    {offlineDisabled && showOfflineNote && (
       <Text style={styles.offlineNote}>
         Payments will be done offline
       </Text>

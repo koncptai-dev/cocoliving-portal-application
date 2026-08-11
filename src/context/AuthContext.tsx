@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect , useRef, useCallback} from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Keychain from 'react-native-keychain';
 import { jwtDecode } from 'jwt-decode';
@@ -53,6 +53,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUserState] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
 
+  const isLoggingOut = useRef(false);
   /* ---------- SECURE STORAGE HELPERS ---------- */
 
   const getSecureStore = async (): Promise<{ token: string; refreshToken?: string } | null> => {
@@ -164,18 +165,58 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   /* ---------- LOGOUT ---------- */
 
-  const logout = async () => {
-    setUserState(null);
-    await AsyncStorage.removeItem(USER_DATA_KEY);
-    await removeSecureStore();
+  // const logout = async () => {
+  //   setUserState(null);
+  //   await AsyncStorage.removeItem(USER_DATA_KEY);
+  //   await removeSecureStore();
 
-    Toast.show({
-      type: 'info',
-      text1: 'Logged out!',
-    });
-  };
+  //   Toast.show({
+  //     type: 'info',
+  //     text1: 'Logged out!',
+  //   });
+  // };
+
+  const logout = useCallback(async () => {
+  setUserState(null);
+  await AsyncStorage.removeItem(USER_DATA_KEY);
+  await removeSecureStore();
+
+  Toast.show({
+    type: "info",
+    text1: "Logged out!",
+  });
+}, []);
 
   /* ---------- PROVIDER ---------- */
+
+
+useEffect(() => {
+  const interceptor = axios.interceptors.response.use(
+    response => response,
+    async error => {
+      const status = error.response?.status;
+
+      if (
+        (status === 401 || status === 403) &&
+        !isLoggingOut.current
+      ) {
+        isLoggingOut.current = true;
+
+        try {
+          await logout();
+        } finally {
+          isLoggingOut.current = false;
+        }
+      }
+
+      return Promise.reject(error);
+    }
+  );
+
+  return () => {
+    axios.interceptors.response.eject(interceptor);
+  };
+}, [logout]);
 
   return (
     <AuthContext.Provider value={{ user, setUser, refreshUser, authLoading, logout }}>

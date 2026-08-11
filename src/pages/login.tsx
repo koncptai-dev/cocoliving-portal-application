@@ -284,7 +284,7 @@ const startFiveSecLoader = () => {
 
     
     Keyboard.dismiss();
-    const e = emailRef.current.trim().toLowerCase();
+    const e = emailRef.current.trim();
     const p = phoneRef.current.trim();
     setErrors({});
 
@@ -544,13 +544,21 @@ const startFiveSecLoader = () => {
                   autoCapitalize="none"
                   style={styles.input}
                   value={email}
+                  // onChangeText={t => {
+                  //   const val = t.toLowerCase();
+                  //   emailRef.current = val;
+                  //   setEmail(val);
+                  //   if (val.length) { phoneRef.current = ''; setPhone(''); }
+                  // }}
                   onChangeText={t => {
-                    const val = t.toLowerCase();
-                    emailRef.current = val;
-                    setEmail(val);
-                    if (val.length) { phoneRef.current = ''; setPhone(''); }
-                  }}
-                  onSubmitEditing={e => { emailRef.current = e.nativeEvent.text.trim().toLowerCase(); checkAndProceed(); }}
+  emailRef.current = t;
+  setEmail(t);
+  if (t.length) {
+    phoneRef.current = '';
+    setPhone('');
+  }
+}}
+                  onSubmitEditing={e => { emailRef.current = e.nativeEvent.text.trim(); checkAndProceed(); }}
                 />
               </View>
 

@@ -6,6 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import axios from "axios";
@@ -23,6 +24,7 @@ const MyBookings = ({ navigation }: any) => {
   const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
  
+  const [isSigningContract, setIsSigningContract] = useState(false);
 
  useFocusEffect(
   useCallback(() => {
@@ -103,6 +105,88 @@ const bookingToShow = currentBooking || upcomingBooking;
 
 
 
+//   const initiateESign = async (bookingId: string | number) => {
+//   try {
+//     const url = `${API_BASE_URL}/api/contracts/${bookingId}/initiate-esign`;
+
+// console.log("API_BASE_URL:", API_BASE_URL);
+// console.log("Request URL:", url);
+// console.log("Headers:", {
+//   Authorization: `Bearer ${token}`,
+// });
+
+//     const res = await axios.post(
+//         url,
+//       {},
+//       {
+//         headers: {
+//           Authorization: `Bearer ${token}`,
+//         },
+//       }
+//     );
+
+//     Alert.alert(
+//       "Success",
+//       "We've sent an email with your e-signature link.\nPlease check your inbox to continue."
+//     );
+
+//     console.log("Initiate eSign Response:", res.data);
+//   } catch (error: any) {
+//     console.log(
+//       "Initiate eSign Error:",
+//       error?.response?.data || error.message
+//     );
+
+//     Alert.alert(
+//       "Error",
+//       error?.response?.data?.message ||
+//         "Unable to initiate the e-sign process. Please try again."
+//     );
+//   }
+// };
+
+
+const initiateESign = async (bookingId: string | number) => {
+  // Prevent multiple clicks
+  if (isSigningContract) return;
+
+  setIsSigningContract(true);
+
+  try {
+    const url = `${API_BASE_URL}/api/contracts/${bookingId}/initiate-esign`;
+
+    const res = await axios.post(
+      url,
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    Alert.alert(
+      "",
+      "We've sent an email with your e-signature link.\nPlease check your inbox to continue."
+    );
+
+    console.log("Initiate eSign Response:", res.data);
+  } catch (error: any) {
+    console.log(
+      "Initiate eSign Error:",
+      error?.response?.data || error.message
+    );
+
+    Alert.alert(
+      "",
+      error?.response?.data?.message ||
+        "Unable to initiate the e-sign process. Please try again."
+    );
+  } finally {
+    setIsSigningContract(false);
+  }
+};
+
   return (
     <View style={{ flex: 1, backgroundColor: "#F6F3EC" }}>
       <HeaderGradient title="My Bookings" />
@@ -136,6 +220,10 @@ const bookingToShow = currentBooking || upcomingBooking;
               }
             />
               </View>
+
+
+
+
 
               {/* ACTION BUTTONS */}
 <View style={styles.actionRow}>
@@ -190,14 +278,11 @@ const bookingToShow = currentBooking || upcomingBooking;
 
   {/* SIGN CONTRACT BUTTON */}
   {bookingToShow?.contractStatus !== "SIGNED" && (
-    <PrimaryBtn
-      title="Sign Contract"
-      onPress={() =>
-        navigation.navigate("ContractSign", {
-          bookingId: bookingToShow.id,
-        })
-      }
-    />
+    <PrimaryBtntwo
+  title="Sign Contract"
+  loading={isSigningContract}
+  onPress={() => initiateESign(bookingToShow.id)}
+/>
   )}
 
   <OutlineBtn
@@ -271,6 +356,28 @@ const PrimaryBtn = ({ title, onPress }: any) => (
   </TouchableOpacity>
 );
 
+const PrimaryBtntwo = ({
+  title,
+  onPress,
+  loading = false,
+}: any) => (
+  <TouchableOpacity
+    style={[
+      styles.primaryBtn,
+      loading && { opacity: 0.6 },
+    ]}
+    onPress={onPress}
+    disabled={loading}
+    activeOpacity={0.7}
+  >
+    {loading ? (
+      <ActivityIndicator color="#FFF" />
+    ) : (
+      <Text style={styles.primaryBtnText}>{title}</Text>
+    )}
+  </TouchableOpacity>
+);
+
 const OutlineBtn = ({ title, onPress }: any) => (
   <TouchableOpacity style={styles.outlineBtn} onPress={onPress}>
     <Text style={styles.outlineBtnText}>{title}</Text>
@@ -303,6 +410,7 @@ const badgeColor = (status = "") => {
 /* ================= STYLES ================= */
 
 const styles = StyleSheet.create({
+
   loader: {
     flex: 1,
     justifyContent: "center",

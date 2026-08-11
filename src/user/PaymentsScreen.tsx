@@ -73,6 +73,14 @@ const printableInvoiceHtml = (payment: any) => {
 
   const paymentMode = payment.paymentMode || "—";
 
+  const advanceRent = rupee(payment.advanceRent);
+const securityDeposit = rupee(payment.securityDeposit);
+const amcCharges = rupee(payment.amcCharges);
+const mealSubscriptionCharges = rupee(payment.mealSubscriptionCharges);
+const mealSubscriptionDuration =
+  payment.mealSubscriptionDuration || 0;
+const totalAmount = rupee(payment.totalAmount);
+
   // const paymentType = payment.paymentType || "—";
 const paymentType =
   payment.offlinePaymentType ||
@@ -244,6 +252,44 @@ const paymentType =
           </div>
           `
           }
+
+          ${
+  payment.paymentType === "Initial"
+    ? `
+<div class="row">
+  <div class="label">Advance Rent</div>
+  <div>${advanceRent}</div>
+</div>
+
+<div class="row">
+  <div class="label">Security Deposit</div>
+  <div>${securityDeposit}</div>
+</div>
+
+<div class="row">
+  <div class="label">AMC Charges</div>
+  <div>${amcCharges}</div>
+</div>
+
+<div class="row">
+  <div class="label">Meal Subscription</div>
+  <div>${mealSubscriptionCharges}</div>
+</div>
+
+<div class="row">
+  <div class="label">Meal Duration</div>
+  <div>${mealSubscriptionDuration} Month${
+        mealSubscriptionDuration > 1 ? "s" : ""
+      }</div>
+</div>
+
+<div class="row">
+  <div class="label"><strong>Total Amount</strong></div>
+  <div><strong>${totalAmount}</strong></div>
+</div>
+`
+    : ""
+}
 
         </div>
 
@@ -487,7 +533,9 @@ const handleInvoicePress = (item: any) => {
                   </Text> */}
 
 <Text style={styles.orderId}>
-  {item.paymentMode === "OFFLINE"
+  {item.paymentType === "Initial"
+    ? `INITIAL-${item.id}`
+    : item.paymentMode === "OFFLINE"
     ? item.type
     : item.merchantOrderId}
 </Text>
@@ -552,6 +600,155 @@ const handleInvoicePress = (item: any) => {
                     )}
                   </>
                 )}
+
+
+
+{/* {item.additionalDetails && (
+  <View style={styles.initialPaymentContainer}>
+    <Text style={styles.breakupTitle}>Payment Details</Text>
+
+<View style={styles.breakupRow}>
+      <Text style={styles.breakupLabel}>Payment Mode</Text>
+      <Text style={styles.breakupValue}>
+        {item.paymentMode || "N/A"}
+      </Text>
+    </View>
+
+    <View style={styles.breakupRow}>
+      <Text style={styles.breakupLabel}>Payment Type</Text>
+      <Text style={styles.breakupValue}>
+        {item.offlinePaymentType || "N/A"}
+      </Text>
+    </View>
+
+ <View style={styles.breakupRow}>
+    <Text style={styles.breakupLabel}>Payment Category</Text>
+    <Text style={styles.breakupValue}>
+      {item.paymentType || "N/A"}
+    </Text>
+  </View>
+
+    <View style={styles.breakupRow}>
+      <Text style={styles.breakupLabel}>Advance Rent</Text>
+      <Text style={styles.breakupValue}>
+        {rupee(item.advanceRent)}
+      </Text>
+    </View>
+
+    <View style={styles.breakupRow}>
+      <Text style={styles.breakupLabel}>Security Deposit</Text>
+      <Text style={styles.breakupValue}>
+        {rupee(item.securityDeposit)}
+      </Text>
+    </View>
+
+    <View style={styles.breakupRow}>
+      <Text style={styles.breakupLabel}>AMC Charges</Text>
+      <Text style={styles.breakupValue}>
+        {rupee(item.amcCharges)}
+      </Text>
+    </View>
+
+    <View style={styles.breakupRow}>
+      <Text style={styles.breakupLabel}>
+        Meal Subscription
+      </Text>
+      <Text style={styles.breakupValue}>
+        {rupee(item.mealSubscriptionCharges)}
+      </Text>
+    </View>
+
+    <View style={styles.breakupRow}>
+      <Text style={styles.breakupLabel}>
+        Meal Duration
+      </Text>
+      <Text style={styles.breakupValue}>
+        {item.mealSubscriptionDuration} Month
+        {item.mealSubscriptionDuration > 1 ? "s" : ""}
+      </Text>
+    </View>
+
+    <View style={[styles.breakupRow, styles.totalRow]}>
+      <Text style={styles.totalLabel}>Total Amount</Text>
+      <Text style={styles.totalValue}>
+        {rupee(item.totalAmount)}
+      </Text>
+    </View>
+  </View>
+)} */}
+
+{item.additionalDetails && (
+  <View style={styles.detailsCard}>
+   
+  
+    {/* Row 1 */}
+    <View style={styles.gridRow}>
+     
+      <View style={styles.gridItem}>
+        <Text style={styles.gridLabel}>Total Amount</Text>
+        <Text style={styles.totalValue}>
+          {rupee(item.totalAmount)}
+        </Text>
+      </View>
+     
+      <View style={styles.gridItem}>
+        <Text style={styles.gridLabel}>AMC Charges</Text>
+        <Text style={styles.gridValue}>
+          {rupee(item.amcCharges)}
+        </Text>
+      </View>
+      
+
+     
+    </View>
+
+    {/* Row 2 */}
+    <View style={styles.gridRow}>
+      <View style={styles.gridItem}>
+        <Text style={styles.gridLabel}>Advance Rent</Text>
+        <Text style={styles.gridValue}>
+          {rupee(item.advanceRent)}
+        </Text>
+      </View>
+
+      <View style={styles.gridItem}>
+        <Text style={styles.gridLabel}>Security Deposit</Text>
+        <Text style={styles.gridValue}>
+          {rupee(item.securityDeposit)}
+        </Text>
+      </View>
+    </View>
+
+    {/* Row 3 */}
+    <View style={styles.gridRow}>
+     
+       <View style={styles.gridItem}>
+        <Text style={styles.gridLabel}>Meal Duration</Text>
+        <Text style={styles.gridValue}>
+          {item.mealSubscriptionDuration} Month
+          {item.mealSubscriptionDuration > 1 ? "s" : ""}
+        </Text>
+      </View>
+
+      <View style={styles.gridItem}>
+        <Text style={styles.gridLabel}>Meal Subscription</Text>
+        <Text style={styles.gridValue}>
+          {rupee(item.mealSubscriptionCharges)}
+        </Text>
+      </View>
+    </View>
+
+    {/* Row 4 */}
+    {/* <View style={styles.gridRow}>
+     
+
+      <View style={styles.gridItem} />
+    </View> */}
+
+
+  </View>
+)}
+
 
                 <View style={styles.amountRow}>
                   <Text style={styles.amount}>
@@ -804,7 +1001,37 @@ const styles = StyleSheet.create({
     padding: 16,
     paddingHorizontal: 20,
   },
+detailsCard: {
+  marginTop: 12,
+  padding: 12,
+  borderRadius: 10,
+  backgroundColor: "#FAF7F2",
+  borderWidth: 1,
+  borderColor: "#EFE3D5",
+},
 
+gridRow: {
+  flexDirection: "row",
+  justifyContent: "space-between",
+  marginBottom: 12,
+},
+
+gridItem: {
+  width: "48%",
+},
+
+gridLabel: {
+  fontFamily: "Quicksand-Regular",
+  fontSize: 12,
+  color: "#8A7160",
+},
+
+gridValue: {
+  marginTop: 4,
+  fontFamily: "Quicksand-Bold",
+  fontSize: 14,
+  color: "#3E2A1F",
+},
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -826,7 +1053,58 @@ const styles = StyleSheet.create({
     padding: 14,
     marginBottom: 12,
   },
+initialPaymentContainer: {
+  marginTop: 12,
+  padding: 12,
+  borderRadius: 10,
+  backgroundColor: "#FAF7F2",
+  borderWidth: 1,
+  borderColor: "#EFE3D5",
+},
 
+breakupTitle: {
+  fontFamily: "Quicksand-Bold",
+  fontSize: 14,
+  color: "#4b3426",
+  marginBottom: 8,
+},
+
+breakupRow: {
+  flexDirection: "row",
+  justifyContent: "space-between",
+  paddingVertical: 4,
+},
+
+breakupLabel: {
+  fontFamily: "Quicksand-Regular",
+  fontSize: 13,
+  color: "#6A4A3C",
+},
+
+breakupValue: {
+  fontFamily: "Quicksand-SemiBold",
+  fontSize: 13,
+  color: "#3E2A1F",
+},
+
+totalRow: {
+  marginTop: 8,
+  paddingTop: 8,
+  borderTopWidth: 1,
+  borderTopColor: "#DDD",
+},
+
+totalLabel: {
+  fontFamily: "Quicksand-Bold",
+  fontSize: 14,
+  color: "#4b3426",
+},
+
+totalValue: {
+  fontFamily: "Quicksand-Bold",
+  fontSize: 15,
+  color: "#D07D23",
+},
   rowBetween: {
     flexDirection: "row",
     justifyContent: "space-between",
