@@ -580,7 +580,7 @@ jobs:
           echo "Test command:"
           echo "$TEST_CMD"
 
-          npm test -- --reporter=json --outputFile=test-results.json
+          npm run test -- --reporter=json --outputFile=test-results.json
 
 
       # --------------------------------------------------------
