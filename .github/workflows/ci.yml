@@ -185,7 +185,6 @@ jobs:
       TEAMS_WEBHOOK: ${{ secrets.MS_TEAMS_WEBHOOK_URL }}
 
     steps:
-
       - name: Block High/Critical Vulnerabilities
         shell: bash
         run: |
@@ -258,7 +257,7 @@ jobs:
                         "value": $high
                       }
                     ],
-                    "text": "❌ Merge is permanently blocked.\n\n[View Pull Request](" + $pr_url + ")\n\n[View Workflow Run](" + $workflow_url + ")",
+                    "text": "❌ Merge is permanently blocked.\n\n[View Pull Request](\($pr_url))\n\n[View Workflow Run](\($workflow_url))",
                     "markdown": true
                   }
                 ]
