@@ -47,7 +47,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: '20'
           cache: npm
 
       # --------------------------------------------------------
@@ -55,7 +55,7 @@ jobs:
       # --------------------------------------------------------
 
       - name: Install Dependencies
-        run: npm ci
+        run: npm i
 
       # --------------------------------------------------------
       # Run Security Audit
