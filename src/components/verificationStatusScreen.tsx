@@ -24,9 +24,7 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigation } from '@react-navigation/native';
 import Config from 'react-native-config';
 export const BASE_URL_APP = Config.API_BASE_URL;
-const DIGI_BASE = 'https://prod.idto.ai';
-const DIGI_API_KEY = 'RulAcOY0Axe9nHs85tNQsP0gN6o2kzGrhrpWcOoLCWI';
-const DIGI_CLIENT_ID = '8391f987-7531-4b74-bcef-d3607d9a6cab';
+
 
 
 
