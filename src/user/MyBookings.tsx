@@ -21,6 +21,9 @@ const MyBookings = ({ navigation }: any) => {
   const { user } = useAuth();
   const token = user?.token;
 
+
+  const isParent = user?.loginAs === 'parent';
+
   const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
  
@@ -280,6 +283,7 @@ const initiateESign = async (bookingId: string | number) => {
   {bookingToShow?.contractStatus !== "SIGNED" && (
     <PrimaryBtntwo
   title="Sign Contract"
+   disabled={isParent}
   loading={isSigningContract}
   onPress={() => initiateESign(bookingToShow.id)}
 />
@@ -356,18 +360,40 @@ const PrimaryBtn = ({ title, onPress }: any) => (
   </TouchableOpacity>
 );
 
+// const PrimaryBtntwo = ({
+//   title,
+//   onPress,
+//   loading = false,
+// }: any) => (
+//   <TouchableOpacity
+//     style={[
+//       styles.primaryBtn,
+//       loading && { opacity: 0.6 },
+//     ]}
+//     onPress={onPress}
+//     disabled={loading}
+//     activeOpacity={0.7}
+//   >
+//     {loading ? (
+//       <ActivityIndicator color="#FFF" />
+//     ) : (
+//       <Text style={styles.primaryBtnText}>{title}</Text>
+//     )}
+//   </TouchableOpacity>
+// );
 const PrimaryBtntwo = ({
   title,
   onPress,
   loading = false,
+  disabled = false,
 }: any) => (
   <TouchableOpacity
     style={[
       styles.primaryBtn,
-      loading && { opacity: 0.6 },
+      (loading || disabled) && { opacity: 0.6 },
     ]}
     onPress={onPress}
-    disabled={loading}
+    disabled={loading || disabled}
     activeOpacity={0.7}
   >
     {loading ? (

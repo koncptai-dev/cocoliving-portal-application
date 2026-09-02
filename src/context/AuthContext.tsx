@@ -19,6 +19,8 @@ export interface NormalUser extends BaseUser {
   role: 'user';
   fullName: string;
   userType: string;
+  loginAs?: 'parent' | 'student';
+  parentName?: string;
 }
 
 export type User = NormalUser;

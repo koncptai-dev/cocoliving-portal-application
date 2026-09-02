@@ -16,6 +16,9 @@ const ComplaintStatus = () => {
   const [roomNumber, setRoomNumber] = useState("No room assigned");
   const [loadingRoom, setLoadingRoom] = useState(true);
 
+
+
+
   const fetchTickets = async () => {
     try {
       const res = await axios.get(`${baseURL}/api/tickets/get-user-tickets`, {
@@ -73,6 +76,23 @@ const ComplaintStatus = () => {
   const ongoing = tickets.filter((t) => t.status === "open");
   const closed = tickets.filter((t) => t.status === "closed");
 
+
+const formatDate = (date) => {
+  if (!date) return "N/A";
+
+  const d = new Date(date);
+
+  if (isNaN(d.getTime())) return "N/A";
+
+  const day = String(d.getDate()).padStart(2, "0");
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const year = d.getFullYear();
+
+  return `${day}-${month}-${year}`;
+};
+
+
+
   return (
     <View style={styles.container}>
       <HeaderGradient
@@ -120,7 +140,8 @@ const ComplaintStatus = () => {
               </Text>
             </Text>
 
-            <Text style={styles.date}>Request Date: {item.date}</Text>
+           <Text style={styles.date}>Request Date: {formatDate(item.date)}</Text>
+
           </View>
         ))}
 
@@ -148,9 +169,10 @@ const ComplaintStatus = () => {
             </Text>
 
             <Text style={styles.date}>Request Date: {item.date}</Text>
-            <Text style={styles.date}>
-              Request Closed: {item.updatedAt?.split("T")[0]}
-            </Text>
+           <Text style={styles.date}>
+  Request Closed: {formatDate(item.updatedAt)}
+</Text>
+
           </View>
         ))}
       </ScrollView>

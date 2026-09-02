@@ -22,9 +22,34 @@ const DashboardScreen = ({ navigation }) => {
   const { user } = useAuth();
   const token = user?.token;
 
-  const username = user?.fullName || "User";
-  const firstName = username.split(" ")[0];
-  const firstLetter = username.charAt(0).toUpperCase();
+  // const username = user?.fullName || "User";
+  // const firstName = username.split(" ")[0];
+  // const firstLetter = username.charAt(0).toUpperCase();
+const [parentName, setParentName] = useState("");
+
+
+// const isParent = user?.userType === "parent";
+
+// const username = isParent
+//   ? user?.parentName || "Parent"
+//   : user?.fullName || "User";
+
+// const firstName = username.trim().split(" ")[0] || "User";
+// const firstLetter = username.charAt(0).toUpperCase();
+
+const isParent = user?.loginAs === "parent";
+
+const displayName = isParent
+  ? parentName?.trim() || "Parent"
+  : user?.fullName?.trim() || "User";
+
+const firstName = displayName.split(/\s+/)[0] || "User";
+const firstLetter = displayName.charAt(0).toUpperCase();
+
+
+
+
+
 
   const [roomNumber, setRoomNumber] = useState("N/A");
   const [daysLeft, setDaysLeft] = useState(0);
@@ -38,21 +63,57 @@ const DashboardScreen = ({ navigation }) => {
   const [bookingId, setBookingId] = useState(null);
   const [notificationCount, setNotificationCount] = useState(0);
 
+  const loadUser = async () => {
+  try {
+    const res = await axios.get(
+      `${API_BASE_URL}/api/user/getUser/${user.id}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    const u = res.data.user;
+
+
+    console.log("Dashboard user profile:", u);
+    console.log("User type:", user?.userType);
+    console.log("Parent name from API:", u?.parentName);
+    console.log("Dashboard user profile:", u);
+
+    setParentName(u.parentName || "");
+  } catch (error) {
+    console.log(
+      "Dashboard profile fetch failed:",
+      error?.response?.data || error.message || error
+    );
+  }
+};
+
   // Debug: Events state değiştiğinde logla
   useEffect(() => {
     console.log("Events state updated:", events);
     console.log("Events count:", events.length);
   }, [events]);
 
-  useFocusEffect(
-    useCallback(() => {
-      if (token) fetchDashboardData();
-    }, [token])
-  );
+  // useFocusEffect(
+  //   useCallback(() => {
+  //     if (token) fetchDashboardData();
+  //   }, [token])
+  // );
+useFocusEffect(
+  useCallback(() => {
+    if (token && user?.id) {
+      fetchDashboardData();
+      loadUser();
+    }
+  }, [token, user?.id])
+);
 
-  useEffect(() => {
-    if (token) fetchDashboardData();
-  }, [token]);
+  // useEffect(() => {
+  //   if (token) fetchDashboardData();
+  // }, [token]);
 
   /* ---------------- API CALLS (HER BİRİ BAĞIMSIZ TRY-CATCH) ---------------- */
   const fetchDashboardData = async () => {

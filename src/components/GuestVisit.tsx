@@ -17,7 +17,6 @@ import colors from '../constants/color';
 import { useNavigation } from '@react-navigation/native';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
-import Toast from 'react-native-toast-message';
 import Config from 'react-native-config';
 
 export const BASE_URL = Config.API_BASE_URL;
@@ -43,7 +42,7 @@ const [loadingVisits, setLoadingVisits] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
 
-
+const isParent = user?.loginAs === "parent";
 
   // Fetch guest visits history
 useEffect(() => {
@@ -59,11 +58,16 @@ useEffect(() => {
       setVisits(res.data.visits || []);
     } catch (err: any) {
       console.log('Guest visits fetch error:', err);
-      Toast.show({
-        type: 'error',
-        text1: 'Failed to load guest history',
-        text2: err?.response?.data?.message || 'Try again later',
-      });
+   Alert.alert(
+  'Failed to Load Guest History',
+  err?.response?.data?.message || 'Try again later'
+);
+ 
+      // Toast.show({
+      //   type: 'error',
+      //   text1: 'Failed to load guest history',
+      //   text2: err?.response?.data?.message || 'Try again later',
+      // });
     } finally {
       setLoadingVisits(false);
     }
@@ -89,19 +93,28 @@ useEffect(() => {
         if (res.data?.bookingId) {
           setBookingId(res.data.bookingId);
         } else {
-          Toast.show({
-            type: 'error',
-            text1: 'No Active Booking',
-            text2: 'Guest visit is only during active state',
-          });
+        Alert.alert(
+    'No Active Booking',
+    'Guest visit is only available during an active booking.'
+  ); 
+          // Toast.show({
+          //   type: 'error',
+          //   text1: 'No Active Booking',
+          //   text2: 'Guest visit is only during active state',
+          // });
         }
       } catch (err: any) {
         console.log('Booking fetch error:', err);
-        Toast.show({
-          type: 'error',
-          text1: 'Failed to load booking',
-          text2: 'Please try again later',
-        });
+        // Toast.show({
+        //   type: 'error',
+        //   text1: 'Failed to load booking',
+        //   text2: 'Please try again later',
+        // });
+        
+  Alert.alert(
+    'Failed to Load Guest History',
+    err?.response?.data?.message || 'Try again later'
+  );
       } finally {
         setLoadingBooking(false);
       }
@@ -184,8 +197,108 @@ useEffect(() => {
   // };
 
 
- const handleSubmit = async () => {
-  if (!bookingId || submitting) return;
+//  const handleSubmit = async () => {
+//   if (!bookingId || submitting) return;
+
+//   if (
+//     !form.guestName?.trim() ||
+//     !form.guestPhone?.trim() ||
+//     !form.guestEmail?.trim() ||
+//     !form.purpose?.trim()
+//   ) {
+//     Alert.alert("Incomplete Form", "Fill all fields.");
+//     return;
+//   }
+
+//   if (form.guestPhone.length !== 10) {
+//     Alert.alert("Invalid Phone", "Please enter a valid phone number.");
+//     return;
+//   }
+
+//   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+//   if (!emailRegex.test(form.guestEmail.trim())) {
+//     Alert.alert("Invalid Email", "Enter a valid email address");
+//     return;
+//   }
+
+//   if (!form.visitDate) {
+//    Alert.alert("Date Required", "Select a visit date.");
+//     return;
+//   }
+
+//   setSubmitting(true);
+
+//   try {
+//     const payload = {
+//       permitType: "guest",
+//       bookingId,
+//       guestName: form.guestName.trim(),
+//       guestPhone: form.guestPhone.trim(),
+//       guestEmail: form.guestEmail.trim(),
+//       visitDate: form.visitDate.toISOString().split("T")[0],
+//       purpose: form.purpose.trim(),
+//     };
+
+//     await axios.post(`${BASE_URL}/api/guest-visits`, payload, {
+//       headers: {
+//         Authorization: `Bearer ${token}`,
+//       },
+//     });
+
+//     Alert.alert(
+//       "Success",
+//       "Guest Visit Created!\nQR code sent on Mail",
+//       [
+//         {
+//           text: "OK",
+//           onPress: () => {
+//             setForm({
+//               guestName: "",
+//               guestPhone: "",
+//               guestEmail: "",
+//               visitDate: new Date(),
+//               purpose: "",
+//             });
+
+//             navigation.goBack();
+//           },
+//         },
+//       ]
+//     );
+//   } catch (err: any) {
+//     const msg =
+//       err?.response?.data?.message || "Failed to create guest visit";
+
+//     Alert.alert("Failed", msg);
+//   } finally {
+//     setSubmitting(false);
+//   }
+// };
+const handleSubmit = async () => {
+  console.log('Create Guest Pass clicked');
+  console.log('bookingId:', bookingId);
+  console.log('token exists:', !!token);
+  console.log('form:', form);
+ if (isParent) {
+    Alert.alert(
+      "Not Available",
+      "Guest Pass is only available for students."
+    );
+    return;
+  }
+
+  if (submitting) {
+    console.log('Already submitting...');
+    return;
+  }
+
+  if (!bookingId) {
+    Alert.alert(
+      'No Active Booking',
+      'No active booking found. Please make sure you have an active booking.'
+    );
+    return;
+  }
 
   if (
     !form.guestName?.trim() ||
@@ -193,23 +306,57 @@ useEffect(() => {
     !form.guestEmail?.trim() ||
     !form.purpose?.trim()
   ) {
-    Alert.alert("Incomplete Form", "Fill all fields.");
+    Alert.alert(
+      'Incomplete Form',
+      'Please fill all fields.'
+    );
     return;
   }
 
-  if (form.guestPhone.length !== 10) {
-    Alert.alert("Invalid Phone", "Please enter a valid phone number.");
+  if (form.guestPhone.trim().length !== 10) {
+    Alert.alert(
+      'Invalid Phone',
+      'Please enter a valid 10-digit phone number.'
+    );
     return;
   }
+
+
+const purpose = form.purpose?.trim() || '';
+
+if (purpose.length < 10) {
+  Alert.alert(
+    'Invalid Purpose',
+    'Purpose of visit must be at least 10 characters.'
+  );
+  return;
+}
+
+if (purpose.length > 100) {
+  Alert.alert(
+    'Invalid Purpose',
+    'Purpose of visit must not exceed 100 characters.'
+  );
+  return;
+}
+
+
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
   if (!emailRegex.test(form.guestEmail.trim())) {
-    Alert.alert("Invalid Email", "Enter a valid email address");
+    Alert.alert(
+      'Invalid Email',
+      'Please enter a valid email address.'
+    );
     return;
   }
 
   if (!form.visitDate) {
-   Alert.alert("Date Required", "Select a visit date.");
+    Alert.alert(
+      'Date Required',
+      'Please select a visit date.'
+    );
     return;
   }
 
@@ -217,34 +364,46 @@ useEffect(() => {
 
   try {
     const payload = {
-      permitType: "guest",
-      bookingId,
+      permitType: 'guest',
+      bookingId: bookingId,
       guestName: form.guestName.trim(),
       guestPhone: form.guestPhone.trim(),
       guestEmail: form.guestEmail.trim(),
-      visitDate: form.visitDate.toISOString().split("T")[0],
+      visitDate: form.visitDate.toISOString().split('T')[0],
       purpose: form.purpose.trim(),
     };
 
-    await axios.post(`${BASE_URL}/api/guest-visits`, payload, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+    console.log('Sending guest visit payload:', payload);
+    console.log('API URL:', `${BASE_URL}/api/guest-visits`);
+
+    const response = await axios.post(
+      `${BASE_URL}/api/guest-visits`,
+      payload,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    console.log('Guest visit API response:', response);
+    console.log('Guest visit response data:', response.data);
 
     Alert.alert(
-      "Success",
-      "Guest Visit Created!\nQR code sent on Mail",
+      'Success',
+      response.data?.message ||
+        'Guest Visit Created Successfully!\nQR code sent on Mail.',
       [
         {
-          text: "OK",
+          text: 'OK',
           onPress: () => {
             setForm({
-              guestName: "",
-              guestPhone: "",
-              guestEmail: "",
+              guestName: '',
+              guestPhone: '',
+              guestEmail: '',
               visitDate: new Date(),
-              purpose: "",
+              purpose: '',
             });
 
             navigation.goBack();
@@ -252,14 +411,32 @@ useEffect(() => {
         },
       ]
     );
-  } catch (err: any) {
-    const msg =
-      err?.response?.data?.message || "Failed to create guest visit";
+} catch (err: any) {
+  console.log('Guest visit API ERROR:', err);
 
-    Alert.alert("Failed", msg);
-  } finally {
-    setSubmitting(false);
-  }
+  const msg =
+    err?.response?.data?.message ||
+    err?.response?.data?.error ||
+    err?.message ||
+    'Failed to create guest visit.';
+
+  console.log('ALERT MESSAGE:', msg);
+
+  setTimeout(() => {
+    Alert.alert(
+      'Failed',
+      String(msg),
+      [
+        {
+          text: 'OK',
+        },
+      ]
+    );
+  }, 100);
+} finally {
+  setSubmitting(false);
+}
+
 };
 
   if (loadingBooking) {
@@ -371,22 +548,47 @@ useEffect(() => {
           )}
 
           {/* Purpose */}
-          <View style={styles.textAreaBox}>
-            <Text style={styles.smallLabel}>Purpose of Visit</Text>
-            <TextInput
-              style={styles.textArea}
-              multiline
-              numberOfLines={4}
-              value={form.purpose}
-              onChangeText={(text) => handleChange('purpose', text)}
-              placeholder="Reason for visit..."
-              placeholderTextColor="#aaa"
-              textAlignVertical="top"
-            />
-          </View>
+        <View style={styles.textAreaBox}>
+  <Text style={styles.smallLabel}>Purpose of Visit</Text>
 
-          {/* Submit */}
-          <TouchableOpacity
+  <TextInput
+    style={styles.textArea}
+    multiline
+    numberOfLines={4}
+    maxLength={100}
+    value={form.purpose}
+    onChangeText={(text) => handleChange('purpose', text)}
+    placeholder="Reason for visit..."
+    placeholderTextColor="#aaa"
+    textAlignVertical="top"
+  />
+
+  <Text style={styles.charCount}>
+    {form.purpose.length}/100
+  </Text>
+</View>
+
+
+       <TouchableOpacity
+  style={[
+    styles.submitBtn,
+    (submitting || isParent) && styles.submitBtnDisabled,
+  ]}
+  onPress={handleSubmit}
+  disabled={submitting || isParent}
+>
+  {submitting ? (
+    <ActivityIndicator color="#fff" />
+  ) : (
+    <Text style={styles.submitText}>
+      {isParent ? "Guest Pass Not Available" : "Create Guest Pass"}
+    </Text>
+  )}
+</TouchableOpacity>
+
+
+
+          {/* <TouchableOpacity
             style={[styles.submitBtn, submitting && styles.submitBtnDisabled]}
             onPress={handleSubmit}
             disabled={submitting}
@@ -396,7 +598,7 @@ useEffect(() => {
             ) : (
               <Text style={styles.submitText}>Create Guest Pass</Text>
             )}
-          </TouchableOpacity>
+          </TouchableOpacity> */}
         </View>
 
         {/* Guest History - Horizontal Scroll (no extra package needed) */}
@@ -484,6 +686,11 @@ const styles = StyleSheet.create({
   formContainer: {
     padding: 20,
   },
+  submitBtnDisabled: {
+  opacity: 0.5,
+  backgroundColor: "#999",
+},
+
   smallLabel: {
     position: 'absolute',
     top: -10,
@@ -495,6 +702,14 @@ const styles = StyleSheet.create({
     fontFamily: 'Quicksand-Medium',
     zIndex: 1,
   },
+  charCount: {
+  textAlign: 'right',
+  fontSize: 12,
+  color: '#777',
+  fontFamily: 'Quicksand-Medium',
+  marginTop: 5,
+},
+
   inputBox: {
     borderWidth: 1,
     borderColor: '#616161',
@@ -534,9 +749,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
     alignItems: 'center',
   },
-  submitBtnDisabled: {
-    opacity: 0.7,
-  },
+
   submitText: {
     color: '#fff',
     fontSize: 18,

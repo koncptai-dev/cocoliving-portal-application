@@ -41,6 +41,30 @@ const ComplaintHistory = () => {
   "pending",
 ];
 
+
+const formatDate = (dateString: string) => {
+  if (!dateString) return "N/A";
+
+  const date = new Date(dateString);
+
+  if (isNaN(date.getTime())) return "N/A";
+
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const year = date.getFullYear();
+
+  return `${day}-${month}-${year}`;
+};
+
+const formatStatus = (status: string) => {
+  if (!status) return "Status";
+
+  return status
+    .replace(/-/g, " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+};
+
+
   const fetchTickets = async () => {
     try {
       const res = await axios.get(`${baseURL}/api/tickets/get-user-tickets`, {
@@ -144,7 +168,10 @@ const ComplaintHistory = () => {
                 setShowMonthDropdown(false);
               }}
             >
-              <Text style={styles.filterText}>{filterStatus}</Text>
+           <Text style={styles.filterText}>
+  {formatStatus(filterStatus)}
+</Text>
+
               <Text style={styles.arrow}>▼</Text>
             </TouchableOpacity>
           </View>
@@ -171,7 +198,27 @@ const ComplaintHistory = () => {
           </View>
         )}
 
-        {showStatusDropdown && (
+
+{showStatusDropdown && (
+  <View style={styles.dropdown}>
+    {statusOptions.map((s) => (
+      <TouchableOpacity
+        key={s}
+        onPress={() => {
+          setFilterStatus(s);
+          setShowStatusDropdown(false);
+        }}
+      >
+        <Text style={styles.dropdownItem}>
+          {s.charAt(0).toUpperCase() + s.slice(1)}
+        </Text>
+      </TouchableOpacity>
+    ))}
+  </View>
+)}
+
+
+        {/* {showStatusDropdown && (
           <View style={styles.dropdown}>
             {statusOptions.map((s) => (
               <TouchableOpacity
@@ -185,7 +232,7 @@ const ComplaintHistory = () => {
               </TouchableOpacity>
             ))}
           </View>
-        )}
+        )} */}
 
         {/* LIST */}
         {filteredTickets.map((item) => (
@@ -224,15 +271,17 @@ const ComplaintHistory = () => {
               </Text>
             </Text>
 
-            <Text style={styles.date}>
-              Request Date: {item.date}
-            </Text>
+           <Text style={styles.date}>
+  Request Date: {formatDate(item.date)}
+</Text>
 
-            {item.status === "closed" && (
-              <Text style={styles.date}>
-                Request Closed: {item.updatedAt?.split("T")[0]}
-              </Text>
-            )}
+
+           {item.status === "closed" && (
+  <Text style={styles.date}>
+    Request Closed: {formatDate(item.updatedAt)}
+  </Text>
+)}
+
 
             {/* <TouchableOpacity style={styles.detailsBtn}>
               <Text style={styles.detailsText}>Details</Text>

@@ -180,14 +180,41 @@ export default function EventsScreen() {
       });
     }
 
-    if (selectedTime) {
-      filtered = filtered.filter((event) => {
-        if (!event.eventTime) return false;
-        const [start] = selectedTime.split(" - ");
-        const startHour = start.replace(/ [AP]M$/, "");
-        return event.eventTime.startsWith(startHour.padStart(2, "0"));
-      });
-    }
+    // if (selectedTime) {
+    //   filtered = filtered.filter((event) => {
+    //     if (!event.eventTime) return false;
+    //     const [start] = selectedTime.split(" - ");
+    //     const startHour = start.replace(/ [AP]M$/, "");
+    //     return event.eventTime.startsWith(startHour.padStart(2, "0"));
+    //   });
+    // }
+if (selectedTime) {
+  const timeSlots = {
+    "9 AM - 12 PM": { start: 9, end: 12 },
+    "12 PM - 3 PM": { start: 12, end: 15 },
+    "3 PM - 6 PM": { start: 15, end: 18 },
+    "6 PM - 9 PM": { start: 18, end: 21 },
+  };
+
+  const slot = timeSlots[selectedTime];
+
+  if (slot) {
+    filtered = filtered.filter((event) => {
+      if (!event.eventTime) return false;
+
+      // event.eventTime example: "15:30:00"
+      const [hour, minute = 0] = event.eventTime.split(":");
+
+      const eventMinutes =
+        parseInt(hour, 10) * 60 + parseInt(minute, 10);
+
+      const startMinutes = slot.start * 60;
+      const endMinutes = slot.end * 60;
+
+      return eventMinutes >= startMinutes && eventMinutes < endMinutes;
+    });
+  }
+}
 
     if (locationFilter) {
       filtered = filtered.filter(

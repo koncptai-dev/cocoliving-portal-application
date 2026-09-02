@@ -134,16 +134,30 @@ const openWhatsApp = async () => {
         label="Edit profile information"
         onPress={() => navigation.navigate("Profile")}
       />
-        <MenuItem
-        icon="call-outline"
-        label="Contact Us"
-        onPress={() => Linking.openURL("tel:+918141676967")}
-      />
+      
+     
       <MenuItem
-  icon="mail-outline"
-  label="Email Us"
-  onPress={() => Linking.openURL("mailto:info@cocoliving.in")}
+        icon="home-outline"
+        label="My Bookings"
+        onPress={() => navigation.navigate("MyBookings")}
+      />
+
+<MenuItem
+  icon="restaurant-outline"
+  label="Meals"
+  onPress={() =>
+    navigation.navigate("Meals", {
+      bookingId: activeBooking?.id,
+    })
+  }
 />
+
+<MenuItem
+        icon="finger-print-outline"
+        label="Verification Status"
+        onPress={() => navigation.navigate("VerificationStatus")}
+      />
+
       <MenuItem
         icon="card-outline"
         label="Payment history"
@@ -162,35 +176,31 @@ const openWhatsApp = async () => {
 
 
 
-<MenuItem
-  icon="restaurant-outline"
-  label="Meals"
-  onPress={() =>
-    navigation.navigate("Meals", {
-      bookingId: activeBooking?.id,
-    })
-  }
-/>
+
   <MenuItem
   icon="flash-outline"
   label="Room Recharge History"
   onPress={() => navigation.navigate("RoomRechargeHistory")}
 />
-      <MenuItem
-        icon="finger-print-outline"
-        label="Verification Status"
-        onPress={() => navigation.navigate("VerificationStatus")}
-      />
-      <MenuItem
-        icon="home-outline"
-        label="My Bookings"
-        onPress={() => navigation.navigate("MyBookings")}
-      />
+      
+     
        <MenuItem
         icon="home-outline"
         label="Guest Pass"
         onPress={() => navigation.navigate("GuestVisit")}
       />
+      
+        <MenuItem
+        icon="call-outline"
+        label="Contact Us"
+        onPress={() => Linking.openURL("tel:+918141676967")}
+      />
+      <MenuItem
+  icon="mail-outline"
+  label="Email Us"
+  onPress={() => Linking.openURL("mailto:info@cocoliving.in")}
+/>
+      
       <MenuItem
         icon="headset-outline"
         label="Support"

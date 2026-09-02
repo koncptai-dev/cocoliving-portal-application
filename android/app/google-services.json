@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "201540842856",
+    "project_id": "cocoliving-3cd5e",
+    "storage_bucket": "cocoliving-3cd5e.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:201540842856:android:25bd00ea84c75e9a26d2dd",
+        "android_client_info": {
+          "package_name": "com.mycoco"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAOpnX2jGHk1BuG45aMav2mj4TMZil-fZ0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
+

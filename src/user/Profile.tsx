@@ -28,7 +28,7 @@ export default function Profile() {
   const navigation = useNavigation();
   const isStudent = user?.userType === "student";
   const isProfessional = user?.userType === "professional";
-
+const isParent = user?.loginAs === "parent";
   // const name = user?.fullName || "";
   // const first = name.split(" ")[0] || "";
   // const last = name.split(" ").slice(1).join(" ") || "";
@@ -166,23 +166,42 @@ export default function Profile() {
 
 
 
-  const isAtLeast17YearsOld = (dob: string) => {
+//   const isAtLeast17YearsOld = (dob: string) => {
+//   if (!dob) return false;
+
+//   const birthDate = new Date(dob);
+//   const today = new Date();
+
+//   let age = today.getFullYear() - birthDate.getFullYear();
+//   const monthDiff = today.getMonth() - birthDate.getMonth();
+
+//   if (
+//     monthDiff < 0 ||
+//     (monthDiff === 0 && today.getDate() < birthDate.getDate())
+//   ) {
+//     age--;
+//   }
+
+//   return age >= 17;
+// };
+const isValidAge = (dob: string) => {
   if (!dob) return false;
 
   const birthDate = new Date(dob);
   const today = new Date();
 
   let age = today.getFullYear() - birthDate.getFullYear();
-  const monthDiff = today.getMonth() - birthDate.getMonth();
 
-  if (
-    monthDiff < 0 ||
-    (monthDiff === 0 && today.getDate() < birthDate.getDate())
-  ) {
+  const hasBirthdayPassed =
+    today.getMonth() > birthDate.getMonth() ||
+    (today.getMonth() === birthDate.getMonth() &&
+      today.getDate() >= birthDate.getDate());
+
+  if (!hasBirthdayPassed) {
     age--;
   }
 
-  return age >= 17;
+  return age >= 17 && age <= 100;
 };
 
 
@@ -206,14 +225,22 @@ const saveProfile = async () => {
     return;
   }
 
-  if (!isAtLeast17YearsOld(profile.dateOfBirth)) {
-    Toast.show({
-      type: "error",
-      text1: "Age Restriction",
-      text2: "You must be at least 17 years old.",
-    });
-    return;
-  }
+  // if (!isAtLeast17YearsOld(profile.dateOfBirth)) {
+  //   Toast.show({
+  //     type: "error",
+  //     text1: "Age Restriction",
+  //     text2: "You must be at least 17 years old.",
+  //   });
+  //   return;
+  // }
+if (!isValidAge(profile.dateOfBirth)) {
+  Toast.show({
+    type: "error",
+    text1: "Age Restriction",
+    text2: "You must be between 17 and 100 years old.",
+  });
+  return;
+}
 
 
   // 🔥 Parent mobile validation
@@ -324,224 +351,621 @@ if (isStudent && userPhone && parentPhone && userPhone === parentPhone) {
   </View>
 
   {/* 📜 Scrollable Content */}
+  
   <ScrollView
-    style={styles.container}
-    showsVerticalScrollIndicator={false}
-  >
+  style={styles.container}
+  showsVerticalScrollIndicator={false}
+>
+  {/* ========================================================= */}
+  {/* IMAGE + USER TYPE */}
+  {/* ========================================================= */}
 
-        {/* IMAGE + USER TYPE */}
-        <View style={styles.rowTop}>
-          <View style={styles.imageWrapper}>
-            {image ? (
-              <Image source={{ uri: image }} style={styles.profileImg} />
-            ) : (
-              <View style={styles.profileCircle}>
-                <Text style={styles.profileLetter}>
-                  {profile.fullName?.charAt(0)?.toUpperCase()}
-                </Text>
-              </View>
-            )}
-
-            <TouchableOpacity style={styles.camIcon} onPress={pickImage}>
-              <Ionicons name="camera-outline" size={20} color="#4C3D2A" />
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.tabWrapper}>
-            <View style={[styles.tab, isStudent ? styles.tabActive : styles.tabInactive]}>
-              <Text style={isStudent ? styles.tabTextActive : styles.tabTextInactive}>Student</Text>
-            </View>
-
-            <View style={[styles.tab, isProfessional ? styles.tabActive : styles.tabInactive]}>
-              <Text style={isProfessional ? styles.tabTextActive : styles.tabTextInactive}>
-                Professional
-              </Text>
-            </View>
-          </View>
-        </View>
-
-        {/* SECTION */}
-        <Text style={styles.sectionTitle}>Personal & Contact Information</Text>
-
-        {/* FIRST + LAST NAME hhh */}
-        {/* <View style={styles.twoCol}>
-          <FloatingInput label="First Name" value={profile.firstName} onChangeText={(v) => update("firstName", v)} />
-          <FloatingInput label="Last Name" value={profile.lastName} onChangeText={(v) => update("lastName", v)} />
-        </View> */}
-<FloatingInputFull
-  label="Full Name"
-  value={profile.fullName}
-  onChangeText={(v) => update("fullName", v)}
-/>
-        {/* DOB + GENDER */}
-        <View style={styles.twoCol}>
-          <FloatingDropdown
-            label="Date of Birth"
-            value={profile.dateOfBirth ? new Date(profile.dateOfBirth).toLocaleDateString('en-IN') : "Select"}
-            onPress={() => setShowDOB(true)}
-          />
-
-          <FloatingDropdown
-            label="Gender"
-            value={profile.gender || "Select Gender"}
-            onPress={() => setShowGender(!showGender)}
-          />
-        </View>
-
-        {/* Gender Options */}
-        {showGender && (
-          <View style={styles.optionList}>
-            <TouchableOpacity onPress={() => { update("gender", "Male"); setShowGender(false); }}>
-              <Text style={styles.optionItem}>Male</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => { update("gender", "Female"); setShowGender(false); }}>
-              <Text style={styles.optionItem}>Female</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => { update("gender", "Other"); setShowGender(false); }}>
-              {/* <Text style={styles.optionItem}>Other</Text> */}
-            </TouchableOpacity>
-          </View>
-        )}
-
-        {/* DOB Picker */}
-        {showDOB && (
-         <DateTimePicker
-  value={profile.dateOfBirth ? new Date(profile.dateOfBirth) : new Date(2000, 0, 1)}
-  mode="date"
-  maximumDate={new Date(
-    new Date().getFullYear() - 17,
-    new Date().getMonth(),
-    new Date().getDate()
-  )}
-            onChange={(e, d) => {
-              if (d) update("dateOfBirth", d.toISOString().split("T")[0]);
-              setShowDOB(false);
-            }}
-          />
-        )}
-
-        {/* EMAIL */}
-        <FloatingStaticVerified
-          label="Email"
-          value={profile.email}
-          verified={user?.isEmailVerified}
+  <View style={styles.rowTop}>
+    <View style={styles.imageWrapper}>
+      {image ? (
+        <Image
+          source={{ uri: image }}
+          style={styles.profileImg}
         />
+      ) : (
+        <View style={styles.profileCircle}>
+          <Text style={styles.profileLetter}>
+            {profile.fullName?.charAt(0)?.toUpperCase()}
+          </Text>
+        </View>
+      )}
 
-        {/* PHONE */}
-        <FloatingPhone
-          label="Mobile Number"
-          value={profile.phone}
-          onChangeText={(v) => update("phone", v)}
-          verified={user?.isPhoneVerified}
+      <TouchableOpacity
+        style={[
+          styles.camIcon,
+          isParent && styles.readOnlyCamera,
+        ]}
+        onPress={() => {
+          // Parent cannot edit profile image
+          if (!isParent) {
+            pickImage();
+          }
+        }}
+      >
+        <Ionicons
+          name="camera-outline"
+          size={20}
+          color="#4C3D2A"
         />
+      </TouchableOpacity>
+    </View>
 
-        {/* ADDRESS */}
-        <FloatingInputFull label="Permanent Address" value={profile.address} onChangeText={(v) => update("address", v)} />
+    <View style={styles.tabWrapper}>
+      <View
+        style={[
+          styles.tab,
+          isStudent
+            ? styles.tabActive
+            : styles.tabInactive,
+        ]}
+      >
+        <Text
+          style={
+            isStudent
+              ? styles.tabTextActive
+              : styles.tabTextInactive
+          }
+        >
+          Student
+        </Text>
+      </View>
 
-        {/* STUDENT SECTION */}
-        {isStudent && (
-          <>
-            <Text style={styles.sectionTitle}>Academic Information</Text>
-
-            <FloatingInputFull label="School/College" value={profile.collegeName} onChangeText={(v) => update("collegeName", v)} />
-
-            <FloatingInputFull label="Course" value={profile.course} onChangeText={(v) => update("course", v)} />
-
-            <FloatingDropdown label="Year of Study" value={profile.studyingYear || "Select Year"} onPress={()=>setShowYear(!showYear)}/>
-
-              {showYear && (
-  <View style={styles.optionList}>
-    <TouchableOpacity onPress={() => { update("studyingYear", "Precollege"); setShowYear(false); }}>
-      <Text style={styles.optionItem}>Precollege</Text>
-    </TouchableOpacity>
-
-    <TouchableOpacity onPress={() => { update("studyingYear", "First Year"); setShowYear(false); }}>
-      <Text style={styles.optionItem}>First Year</Text>
-    </TouchableOpacity>
-
-    <TouchableOpacity onPress={() => { update("studyingYear", "Second Year"); setShowYear(false); }}>
-      <Text style={styles.optionItem}>Second Year</Text>
-    </TouchableOpacity>
-
-    <TouchableOpacity onPress={() => { update("studyingYear", "Third Year"); setShowYear(false); }}>
-      <Text style={styles.optionItem}>Third Year</Text>
-    </TouchableOpacity>
-
-    <TouchableOpacity onPress={() => { update("studyingYear", "Fourth Year"); setShowYear(false); }}>
-      <Text style={styles.optionItem}>Fourth Year</Text>
-    </TouchableOpacity>
-
-    <TouchableOpacity onPress={() => { update("studyingYear", "Fifth Year"); setShowYear(false); }}>
-      <Text style={styles.optionItem}>Fifth Year</Text>
-    </TouchableOpacity>
+      <View
+        style={[
+          styles.tab,
+          isProfessional
+            ? styles.tabActive
+            : styles.tabInactive,
+        ]}
+      >
+        <Text
+          style={
+            isProfessional
+              ? styles.tabTextActive
+              : styles.tabTextInactive
+          }
+        >
+          Professional
+        </Text>
+      </View>
+    </View>
   </View>
-)}
 
-            <Text style={styles.sectionTitle}>Emergency Contact</Text>
 
-            <FloatingInputFull label="Parent Name" value={profile.parentName} onChangeText={(v) => update("parentName", v)} />
+  {/* ========================================================= */}
+  {/* PERSONAL & CONTACT INFORMATION */}
+  {/* ========================================================= */}
 
-            <FloatingInputFull
-              label="Parent Email"
-              value={profile.parentEmail}
-              onChangeText={(v) => {
-                update("parentEmail", v);
-                setErrors(prev => ({ ...prev, parentEmail: validateParentEmail(v) }));
-              }}
-              keyboardType="email-address"
-            />
-            {errors.parentEmail && <Text style={styles.errorText}>{errors.parentEmail}</Text>}
+  <Text style={styles.sectionTitle}>
+    Personal & Contact Information
+  </Text>
 
-            <FloatingInputFull
-              label="Parent Mobile"
-              value={profile.parentMobile}
-              onChangeText={(v) => update("parentMobile", v)}  
-              keyboardType="phone-pad"
-            />
-          </>
-        )}
 
-        {/* PROFESSIONAL SECTION */}
-        {isProfessional && (
-          <>
-            <Text style={styles.sectionTitle}>Professional Information</Text>
+  {/* FULL NAME
+      Student  -> Editable
+      Parent   -> Read Only
+  */}
+  <FloatingInputFull
+    label="Full Name"
+    value={profile.fullName}
+    onChangeText={(v) => update("fullName", v)}
+    editable={!isParent}
+  />
 
-            <FloatingInputFull label="Company Name" value={profile.companyName} onChangeText={(v) => update("companyName", v)} />
 
-            <FloatingInputFull label="Position" value={profile.position} onChangeText={(v) => update("position", v)} />
-          </>
-        )}
+  {/* ========================================================= */}
+  {/* DOB + GENDER */}
+  {/* ========================================================= */}
 
-        {/* FOOD PREFERENCE */}
-        <Text style={styles.sectionTitle}>Health & Dietary Information</Text>
+  <View style={styles.twoCol}>
 
-        <FloatingDropdown
-          label="Food Preference"
-          value={profile.foodPreference || "Select"}
-          onPress={() => setShowFood(!showFood)}
-        />
+    {/* DATE OF BIRTH */}
+    <FloatingDropdown
+      label="Date of Birth"
+      value={
+        profile.dateOfBirth
+          ? new Date(
+              profile.dateOfBirth
+            ).toLocaleDateString("en-IN")
+          : "Select"
+      }
+      onPress={() => {
+        // Parent cannot edit DOB
+        if (!isParent) {
+          setShowDOB(true);
+        }
+      }}
+    />
 
-        {showFood && (
-          <View style={styles.optionList}>
-            <TouchableOpacity onPress={() => { update("foodPreference", "Jain"); setShowFood(false); }}>
-              <Text style={styles.optionItem}>Jain</Text>
-            </TouchableOpacity>
 
-            <TouchableOpacity onPress={() => { update("foodPreference", "Non-Jain"); setShowFood(false); }}>
-              <Text style={styles.optionItem}>Non-Jain</Text>
-            </TouchableOpacity>
-          </View>
-        )}
+    {/* GENDER */}
+    <FloatingDropdown
+      label="Gender"
+      value={
+        profile.gender || "Select Gender"
+      }
+      onPress={() => {
+        // Parent cannot edit gender
+        if (!isParent) {
+          setShowGender(!showGender);
+        }
+      }}
+    />
 
-        <FloatingInputFull label="Allergies" value={profile.allergies} onChangeText={(v) => update("allergies", v)} />
+  </View>
 
-        {/* SAVE BUTTON */}
-        <TouchableOpacity style={styles.saveBtn} onPress={saveProfile}>
-          <Text style={styles.saveText}>Save</Text>
-        </TouchableOpacity>
 
-        <View style={{ height: 40 }} />
-      </ScrollView>
+  {/* ========================================================= */}
+  {/* GENDER OPTIONS */}
+  {/* ========================================================= */}
+
+  {!isParent && showGender && (
+    <View style={styles.optionList}>
+
+      <TouchableOpacity
+        onPress={() => {
+          update("gender", "Male");
+          setShowGender(false);
+        }}
+      >
+        <Text style={styles.optionItem}>
+          Male
+        </Text>
+      </TouchableOpacity>
+
+
+      <TouchableOpacity
+        onPress={() => {
+          update("gender", "Female");
+          setShowGender(false);
+        }}
+      >
+        <Text style={styles.optionItem}>
+          Female
+        </Text>
+      </TouchableOpacity>
+
+
+      <TouchableOpacity
+        onPress={() => {
+          update("gender", "Other");
+          setShowGender(false);
+        }}
+      >
+        <Text style={styles.optionItem}>
+          Other
+        </Text>
+      </TouchableOpacity>
+
+    </View>
+  )}
+
+
+  {/* ========================================================= */}
+  {/* DOB PICKER */}
+  {/* ========================================================= */}
+
+  {!isParent && showDOB && (
+    <DateTimePicker
+      value={
+        profile.dateOfBirth
+          ? new Date(profile.dateOfBirth)
+          : new Date(2000, 0, 1)
+      }
+      mode="date"
+
+      minimumDate={
+        new Date(
+          new Date().getFullYear() - 100,
+          new Date().getMonth(),
+          new Date().getDate()
+        )
+      }
+
+      maximumDate={
+        new Date(
+          new Date().getFullYear() - 17,
+          new Date().getMonth(),
+          new Date().getDate()
+        )
+      }
+
+      onChange={(e, d) => {
+        setShowDOB(false);
+
+        if (d) {
+          update(
+            "dateOfBirth",
+            d.toISOString().split("T")[0]
+          );
+        }
+      }}
+    />
+  )}
+
+
+  {/* ========================================================= */}
+  {/* EMAIL */}
+  {/* EMAIL IS ALWAYS READ ONLY */}
+  {/* ========================================================= */}
+
+  <FloatingStaticVerified
+    label="Email"
+    value={profile.email}
+    verified={user?.isEmailVerified}
+  />
+
+
+  {/* ========================================================= */}
+  {/* MOBILE NUMBER */}
+  {/* Student -> Editable
+      Parent  -> Read Only
+  */}
+  <FloatingPhone
+    label="Mobile Number"
+    value={profile.phone}
+    onChangeText={(v) => update("phone", v)}
+    verified={user?.isPhoneVerified}
+  />
+
+
+  {/* ========================================================= */}
+  {/* ADDRESS */}
+  {/* Student -> Editable
+      Parent  -> Read Only
+  */}
+  <FloatingInputFull
+    label="Permanent Address"
+    value={profile.address}
+    onChangeText={(v) => update("address", v)}
+    editable={!isParent}
+  />
+
+
+  {/* ========================================================= */}
+  {/* STUDENT SECTION */}
+  {/* ========================================================= */}
+
+  {isStudent && (
+    <>
+      <Text style={styles.sectionTitle}>
+        Academic Information
+      </Text>
+
+
+      {/* SCHOOL / COLLEGE */}
+      <FloatingInputFull
+        label="School/College"
+        value={profile.collegeName}
+        onChangeText={(v) =>
+          update("collegeName", v)
+        }
+        editable={!isParent}
+      />
+
+
+      {/* COURSE */}
+      <FloatingInputFull
+        label="Course"
+        value={profile.course}
+        onChangeText={(v) =>
+          update("course", v)
+        }
+        editable={!isParent}
+      />
+
+
+      {/* YEAR OF STUDY */}
+      <FloatingDropdown
+        label="Year of Study"
+        value={
+          profile.studyingYear ||
+          "Select Year"
+        }
+        onPress={() => {
+          // Parent cannot change year
+          if (!isParent) {
+            setShowYear(!showYear);
+          }
+        }}
+      />
+
+
+      {/* YEAR OPTIONS */}
+
+      {!isParent && showYear && (
+        <View style={styles.optionList}>
+
+          <TouchableOpacity
+            onPress={() => {
+              update(
+                "studyingYear",
+                "Precollege"
+              );
+              setShowYear(false);
+            }}
+          >
+            <Text style={styles.optionItem}>
+              Precollege
+            </Text>
+          </TouchableOpacity>
+
+
+          <TouchableOpacity
+            onPress={() => {
+              update(
+                "studyingYear",
+                "First Year"
+              );
+              setShowYear(false);
+            }}
+          >
+            <Text style={styles.optionItem}>
+              First Year
+            </Text>
+          </TouchableOpacity>
+
+
+          <TouchableOpacity
+            onPress={() => {
+              update(
+                "studyingYear",
+                "Second Year"
+              );
+              setShowYear(false);
+            }}
+          >
+            <Text style={styles.optionItem}>
+              Second Year
+            </Text>
+          </TouchableOpacity>
+
+
+          <TouchableOpacity
+            onPress={() => {
+              update(
+                "studyingYear",
+                "Third Year"
+              );
+              setShowYear(false);
+            }}
+          >
+            <Text style={styles.optionItem}>
+              Third Year
+            </Text>
+          </TouchableOpacity>
+
+
+          <TouchableOpacity
+            onPress={() => {
+              update(
+                "studyingYear",
+                "Fourth Year"
+              );
+              setShowYear(false);
+            }}
+          >
+            <Text style={styles.optionItem}>
+              Fourth Year
+            </Text>
+          </TouchableOpacity>
+
+
+          <TouchableOpacity
+            onPress={() => {
+              update(
+                "studyingYear",
+                "Fifth Year"
+              );
+              setShowYear(false);
+            }}
+          >
+            <Text style={styles.optionItem}>
+              Fifth Year
+            </Text>
+          </TouchableOpacity>
+
+        </View>
+      )}
+
+
+      {/* ===================================================== */}
+      {/* EMERGENCY / PARENT DETAILS */}
+      {/* THESE 3 ARE EDITABLE BY BOTH STUDENT AND PARENT */}
+      {/* ===================================================== */}
+
+      <Text style={styles.sectionTitle}>
+        Emergency Contact
+      </Text>
+
+
+      {/* PARENT NAME */}
+      <FloatingInputFull
+        label="Parent Name"
+        value={profile.parentName}
+        onChangeText={(v) =>
+          update("parentName", v)
+        }
+        editable={true}
+      />
+
+
+      {/* PARENT EMAIL */}
+      <FloatingInputFull
+        label="Parent Email"
+        value={profile.parentEmail}
+        onChangeText={(v) => {
+          update("parentEmail", v);
+
+          setErrors((prev) => ({
+            ...prev,
+            parentEmail:
+              validateParentEmail(v),
+          }));
+        }}
+        keyboardType="email-address"
+        editable={true}
+      />
+
+      {errors.parentEmail && (
+        <Text style={styles.errorText}>
+          {errors.parentEmail}
+        </Text>
+      )}
+
+
+      {/* PARENT MOBILE */}
+      <FloatingInputFull
+        label="Parent Mobile"
+        value={profile.parentMobile}
+        onChangeText={(v) =>
+          update("parentMobile", v)
+        }
+        keyboardType="phone-pad"
+        editable={true}
+      />
+
+    </>
+  )}
+
+
+  {/* ========================================================= */}
+  {/* PROFESSIONAL SECTION */}
+  {/* ========================================================= */}
+
+  {isProfessional && (
+    <>
+      <Text style={styles.sectionTitle}>
+        Professional Information
+      </Text>
+
+
+      {/* COMPANY NAME
+          Student/Professional -> Editable
+          Parent              -> Read Only
+      */}
+      <FloatingInputFull
+        label="Company Name"
+        value={profile.companyName}
+        onChangeText={(v) =>
+          update("companyName", v)
+        }
+        editable={!isParent}
+      />
+
+
+      {/* POSITION */}
+      <FloatingInputFull
+        label="Position"
+        value={profile.position}
+        onChangeText={(v) =>
+          update("position", v)
+        }
+        editable={!isParent}
+      />
+
+    </>
+  )}
+
+
+  {/* ========================================================= */}
+  {/* HEALTH & DIETARY INFORMATION */}
+  {/* ========================================================= */}
+
+  <Text style={styles.sectionTitle}>
+    Health & Dietary Information
+  </Text>
+
+
+  {/* FOOD PREFERENCE */}
+
+  <FloatingDropdown
+    label="Food Preference"
+    value={
+      profile.foodPreference || "Select"
+    }
+    onPress={() => {
+      // Parent cannot edit
+      if (!isParent) {
+        setShowFood(!showFood);
+      }
+    }}
+  />
+
+
+  {/* FOOD OPTIONS */}
+
+  {!isParent && showFood && (
+    <View style={styles.optionList}>
+
+      <TouchableOpacity
+        onPress={() => {
+          update(
+            "foodPreference",
+            "Jain"
+          );
+          setShowFood(false);
+        }}
+      >
+        <Text style={styles.optionItem}>
+          Jain
+        </Text>
+      </TouchableOpacity>
+
+
+      <TouchableOpacity
+        onPress={() => {
+          update(
+            "foodPreference",
+            "Non-Jain"
+          );
+          setShowFood(false);
+        }}
+      >
+        <Text style={styles.optionItem}>
+          Non-Jain
+        </Text>
+      </TouchableOpacity>
+
+    </View>
+  )}
+
+
+  {/* ALLERGIES */}
+
+  <FloatingInputFull
+    label="Allergies"
+    value={profile.allergies}
+    onChangeText={(v) =>
+      update("allergies", v)
+    }
+    editable={!isParent}
+  />
+
+
+  {/* ========================================================= */}
+  {/* SAVE BUTTON */}
+  {/* ========================================================= */}
+
+  <TouchableOpacity
+    style={styles.saveBtn}
+    onPress={saveProfile}
+  >
+    <Text style={styles.saveText}>
+      Save
+    </Text>
+  </TouchableOpacity>
+
+
+  <View style={{ height: 40 }} />
+
+</ScrollView>
+
 
       <Toast />
  </KeyboardAvoidingView>
@@ -562,17 +986,46 @@ const FloatingInput = ({ label, value, onChangeText, keyboardType = "default" })
   </View>
 );
 
-const FloatingInputFull = ({ label, value, onChangeText, keyboardType = "default" }) => (
-  <View style={styles.floatWrapper}>
+// const FloatingInputFull = ({ label, value, onChangeText, keyboardType = "default" }) => (
+//   <View style={styles.floatWrapper}>
+//     <Text style={styles.smallLabel}>{label}</Text>
+//     <TextInput
+//       style={styles.floatInput}
+//       value={value}
+//       onChangeText={onChangeText}
+//       keyboardType={keyboardType}
+//     />
+//   </View>
+// );
+
+const FloatingInputFull = ({
+  label,
+  value,
+  onChangeText,
+  keyboardType = "default",
+  editable = true,
+}: any) => (
+  <View
+    style={[
+      styles.floatWrapper,
+      !editable && styles.readOnlyField,
+    ]}
+  >
     <Text style={styles.smallLabel}>{label}</Text>
+
     <TextInput
-      style={styles.floatInput}
+      style={[
+        styles.floatInput,
+        !editable && styles.readOnlyInput,
+      ]}
       value={value}
       onChangeText={onChangeText}
       keyboardType={keyboardType}
+      editable={editable}
     />
   </View>
 );
+
 
 const FloatingDropdown = ({ label, value, onPress }) => (
   <TouchableOpacity style={styles.floatWrapper} onPress={onPress}>
@@ -678,6 +1131,23 @@ header: {
     alignItems: "center",
   },
   profileLetter: { fontSize: 32, fontWeight: "700", color: "#4C3D2A" },
+disabledField: {
+  backgroundColor: "#F5F5F5",
+  borderColor: "#D8D8D8",
+},
+
+disabledInput: {
+  color: "#777",
+},
+readOnlyField: {
+  backgroundColor: "#F5F5F5",
+  borderColor: "#D8D8D8",
+},
+
+readOnlyInput: {
+  color: "#777",
+},
+
 
   camIcon: {
     position: "absolute",
