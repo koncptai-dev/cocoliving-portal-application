@@ -32,7 +32,8 @@ export const BASE_URL_APP = Config.API_BASE_URL;
 const VerificationStatusScreen = () => {
   const { user, refreshUser } = useAuth();
   const navigation = useNavigation();
-
+const loginAs = user?.loginAs || 'student';
+const isParentLogin = loginAs === 'parent';
   const [otpFor, setOtpFor] = useState<null | 'phone' | 'email'>(null);
   const [otp, setOtp] = useState('');
   const [otpLoading, setOtpLoading] = useState(false);
@@ -586,16 +587,26 @@ await Linking.openURL(digilockerUrl);
               {getStatusIcon(user?.isPhoneVerified)}
             </View>
 
+ 
             {!user?.isPhoneVerified && (
               <View style={styles.actionArea}>
                 {otpFor !== 'phone' ? (
-                  <TouchableOpacity
-                    style={styles.actionButton}
-                    onPress={() => sendOTP('phone')}
-                    disabled={otpLoading}
-                  >
-                    {otpLoading ? <ActivityIndicator color="#fff" /> : <Text style={styles.btnText}>Verify Mobile</Text>}
-                  </TouchableOpacity>
+                 <TouchableOpacity
+  style={[
+    styles.actionButton,
+    isParentLogin && { opacity: 0.5 },
+  ]}
+ onPress={() => sendOTP('phone')}
+  disabled={otpLoading || isParentLogin}
+>
+  {otpLoading ? (
+    <ActivityIndicator color="#fff" />
+  ) : (
+    <Text style={styles.btnText}>
+      {isParentLogin ? 'Not Available for Parent' : 'Verify Mobile'}
+    </Text>
+  )}
+</TouchableOpacity>
                 ) : (
                   <>
                     <TextInput
@@ -607,13 +618,22 @@ await Linking.openURL(digilockerUrl);
                       value={otp}
                       onChangeText={setOtp}
                     />
-                    <TouchableOpacity
-                      style={styles.actionButton}
-                      onPress={verifyOTP}
-                      disabled={otpLoading}
-                    >
-                      {otpLoading ? <ActivityIndicator color="#fff" /> : <Text style={styles.btnText}>Submit OTP</Text>}
-                    </TouchableOpacity>
+                  <TouchableOpacity
+  style={[
+    styles.actionButton,
+    isParentLogin && { opacity: 0.5 },
+  ]}
+  onPress={verifyOTP}
+  disabled={otpLoading || isParentLogin}
+>
+  {otpLoading ? (
+    <ActivityIndicator color="#fff" />
+  ) : (
+    <Text style={styles.btnText}>
+      {isParentLogin ? 'Not Available for Parent' : 'Submit OTP'}
+    </Text>
+  )}
+</TouchableOpacity>
                   </>
                 )}
               </View>
@@ -630,38 +650,61 @@ await Linking.openURL(digilockerUrl);
               {getStatusIcon(user?.isEmailVerified)}
             </View>
 
-            {!user?.isEmailVerified && (
-              <View style={styles.actionArea}>
-                {otpFor !== 'email' ? (
-                  <TouchableOpacity
-                    style={styles.actionButton}
-                    onPress={() => sendOTP('email')}
-                    disabled={otpLoading}
-                  >
-                    {otpLoading ? <ActivityIndicator color="#fff" /> : <Text style={styles.btnText}>Verify Email</Text>}
-                  </TouchableOpacity>
-                ) : (
-                  <>
-                    <TextInput
-                      style={styles.input}
-                      placeholder="Enter 6-digit OTP"
-                      placeholderTextColor="#aaa"
-                      keyboardType="number-pad"
-                      maxLength={6}
-                      value={otp}
-                      onChangeText={setOtp}
-                    />
-                    <TouchableOpacity
-                      style={styles.actionButton}
-                      onPress={verifyOTP}
-                      disabled={otpLoading}
-                    >
-                      {otpLoading ? <ActivityIndicator color="#fff" /> : <Text style={styles.btnText}>Submit OTP</Text>}
-                    </TouchableOpacity>
-                  </>
-                )}
-              </View>
-            )}
+          {!user?.isEmailVerified && (
+  <View style={styles.actionArea}>
+    {otpFor !== 'email' ? (
+      <TouchableOpacity
+        style={[
+          styles.actionButton,
+          isParentLogin && { opacity: 0.5 },
+        ]}
+        onPress={() => sendOTP('email')}
+        disabled={otpLoading || isParentLogin}
+      >
+        {otpLoading ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text style={styles.btnText}>
+            {isParentLogin
+              ? 'Not Available for Parent'
+              : 'Verify Email'}
+          </Text>
+        )}
+      </TouchableOpacity>
+    ) : (
+      <>
+        <TextInput
+          style={styles.input}
+          placeholder="Enter 6-digit OTP"
+          placeholderTextColor="#aaa"
+          keyboardType="number-pad"
+          maxLength={6}
+          value={otp}
+          onChangeText={setOtp}
+        />
+
+        <TouchableOpacity
+          style={[
+            styles.actionButton,
+            isParentLogin && { opacity: 0.5 },
+          ]}
+          onPress={verifyOTP}
+          disabled={otpLoading || isParentLogin}
+        >
+          {otpLoading ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.btnText}>
+              {isParentLogin
+                ? 'Not Available for Parent'
+                : 'Submit OTP'}
+            </Text>
+          )}
+        </TouchableOpacity>
+      </>
+    )}
+  </View>
+)}
           </View>
 
           {/* PAN Card */}
@@ -699,8 +742,29 @@ await Linking.openURL(digilockerUrl);
         maxLength={10}
         autoCapitalize="characters"
       />
+<TouchableOpacity
+  style={[
+    styles.uploadButton,
+    isParentLogin && { opacity: 0.5 },
+  ]}
+  onPress={() => selectImage(setPanImage)}
+  disabled={isParentLogin}
+>
+  <Ionicons
+    name="cloud-upload-outline"
+    size={20}
+    color="#5A3F2E"
+  />
 
-      <TouchableOpacity
+  <Text style={styles.uploadText}>
+    {isParentLogin
+      ? 'Not Available for Parent'
+      : panImage
+        ? 'Change PAN Image'
+        : 'Upload PAN Card'}
+  </Text>
+</TouchableOpacity>
+      {/* <TouchableOpacity
         style={styles.uploadButton}
         onPress={() => selectImage(setPanImage)}
       >
@@ -708,13 +772,29 @@ await Linking.openURL(digilockerUrl);
         <Text style={styles.uploadText}>
           {panImage ? 'Change PAN Image' : 'Upload PAN Card'}
         </Text>
-      </TouchableOpacity>
+      </TouchableOpacity> */}
 
       {panImage?.uri && (
         <Image source={{ uri: panImage.uri }} style={styles.preview} resizeMode="contain" />
       )}
 
-      <TouchableOpacity
+<TouchableOpacity
+  style={[
+    styles.actionButton,
+    (panUploading || isParentLogin) && { opacity: 0.5 },
+  ]}
+  onPress={handlePanSubmit}
+  disabled={panUploading || isParentLogin}
+>
+  {panUploading ? (
+    <ActivityIndicator color="#fff" />
+  ) : (
+    <Text style={styles.btnText}>
+      {isParentLogin ? 'Not Available for Parent' : 'Submit PAN'}
+    </Text>
+  )}
+</TouchableOpacity>
+      {/* <TouchableOpacity
         style={styles.actionButton}
         onPress={handlePanSubmit}
         disabled={panUploading}
@@ -724,7 +804,7 @@ await Linking.openURL(digilockerUrl);
         ) : (
           <Text style={styles.btnText}>Submit PAN</Text>
         )}
-      </TouchableOpacity>
+      </TouchableOpacity> */}
     </View>
   )}
 </View>
@@ -760,7 +840,44 @@ await Linking.openURL(digilockerUrl);
                 </View>
 
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                  <TouchableOpacity
+                 
+                 <TouchableOpacity
+  style={[
+    styles.uploadButtonHalf,
+    isParentLogin && { opacity: 0.5 },
+  ]}
+  onPress={() => selectImage(setAadhaarFront)}
+  disabled={isParentLogin}
+>
+  <Ionicons name="image-outline" size={20} color="#5A3F2E" />
+  <Text style={styles.uploadTextSmall}>
+    {isParentLogin
+      ? 'Not Available'
+      : aadhaarFront
+        ? 'Front ✓'
+        : 'Upload Front'}
+  </Text>
+</TouchableOpacity>
+
+<TouchableOpacity
+  style={[
+    styles.uploadButtonHalf,
+    isParentLogin && { opacity: 0.5 },
+  ]}
+  onPress={() => selectImage(setAadhaarBack)}
+  disabled={isParentLogin}
+>
+  <Ionicons name="image-outline" size={20} color="#5A3F2E" />
+  <Text style={styles.uploadTextSmall}>
+    {isParentLogin
+      ? 'Not Available'
+      : aadhaarBack
+        ? 'Back ✓'
+        : 'Upload Back'}
+  </Text>
+</TouchableOpacity>
+                 
+                  {/* <TouchableOpacity
                     style={styles.uploadButtonHalf}
                     onPress={() => selectImage(setAadhaarFront)}
                   >
@@ -778,7 +895,7 @@ await Linking.openURL(digilockerUrl);
                     <Text style={styles.uploadTextSmall}>
                       {aadhaarBack ? 'Back ✓' : 'Upload Back'}
                     </Text>
-                  </TouchableOpacity>
+                  </TouchableOpacity> */}
                 </View>
 
                 <View style={{ flexDirection: 'row', marginTop: 12, gap: 8 }}>
@@ -790,7 +907,26 @@ await Linking.openURL(digilockerUrl);
                   )}
                 </View>
 
-                   <TouchableOpacity
+<TouchableOpacity
+  style={[
+    styles.actionButton,
+    { marginTop: 20 },
+    (aadhaarVerifying || isParentLogin) && { opacity: 0.5 },
+  ]}
+  onPress={startAadhaarFlow}
+  disabled={aadhaarVerifying || isParentLogin}
+>
+  {aadhaarVerifying ? (
+    <ActivityIndicator color="#fff" />
+  ) : (
+    <Text style={styles.btnText}>
+      {isParentLogin
+        ? 'Not Available for Parent'
+        : 'Verify via DigiLocker'}
+    </Text>
+  )}
+</TouchableOpacity>
+                   {/* <TouchableOpacity
                   style={[styles.actionButton, { marginTop: 20 }]}
                   onPress={startAadhaarFlow}
                   disabled={aadhaarVerifying}
@@ -800,7 +936,7 @@ await Linking.openURL(digilockerUrl);
                   ) : (
                     <Text style={styles.btnText}>Verify via DigiLocker</Text>
                   )}
-                </TouchableOpacity>
+                </TouchableOpacity> */}
               </View>
             )}
           </View>

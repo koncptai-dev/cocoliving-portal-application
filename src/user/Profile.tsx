@@ -97,25 +97,45 @@ const isParent = user?.loginAs === "parent";
 
       const u = res.data.user;
 
+
       setProfile({
-        ...profile,
-        fullName: u.fullName || "",
-        dateOfBirth: u.dateOfBirth || "",
-        gender: u.gender || "",
-        email: u.email || "",
-        phone: u.phone || "",
-        address: u.address || "",
-        collegeName: u.collegeName || "",
-        course: u.course || "",
-        studyingYear : u.studyingYear || "",
-        parentName: u.parentName || "",
-        parentEmail: u.parentEmail || "",      // ← NEW
-        parentMobile: u.parentMobile || "",
-        companyName: u.companyName || "",
-        position: u.position || "",
-        allergies: u.allergies || "",
-        foodPreference: u.foodPreference || "",
-      });
+  fullName: u.fullName || "",
+  dateOfBirth: u.dateOfBirth || "",
+  gender: u.gender || "",
+  email: u.email || "",
+  phone: u.phone || "",
+  address: u.address || "",
+  collegeName: u.collegeName || "",
+  course: u.course || "",
+  studyingYear: u.studyingYear || "",
+  parentName: u.parentName || "",
+  parentEmail: u.parentEmail || "",
+  parentMobile: u.parentMobile || "",
+  companyName: u.companyName || "",
+  position: u.position || "",
+  allergies: u.allergies || "",
+  foodPreference: u.foodPreference || "",
+});
+
+      // setProfile({
+      //   ...profile,
+      //   fullName: u.fullName || "",
+      //   dateOfBirth: u.dateOfBirth || "",
+      //   gender: u.gender || "",
+      //   email: u.email || "",
+      //   phone: u.phone || "",
+      //   address: u.address || "",
+      //   collegeName: u.collegeName || "",
+      //   course: u.course || "",
+      //   studyingYear : u.studyingYear || "",
+      //   parentName: u.parentName || "",
+      //   parentEmail: u.parentEmail || "",      // ← NEW
+      //   parentMobile: u.parentMobile || "",
+      //   companyName: u.companyName || "",
+      //   position: u.position || "",
+      //   allergies: u.allergies || "",
+      //   foodPreference: u.foodPreference || "",
+      // });
 
       if (u.profileImage) {
         setImage(`${BASE_URL}${u.profileImage}`);

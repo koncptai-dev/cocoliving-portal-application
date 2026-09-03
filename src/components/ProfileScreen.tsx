@@ -289,7 +289,48 @@ return (
   <View style={{ width: 26 }} />
 </View>
 
-      <View style={styles.profileRow}>
+<View style={styles.profileRow}>
+  <View style={styles.avatarWrapper}>
+    {user?.profileImage ? (
+      <Image
+        source={{ uri: `${BASE_URL}${user.profileImage}` }}
+        style={styles.avatar}
+      />
+    ) : (
+      <View style={styles.avatar}>
+        <Text style={styles.avatarText}>{firstLetter}</Text>
+      </View>
+    )}
+  </View>
+
+<View style={styles.profileInfo}>
+  <Text style={styles.name} numberOfLines={2}>
+    {userName}
+  </Text>
+
+  <View style={styles.roleRow}>
+    <Text style={styles.role}>
+      {userType
+        ? userType.charAt(0).toUpperCase() + userType.slice(1)
+        : ""}
+    </Text>
+  </View>
+</View>
+  {/* <View style={styles.profileInfo}>
+    <Text style={styles.name} numberOfLines={1} ellipsizeMode="tail">
+      {userName}
+    </Text>
+
+    <View style={styles.roleRow}>
+      <Text style={styles.role}>
+        {userType
+          ? userType.charAt(0).toUpperCase() + userType.slice(1)
+          : ""}
+      </Text>
+    </View>
+  </View> */}
+</View>
+      {/* <View style={styles.profileRow}>
         <View style={styles.avatarWrapper}>
           {user?.profileImage ? (
             <Image
@@ -311,7 +352,7 @@ return (
   </Text>
 </View>
         </View>
-      </View>
+      </View> */}
     </LinearGradient>
 
     {/* ================= SCROLLABLE SECTION ================= */}
@@ -453,6 +494,54 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 40,
   },
 
+
+
+  profileRow: {
+  flexDirection: "row",
+  alignItems: "center",
+  marginTop: 30,
+  marginBottom: 10,
+},
+
+profileInfo: {
+  flex: 1,
+  marginLeft: 14,
+  minWidth: 0,
+},
+
+name: {
+  fontSize: 20,
+  fontFamily: "Quicksand-Bold",
+  color: "#fff",
+  flexShrink: 1,
+},
+
+// profileInfo: {
+//   flex: 1,
+//   marginLeft: 14,
+//   minWidth: 0,
+// },
+
+// name: {
+//   fontSize: 20,
+//   fontFamily: "Quicksand-Bold",
+//   color: "#fff",
+//   flexShrink: 1,
+// },
+
+roleRow: {
+  flexDirection: "row",
+  alignItems: "center",
+},
+
+role: {
+  fontSize: 16,
+  fontFamily: "Quicksand-Regular",
+  color: "#fff",
+  flexShrink: 1,
+},
+
+
  topRow: {
   flexDirection: "row",
   alignItems: "center",
@@ -466,12 +555,12 @@ const styles = StyleSheet.create({
     fontFamily: "Quicksand-Bold",
   },
 
-  profileRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 30,
-    marginBottom: 10,
-  },
+  // profileRow: {
+  //   flexDirection: "row",
+  //   alignItems: "center",
+  //   marginTop: 30,
+  //   marginBottom: 10,
+  // },
 
   avatarWrapper: {
     position: "relative",
@@ -503,22 +592,22 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
 
-  name: {
-    fontSize: 20,
-    fontFamily: "Quicksand-Bold",
-    color: "#fff",
-  },
+  // name: {
+  //   fontSize: 20,
+  //   fontFamily: "Quicksand-Bold",
+  //   color: "#fff",
+  // },
 
-  roleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
+  // roleRow: {
+  //   flexDirection: "row",
+  //   alignItems: "center",
+  // },
 
-  role: {
-    fontSize: 16,
-    fontFamily: "Quicksand-Regular",
-    color: "#fff",
-  },
+  // role: {
+  //   fontSize: 16,
+  //   fontFamily: "Quicksand-Regular",
+  //   color: "#fff",
+  // },
 
   mainCard: {
     marginHorizontal: 20,

@@ -423,6 +423,17 @@ const startFiveSecLoader = () => {
 
      if (res.data?.success) {
   const { token, account, loginAs } = res.data;
+
+
+console.log('========== LOGIN SUCCESS ==========');
+  console.log('LOGIN AS:', loginAs);
+  console.log('ACCOUNT ID:', account?.id);
+  console.log('ACCOUNT FULL NAME:', account?.fullName);
+  console.log('ACCOUNT USER TYPE:', account?.userType);
+  console.log('ACCOUNT PARENT NAME:', account?.parentName);
+  console.log('FULL ACCOUNT:', JSON.stringify(account, null, 2));
+  console.log('===================================');
+
   await setUser({ ...account, token, loginAs });
 
   // ✅ permission

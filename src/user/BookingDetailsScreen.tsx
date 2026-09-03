@@ -102,7 +102,8 @@ const BookingDetailsScreen = ({ route }) => {
   const [bookingData, setBookingData] = useState(route?.params?.booking);
   const { user } = useAuth();
   const token = user?.token;
-
+const loginAs = user?.loginAs || "student";
+const isParentLogin = loginAs === "parent";
   const [loading, setLoading] = useState(true);
 
   const [remainingLoading, setRemainingLoading] = useState(false);
@@ -1290,6 +1291,7 @@ return (
   onPress={paySecurityDeposit}
   disabled={depositLoading}
   offlineDisabled={isOfflineOnly}
+   isParentLogin={isParentLogin}
 />
 
 </View>
@@ -1318,6 +1320,7 @@ return (
   onPress={payRemaining}
   disabled={remainingLoading}
   offlineDisabled={isOfflineOnly}
+   isParentLogin={isParentLogin}
 />
 
       </View>
@@ -1336,6 +1339,7 @@ return (
   onPress={activateMonthlyPlan}
   disabled={monthlyPlanLoading}
   offlineDisabled={isOfflineOnly}
+   isParentLogin={isParentLogin}
 />
 
       </View>
@@ -1360,6 +1364,7 @@ return (
   disabled={monthlyRentLoading}
   offlineDisabled={isOfflineOnly}
   showOfflineNote={false}
+   isParentLogin={isParentLogin}
 />
 
 )}
@@ -1414,6 +1419,7 @@ return (
         Number(electricityAmount) < 100
       }
       onPress={initiateElectricityRecharge}
+       isParentLogin={isParentLogin}
     />
 
   </View>
@@ -1443,6 +1449,7 @@ return (
                 text={cancelLoading ? "Processing..." : "Request Cancellation"}
                 onPress={requestCancellation}
                 disabled={cancelLoading}
+                isParentLogin={isParentLogin}
               />
             </>
           )}
@@ -1514,6 +1521,7 @@ return (
       text={extendLoading ? "Processing..." : "Pay & Extend"}
       onPress={requestExtension}
       disabled={extendLoading || !isExtendValid}
+       isParentLogin={isParentLogin}
     />
   </View>
 )}
@@ -1652,42 +1660,81 @@ const Row = ({ label, value }) => (
 // );
 
 
-
 const PrimaryButton = ({
   text,
   onPress,
   disabled,
   offlineDisabled = false,
   showOfflineNote = true,
-}) => (
-  <View style={styles.primaryBtnWrapper}>
-    <TouchableOpacity
-      activeOpacity={offlineDisabled ? 1 : 0.7}
-      style={[
-        styles.btn,
-        offlineDisabled && styles.offlineBtn,
-        disabled && { opacity: 0.6 },
-      ]}
-      onPress={offlineDisabled ? undefined : onPress}
-      disabled={disabled}
-    >
-      <Text
-        style={[
-          styles.btnText,
-          offlineDisabled && styles.offlineBtnText,
-        ]}
-      >
-        {text}
-      </Text>
-    </TouchableOpacity>
+  isParentLogin = false,
+}) => {
+  const isDisabled = disabled || offlineDisabled || isParentLogin;
 
-    {offlineDisabled && showOfflineNote && (
-      <Text style={styles.offlineNote}>
-        Payments will be done offline
-      </Text>
-    )}
-  </View>
-);
+  return (
+    <View style={styles.primaryBtnWrapper}>
+      <TouchableOpacity
+        activeOpacity={isDisabled ? 1 : 0.7}
+        style={[
+          styles.btn,
+          offlineDisabled && styles.offlineBtn,
+          isDisabled && { opacity: 0.5 },
+        ]}
+        onPress={isDisabled ? undefined : onPress}
+        disabled={isDisabled}
+      >
+        <Text
+          style={[
+            styles.btnText,
+            offlineDisabled && styles.offlineBtnText,
+          ]}
+        >
+          {text}
+        </Text>
+      </TouchableOpacity>
+
+      {offlineDisabled && showOfflineNote && (
+        <Text style={styles.offlineNote}>
+          Payments will be done offline
+        </Text>
+      )}
+    </View>
+  );
+};
+// const PrimaryButton = ({
+//   text,
+//   onPress,
+//   disabled,
+//   offlineDisabled = false,
+//   showOfflineNote = true,
+// }) => (
+//   <View style={styles.primaryBtnWrapper}>
+//     <TouchableOpacity
+//       activeOpacity={offlineDisabled ? 1 : 0.7}
+//       style={[
+//         styles.btn,
+//         offlineDisabled && styles.offlineBtn,
+//         disabled && { opacity: 0.6 },
+//       ]}
+//       onPress={offlineDisabled ? undefined : onPress}
+//       disabled={disabled}
+//     >
+//       <Text
+//         style={[
+//           styles.btnText,
+//           offlineDisabled && styles.offlineBtnText,
+//         ]}
+//       >
+//         {text}
+//       </Text>
+//     </TouchableOpacity>
+
+//     {offlineDisabled && showOfflineNote && (
+//       <Text style={styles.offlineNote}>
+//         Payments will be done offline
+//       </Text>
+//     )}
+//   </View>
+// );
 
 
 // const DestructiveButton = ({ text, onPress, disabled }) => (
@@ -1700,20 +1747,44 @@ const PrimaryButton = ({
 //   </TouchableOpacity>
 // );
 
-const DestructiveButton = ({ text, onPress, disabled }) => (
-  <TouchableOpacity
-    activeOpacity={0.7}
-    style={[
-      styles.btn,
-      { backgroundColor: "#d32f2f" },
-      disabled && { opacity: 0.6 },
-    ]}
-    onPress={onPress}
-    disabled={disabled}
-  >
-    <Text style={styles.btnText}>{text}</Text>
-  </TouchableOpacity>
-);
+
+const DestructiveButton = ({
+  text,
+  onPress,
+  disabled,
+  isParentLogin = false,
+}) => {
+  const isDisabled = disabled || isParentLogin;
+
+  return (
+    <TouchableOpacity
+      activeOpacity={isDisabled ? 1 : 0.7}
+      style={[
+        styles.btn,
+        { backgroundColor: "#d32f2f" },
+        isDisabled && { opacity: 0.5 },
+      ]}
+      onPress={isDisabled ? undefined : onPress}
+      disabled={isDisabled}
+    >
+      <Text style={styles.btnText}>{text}</Text>
+    </TouchableOpacity>
+  );
+};
+// const DestructiveButton = ({ text, onPress, disabled }) => (
+//   <TouchableOpacity
+//     activeOpacity={0.7}
+//     style={[
+//       styles.btn,
+//       { backgroundColor: "#d32f2f" },
+//       disabled && { opacity: 0.6 },
+//     ]}
+//     onPress={onPress}
+//     disabled={disabled}
+//   >
+//     <Text style={styles.btnText}>{text}</Text>
+//   </TouchableOpacity>
+// );
 
 
 

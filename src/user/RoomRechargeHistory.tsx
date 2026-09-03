@@ -26,7 +26,8 @@ const RoomRechargeHistoryScreen = () => {
 
   const { user } = useAuth();
   const token = user?.token;
-
+const loginAs = user?.loginAs || "student";
+const isParentLogin = loginAs === "parent";
   const [loading, setLoading] = useState(true);
   const [recharges, setRecharges] = useState<any[]>([]);
   const [currentBalance, setCurrentBalance] = useState(0);
@@ -231,39 +232,39 @@ const RoomRechargeHistoryScreen = () => {
       />
 
       {/* BUTTON */}
-      <TouchableOpacity
-        style={[
-          styles.rechargeButton,
-          !booking && { opacity: 0.6 },
-        ]}
-        disabled={!booking}
-        onPress={() => {
-          console.log(
-            "BOOKING DETAILS DATA 👉",
-            JSON.stringify(booking, null, 2)
-          );
+    <TouchableOpacity
+  style={[
+    styles.rechargeButton,
+    (!booking || isParentLogin) && { opacity: 0.6 },
+  ]}
+  disabled={!booking || isParentLogin}
+  onPress={() => {
+    console.log(
+      "BOOKING DETAILS DATA 👉",
+      JSON.stringify(booking, null, 2)
+    );
 
-          if (!booking) {
-            console.log("Booking not available");
-            return;
-          }
+    if (!booking) {
+      console.log("Booking not available");
+      return;
+    }
 
-          navigation.navigate("BookingDetails", {
-            booking: booking,
-          });
-        }}
-      >
-        <Ionicons
-          name="flash-outline"
-          size={20}
-          color="#fff"
-          style={{ marginRight: 8 }}
-        />
+    navigation.navigate("BookingDetails", {
+      booking: booking,
+    });
+  }}
+>
+  <Ionicons
+    name="flash-outline"
+    size={20}
+    color="#fff"
+    style={{ marginRight: 8 }}
+  />
 
-        <Text style={styles.rechargeButtonText}>
-          Recharge Electricity Account
-        </Text>
-      </TouchableOpacity>
+  <Text style={styles.rechargeButtonText}>
+    Recharge Electricity Account
+  </Text>
+</TouchableOpacity>
     </View>
   );
 };

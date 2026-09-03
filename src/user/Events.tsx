@@ -26,7 +26,8 @@ export default function EventsScreen() {
   const { user } = useAuth();
   const token = user?.token;
   const navigation = useNavigation();
-
+const loginAs = user?.loginAs || "student";
+const isParentLogin = loginAs === "parent";
   const [events, setEvents] = useState([]);
   const [filteredEvents, setFilteredEvents] = useState([]);
 
@@ -430,6 +431,15 @@ if (selectedTime) {
   <TouchableOpacity style={styles.completedButton} disabled>
     <Text style={styles.completedText}>Event Full</Text>
   </TouchableOpacity>
+) : isParentLogin ? (
+  <TouchableOpacity
+    style={[styles.joinButton, styles.disabledButton]}
+    disabled={true}
+  >
+    <Text style={styles.disabledText}>
+      Not for Parent
+    </Text>
+  </TouchableOpacity>
 ) : (
   <TouchableOpacity
     style={[
@@ -528,7 +538,16 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#EEE",
   },
+disabledButton: {
+  backgroundColor: "#DDDDDD",
+  opacity: 0.7,
+},
 
+disabledText: {
+  fontSize: 16,
+  fontFamily: "Quicksand-Bold",
+  color: "#777777",
+},
   listText: { fontSize: 14, color: "#616161",    fontFamily:'Quicksand-Regular' },
 
   slotContainer: {

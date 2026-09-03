@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   View,
   ImageBackground,
@@ -12,7 +13,12 @@ import {
 import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useAuth } from '../context/AuthContext';
-import { useNavigation } from '@react-navigation/native';
+// import { useNavigation } from '@react-navigation/native';
+import {
+  useNavigation,
+  useFocusEffect,
+} from '@react-navigation/native';
+
 import axios from 'axios';
 import Config from 'react-native-config';
 const { width } = Dimensions.get('window');
@@ -33,9 +39,21 @@ const HeaderGradient: React.FC<Props> = ({ title, image }) => {
   const token = user?.token;
   const navigation = useNavigation<any>();
 
-  const username = user?.fullName || 'User';
-  const firstName = username.split(' ')[0];
-  const firstLetter = username.charAt(0).toUpperCase();
+  // const username = user?.fullName || 'User';
+  // const firstName = username.split(' ')[0];
+  // const firstLetter = username.charAt(0).toUpperCase();
+
+
+const [parentName, setParentName] = useState('');
+
+const isParent = user?.loginAs === 'parent';
+
+const displayName = isParent
+  ? parentName?.trim() || 'Parent'
+  : user?.fullName?.trim() || 'User';
+
+const firstName = displayName.split(/\s+/)[0] || 'User';
+const firstLetter = displayName.charAt(0).toUpperCase();
 
   const [location, setLocation] = useState('Navrangpura');
 
@@ -63,9 +81,60 @@ const HeaderGradient: React.FC<Props> = ({ title, image }) => {
     }
   };
 
-  useEffect(() => {
+
+const loadUser = async () => {
+  if (!token || !user?.id) return;
+
+  try {
+    const res = await axios.get(
+      `${baseURL}/api/user/getUser/${user.id}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    const u = res.data.user;
+
+    console.log('Header user profile:', u);
+    console.log('Header parent name:', u?.parentName);
+
+    setParentName(u?.parentName || '');
+  } catch (error: any) {
+    console.log(
+      'Header profile fetch failed:',
+      error?.response?.data || error?.message || error
+    );
+  }
+};
+
+
+  // useEffect(() => {
+  //   fetchLocation();
+  // }, [token]);
+
+// useEffect(() => {
+//   fetchLocation();
+
+//   if (user?.loginAs === 'parent') {
+//     loadUser();
+//   }
+// }, [token, user?.id, user?.loginAs]);
+
+useFocusEffect(
+  useCallback(() => {
     fetchLocation();
-  }, [token]);
+
+    if (user?.loginAs === 'parent') {
+      loadUser();
+    }
+
+    return () => {
+      // cleanup if needed
+    };
+  }, [token, user?.id, user?.loginAs])
+);
 
   return (
     <View style={[styles.container, { height: IMAGE_HEIGHT }]}>

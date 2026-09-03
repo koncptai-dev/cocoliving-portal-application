@@ -126,24 +126,63 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   /* ---------- REFRESH USER DATA ---------- */
 
-  const refreshUser = async () => {
-    if (!user?.id || !user?.token) return;
+  // const refreshUser = async () => {
+  //   if (!user?.id || !user?.token) return;
 
-    try {
-      const res = await axios.get(`${BASE_URL}/api/user/getUser/${user.id}`, {
-        headers: { Authorization: `Bearer ${user.token}` },
-      });
+  //   try {
+  //     const res = await axios.get(`${BASE_URL}/api/user/getUser/${user.id}`, {
+  //       headers: { Authorization: `Bearer ${user.token}` },
+  //     });
 
-      await setUser({
-        ...res.data.user,
-        token: user.token,
-        refreshToken: user.refreshToken,
-        role: user.role,
-      });
-    } catch (err) {
-      console.log('❌ Failed to refresh user', err);
-    }
-  };
+  //     await setUser({
+  //       ...res.data.user,
+  //       token: user.token,
+  //       refreshToken: user.refreshToken,
+  //       role: user.role,
+  //     });
+  //   } catch (err) {
+  //     console.log('❌ Failed to refresh user', err);
+  //   }
+  // };
+
+const refreshUser = async () => {
+  if (!user?.id || !user?.token) return;
+
+  try {
+    const res = await axios.get(
+      `${BASE_URL}/api/user/getUser/${user.id}`,
+      {
+        headers: {
+          Authorization: `Bearer ${user.token}`,
+        },
+      }
+    );
+
+    const refreshedUser = res.data.user;
+
+    await setUser({
+      ...refreshedUser,
+
+      // IMPORTANT:
+      // Keep the current login mode.
+      loginAs: user.loginAs,
+
+      // Keep authentication details.
+      token: user.token,
+      refreshToken: user.refreshToken,
+      role: user.role,
+    });
+
+    console.log("========== USER REFRESHED ==========");
+    console.log("ID:", refreshedUser?.id);
+    console.log("FULL NAME:", refreshedUser?.fullName);
+    console.log("USER TYPE:", refreshedUser?.userType);
+    console.log("LOGIN AS PRESERVED:", user.loginAs);
+    console.log("====================================");
+  } catch (err) {
+    console.log("❌ Failed to refresh user", err);
+  }
+};
 
   /* ---------- SET USER ---------- */
 

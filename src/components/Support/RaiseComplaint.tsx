@@ -28,7 +28,8 @@ const RaiseComplaint = () => {
 
   const { user } = useAuth();
   const token = user?.token;
-
+const loginAs = user?.loginAs || "student";
+const isParentLogin = loginAs === "parent";
   const urgencyOptions = ['Low', 'High', 'Priority'];
 
   const CATEGORY_MAP = {
@@ -742,7 +743,24 @@ console.log("✅ RESPONSE MESSAGE:", response?.data?.message);
           </View>
 
           {/* SUBMIT */}
-          <TouchableOpacity
+         <TouchableOpacity
+  style={[
+    styles.submitBtn,
+    (submitting || isParentLogin) && { opacity: 0.5 }
+  ]}
+  onPress={handleSubmit}
+  activeOpacity={0.8}
+  disabled={submitting || isParentLogin}
+>
+  <Text style={styles.submitText}>
+    {submitting
+      ? "Processing..."
+      : isParentLogin
+        ? "Submit"
+        : "Submit"}
+  </Text>
+</TouchableOpacity>
+          {/* <TouchableOpacity
             style={[
               styles.submitBtn,
               submitting && { opacity: 0.6 }
@@ -756,7 +774,7 @@ console.log("✅ RESPONSE MESSAGE:", response?.data?.message);
                 ? "Processing..."
                 : "Submit"}
             </Text>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
 
         </View>
       </ScrollView>

@@ -22,6 +22,7 @@ const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1516450360452-9312f5e8
 const EventDetailsScreen = ({ route, navigation }) => {
   const { user } = useAuth();
   const token = user?.token;
+  const isParent = user?.loginAs === "parent";
   const initialEvent = route.params?.event;
 
   const [localEvent, setLocalEvent] = useState(initialEvent);
@@ -58,6 +59,16 @@ const EventDetailsScreen = ({ route, navigation }) => {
   );
 
   const handleJoinEvent = async () => {
+
+ if (isParent) {
+    Toast.show({
+      type: "error",
+      text1: "Restricted",
+      text2: "Parents cannot join events.",
+    });
+    return;
+  }
+
     if (!user?.id || !localEvent) return;
 
     const currentParticipation = localEvent.EventParticipations?.find(
@@ -231,16 +242,33 @@ const EventDetailsScreen = ({ route, navigation }) => {
   </TouchableOpacity>
 ) : (
   <TouchableOpacity
-    style={[
-      styles.joinButton,
-      isAttending ? styles.greenButton : styles.brownButton,
-    ]}
-    onPress={handleJoinEvent}
-  >
-    <Text style={styles.joinText}>
-      {isAttending ? "You're In!" : "I'm In!"}
-    </Text>
-  </TouchableOpacity>
+  style={[
+    styles.joinButton,
+    isAttending ? styles.greenButton : styles.brownButton,
+    isParent && styles.restrictedButton,
+  ]}
+  onPress={handleJoinEvent}
+  disabled={isParent}
+>
+  <Text style={styles.joinText}>
+    {isParent
+      ? "Restricted"
+      : isAttending
+      ? "You're In!"
+      : "I'm In!"}
+  </Text>
+</TouchableOpacity>
+  // <TouchableOpacity
+  //   style={[
+  //     styles.joinButton,
+  //     isAttending ? styles.greenButton : styles.brownButton,
+  //   ]}
+  //   onPress={handleJoinEvent}
+  // >
+  //   <Text style={styles.joinText}>
+  //     {isAttending ? "You're In!" : "I'm In!"}
+  //   </Text>
+  // </TouchableOpacity>
 )}
         </View>
       </ScrollView>
@@ -313,7 +341,10 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     fontFamily: "Quicksand-Regular",
   },
-
+restrictedButton: {
+  backgroundColor: "#999999",
+  opacity: 0.6,
+},
   quickPeekTitle: {
     fontSize: 20,
     fontFamily: "Quicksand-Bold",

@@ -22,6 +22,8 @@ export const BASE_URL = Config.API_BASE_URL;
 const RoomDetailsScreen = ({ route, navigation }) => {
   const { room, property } = route.params;
   const { user } = useAuth();
+const loginAs = user?.loginAs || "student";
+const isParentLogin = loginAs === "parent";
 
   const gallery =
     room.roomImages?.length > 0
@@ -245,13 +247,38 @@ const RoomDetailsScreen = ({ route, navigation }) => {
         </View>
 
         <View style={{ gap: 10 }}>
-          <TouchableOpacity style={styles.bookBtn} onPress={() => handleAction("Book")}>
+          {/* <TouchableOpacity style={styles.bookBtn} onPress={() => handleAction("Book")}>
             <Text style={styles.bookText}>Book</Text>
-          </TouchableOpacity>
-
+          </TouchableOpacity> */}
+<TouchableOpacity
+  style={[
+    styles.bookBtn,
+    isParentLogin && { opacity: 0.5 },
+  ]}
+  onPress={() => handleAction("Book")}
+  disabled={isParentLogin}
+>
+  <Text style={styles.bookText}>
+    {isParentLogin ? "Book" : "Book"}
+  </Text>
+</TouchableOpacity>
+{/* 
           <TouchableOpacity style={styles.preBtn} onPress={() => handleAction("PreBook")}>
             <Text style={styles.preText}>Pre-book</Text>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
+<TouchableOpacity
+  style={[
+    styles.preBtn,
+    isParentLogin && { opacity: 0.5 },
+  ]}
+  onPress={() => handleAction("PreBook")}
+  disabled={isParentLogin}
+>
+  <Text style={styles.preText}>
+    {isParentLogin ? "Pre-book" : "Pre-book"}
+  </Text>
+</TouchableOpacity>
+
         </View>
       </View>
     </View>
