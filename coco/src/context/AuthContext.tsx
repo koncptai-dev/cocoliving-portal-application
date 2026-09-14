@@ -1,0 +1,504 @@
+import React, { createContext, useContext, useState, useEffect , useRef, useCallback} from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Keychain from 'react-native-keychain';
+import { jwtDecode } from 'jwt-decode';
+import Toast from 'react-native-toast-message';
+import axios from 'axios';
+import Config from 'react-native-config';
+
+/* ================= TYPES ================= */
+
+interface BaseUser {
+  id: string;
+  token: string;
+  role: string;
+  refreshToken?: string;
+}
+
+export interface NormalUser extends BaseUser {
+  role: 'user';
+  fullName: string;
+  userType: string;
+  loginAs?: 'parent' | 'student';
+  parentName?: string;
+}
+
+export type User = NormalUser;
+
+interface AuthContextType {
+  user: User | null;
+  setUser: (user: User | null) => Promise<void>;
+  refreshUser: () => Promise<void>;
+  authLoading: boolean; // 🔥 used by Splash logic
+  logout: () => Promise<void>;
+}
+
+/* ================= CONTEXT ================= */
+
+const AuthContext = createContext<AuthContextType>({
+  user: null,
+  setUser: async () => {},
+  refreshUser: async () => {},
+  authLoading: true,
+  logout: async () => {},
+});
+
+/* ================= CONSTANTS ================= */
+
+const USER_DATA_KEY = 'userData';
+const SECURE_AUTH_KEY = 'secureAuth';
+export const BASE_URL = Config.API_BASE_URL;
+
+/* ================= PROVIDER ================= */
+
+export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+  const [user, setUserState] = useState<User | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
+
+  const isLoggingOut = useRef(false);
+  /* ---------- SECURE STORAGE HELPERS ---------- */
+
+  const getSecureStore = async (): Promise<{ token: string; refreshToken?: string } | null> => {
+    try {
+      const creds = await Keychain.getGenericPassword();
+      if (!creds) return null;
+      return JSON.parse(creds.password);
+    } catch {
+      const raw = await AsyncStorage.getItem(SECURE_AUTH_KEY);
+      return raw ? JSON.parse(raw) : null;
+    }
+  };
+
+  const setSecureStore = async (data: { token: string; refreshToken?: string }) => {
+    try {
+      await Keychain.setGenericPassword(SECURE_AUTH_KEY, JSON.stringify(data));
+    } catch {
+      await AsyncStorage.setItem(SECURE_AUTH_KEY, JSON.stringify(data));
+    }
+  };
+
+  const removeSecureStore = async () => {
+    try {
+      await Keychain.resetGenericPassword();
+    } catch {
+      await AsyncStorage.removeItem(SECURE_AUTH_KEY);
+    }
+  };
+
+  /* ---------- LOAD USER ON APP START ---------- */
+
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        const storedUser = await AsyncStorage.getItem(USER_DATA_KEY);
+        const secureAuth = await getSecureStore();
+
+        if (!storedUser || !secureAuth?.token) {
+          setAuthLoading(false);
+          return;
+        }
+
+        const decoded = jwtDecode<{ exp: number }>(secureAuth.token);
+
+        // 🔥 TOKEN EXPIRED
+        if (decoded.exp * 1000 < Date.now()) {
+          await logout();
+          setAuthLoading(false);
+          return;
+        }
+
+        const userData = JSON.parse(storedUser);
+
+        setUserState({
+          ...userData,
+          token: secureAuth.token,
+          refreshToken: secureAuth.refreshToken,
+        });
+      } catch (err) {
+        console.log('Auth restore failed:', err);
+      } finally {
+        setAuthLoading(false);
+      }
+    };
+
+    loadUser();
+  }, []);
+
+  /* ---------- REFRESH USER DATA ---------- */
+
+  // const refreshUser = async () => {
+  //   if (!user?.id || !user?.token) return;
+
+  //   try {
+  //     const res = await axios.get(`${BASE_URL}/api/user/getUser/${user.id}`, {
+  //       headers: { Authorization: `Bearer ${user.token}` },
+  //     });
+
+  //     await setUser({
+  //       ...res.data.user,
+  //       token: user.token,
+  //       refreshToken: user.refreshToken,
+  //       role: user.role,
+  //     });
+  //   } catch (err) {
+  //     console.log('❌ Failed to refresh user', err);
+  //   }
+  // };
+
+const refreshUser = async () => {
+  if (!user?.id || !user?.token) return;
+
+  try {
+    const res = await axios.get(
+      `${BASE_URL}/api/user/getUser/${user.id}`,
+      {
+        headers: {
+          Authorization: `Bearer ${user.token}`,
+        },
+      }
+    );
+
+    const refreshedUser = res.data.user;
+
+    await setUser({
+      ...refreshedUser,
+
+      // IMPORTANT:
+      // Keep the current login mode.
+      loginAs: user.loginAs,
+
+      // Keep authentication details.
+      token: user.token,
+      refreshToken: user.refreshToken,
+      role: user.role,
+    });
+
+    console.log("========== USER REFRESHED ==========");
+    console.log("ID:", refreshedUser?.id);
+    console.log("FULL NAME:", refreshedUser?.fullName);
+    console.log("USER TYPE:", refreshedUser?.userType);
+    console.log("LOGIN AS PRESERVED:", user.loginAs);
+    console.log("====================================");
+  } catch (err) {
+    console.log("❌ Failed to refresh user", err);
+  }
+};
+
+  /* ---------- SET USER ---------- */
+
+  const setUser = async (newUser: User | null) => {
+    setUserState(newUser);
+
+    try {
+      if (newUser) {
+        const { token, refreshToken, ...userData } = newUser;
+
+        await AsyncStorage.setItem(USER_DATA_KEY, JSON.stringify(userData));
+        await setSecureStore({ token, refreshToken });
+      } else {
+        await AsyncStorage.removeItem(USER_DATA_KEY);
+        await removeSecureStore();
+      }
+    } catch (err) {
+      console.log('Persist user failed:', err);
+    }
+  };
+
+  /* ---------- LOGOUT ---------- */
+
+  // const logout = async () => {
+  //   setUserState(null);
+  //   await AsyncStorage.removeItem(USER_DATA_KEY);
+  //   await removeSecureStore();
+
+  //   Toast.show({
+  //     type: 'info',
+  //     text1: 'Logged out!',
+  //   });
+  // };
+
+  const logout = useCallback(async () => {
+  setUserState(null);
+  await AsyncStorage.removeItem(USER_DATA_KEY);
+  await removeSecureStore();
+
+  Toast.show({
+    type: "info",
+    text1: "Logged out!",
+  });
+}, []);
+
+  /* ---------- PROVIDER ---------- */
+
+
+useEffect(() => {
+  const interceptor = axios.interceptors.response.use(
+    response => response,
+    async error => {
+      const status = error.response?.status;
+
+      // if (
+      //   (status === 401 || status === 403) &&
+      //   !isLoggingOut.current
+      // ) {
+//       if (
+//   status === 401 &&
+//   !isLoggingOut.current
+// ) {
+//         isLoggingOut.current = true;
+
+//         try {
+//           await logout();
+//         } finally {
+//           isLoggingOut.current = false;
+//         }
+
+
+//       }
+if (
+  status === 401 &&
+  !user?.token &&
+  !isLoggingOut.current
+) {
+  isLoggingOut.current = true;
+
+  try {
+    await logout();
+  } finally {
+    isLoggingOut.current = false;
+  }
+}
+      return Promise.reject(error);
+    }
+  );
+
+  return () => {
+    axios.interceptors.response.eject(interceptor);
+  };
+}, [logout]);
+
+  return (
+    <AuthContext.Provider value={{ user, setUser, refreshUser, authLoading, logout }}>
+      {children}
+    </AuthContext.Provider>
+  );
+};
+
+/* ================= HOOK ================= */
+
+export const useAuth = () => useContext(AuthContext);
+
+
+
+// import React, { createContext, useContext, useState, useEffect } from 'react';
+// import AsyncStorage from '@react-native-async-storage/async-storage';
+// import * as Keychain from 'react-native-keychain';
+// import { jwtDecode } from 'jwt-decode';
+// import Toast from 'react-native-toast-message';
+// import axios from 'axios';
+
+// /* ================= TYPES ================= */
+
+// interface BaseUser {
+//   id: string;
+//   token: string;
+//   role: string;
+//   refreshToken?: string;
+// }
+
+// export interface NormalUser extends BaseUser {
+//   role: 'user';
+//   fullName: string;
+//   userType: string;
+// }
+
+// export type User = NormalUser;
+
+// interface AuthContextType {
+//   user: User | null;
+//   setUser: (user: User | null) => Promise<void>;
+//   refreshUser: () => Promise<void>;   // ✅ ADD
+//   isLoading: boolean;
+//   logout: () => Promise<void>;
+// }
+
+// /* ================= CONTEXT ================= */
+
+// const AuthContext = createContext<AuthContextType>({
+//   user: null,
+//   setUser: async () => {},
+//   refreshUser: async () => {},   // ✅ ADD
+//   isLoading: true,
+//   logout: async () => {},
+// });
+// /* ================= CONSTANTS ================= */
+
+// const USER_DATA_KEY = 'userData';
+// const SECURE_AUTH_KEY = 'secureAuth';
+// const BASE_URL = "https://staging.cocoliving.in";
+
+// /* ================= PROVIDER ================= */
+
+// export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+//   const [user, setUserState] = useState<User | null>(null);
+//   const [isLoading, setIsLoading] = useState(true);
+
+//   /* ---------- SECURE STORAGE HELPERS ---------- */
+
+//   const getSecureStore = async (): Promise<{
+//     token: string;
+//     refreshToken?: string;
+//   } | null> => {
+//     try {
+//       const creds = await Keychain.getGenericPassword();
+//       if (!creds) return null;
+//       return JSON.parse(creds.password);
+//     } catch (err) {
+//       console.log('⚠️ Keychain get failed, fallback to AsyncStorage');
+//       const raw = await AsyncStorage.getItem(SECURE_AUTH_KEY);
+//       return raw ? JSON.parse(raw) : null;
+//     }
+//   };
+
+//   const setSecureStore = async (data: {
+//     token: string;
+//     refreshToken?: string;
+//   }) => {
+//     try {
+//       await Keychain.setGenericPassword(
+//         SECURE_AUTH_KEY,
+//         JSON.stringify(data)
+//       );
+//     } catch (err) {
+//       console.log('⚠️ Keychain set failed, fallback to AsyncStorage');
+//       await AsyncStorage.setItem(SECURE_AUTH_KEY, JSON.stringify(data));
+//     }
+//   };
+
+//   const removeSecureStore = async () => {
+//     try {
+//       await Keychain.resetGenericPassword();
+//     } catch (err) {
+//       await AsyncStorage.removeItem(SECURE_AUTH_KEY);
+//     }
+//   };
+
+//   //referesh uer 
+//   const refreshUser = async () => {
+//   if (!user?.id || !user?.token) return;
+
+//   try {
+//     const res = await axios.get(
+//       `${BASE_URL}/api/user/getUser/${user.id}`,
+//       {
+//         headers: { Authorization: `Bearer ${user.token}` },
+//       }
+//     );
+
+//     // 🔥 token ko preserve karna zaroori hai
+//     await setUser({
+//       ...res.data.user,
+//       token: user.token,
+//       refreshToken: user.refreshToken,
+//       role: user.role,
+//     });
+//   } catch (err) {
+//     console.log("❌ Failed to refresh user", err);
+//   }
+// };
+
+
+//   /* ---------- LOAD USER ON APP START ---------- */
+
+//   useEffect(() => {
+//     const loadUser = async () => {
+//       try {
+//         const storedUser = await AsyncStorage.getItem(USER_DATA_KEY);
+//         const secureAuth = await getSecureStore();
+
+//         if (!storedUser || !secureAuth?.token) {
+//           setIsLoading(false);
+//           return;
+//         }
+
+//         const decoded = jwtDecode<{ exp: number }>(secureAuth.token);
+
+//         if (decoded.exp * 1000 < Date.now()) {
+//           await logout();
+//           return;
+//         }
+
+//         const userData = JSON.parse(storedUser);
+
+//         setUserState({
+//           ...userData,
+//           token: secureAuth.token,
+//           refreshToken: secureAuth.refreshToken,
+//         });
+//       } catch (err) {
+//         console.log('Failed to restore auth state', err);
+//       } finally {
+//         setIsLoading(false);
+//       }
+//     };
+
+//     loadUser();
+//   }, []);
+
+//   /* ---------- SET USER ---------- */
+
+//   const setUser = async (newUser: User | null) => {
+//     setUserState(newUser);
+
+//     try {
+//       if (newUser) {
+//         const { token, refreshToken, ...userData } = newUser;
+
+//         await AsyncStorage.setItem(
+//           USER_DATA_KEY,
+//           JSON.stringify(userData)
+//         );
+
+//         await setSecureStore({ token, refreshToken });
+//       } else {
+//         await AsyncStorage.removeItem(USER_DATA_KEY);
+//         await removeSecureStore();
+//       }
+//     } catch (err) {
+//       console.log('Failed to persist user', err);
+//     }
+//   };
+
+//   /* ---------- LOGOUT ---------- */
+
+//   const logout = async () => {
+//     setUserState(null);
+
+//     try {
+//       await AsyncStorage.removeItem(USER_DATA_KEY);
+//       await removeSecureStore();
+//     } catch (err) {
+//       console.log('Failed to clear auth storage', err);
+//     }
+
+//     Toast.show({
+//       type: 'info',
+//       text1: 'Logged out!',
+//     });
+//   };
+
+//   /* ---------- PROVIDER ---------- */
+
+//   return (
+//   <AuthContext.Provider
+//   value={{ user, setUser, refreshUser, isLoading, logout }}
+// >
+//   {children}
+// </AuthContext.Provider>
+//   );
+// };
+
+// /* ================= HOOK ================= */
+
+// export const useAuth = () => useContext(AuthContext);
+
