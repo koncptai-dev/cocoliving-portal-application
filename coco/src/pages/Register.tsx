@@ -88,7 +88,7 @@ const [canResend, setCanResend] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
   const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
-
+const [buttonLoading, setButtonLoading] = useState(false);
   const [showDOBPicker, setShowDOBPicker] = useState(false);
 
   const isDefaultAvatar = profilePicUri === AVATAR_PLACEHOLDER;
@@ -149,13 +149,22 @@ maxDOB.setFullYear(maxDOB.getFullYear() - 17);
   //   }
   // };
 
+
+const startButtonLoader = () => {
+  setButtonLoading(true);
+
+  setTimeout(() => {
+    setButtonLoading(false);
+  }, 3000);
+};
+
   const handleSendOTP = async () => {
    
     // if (!firstName.trim() || !lastName.trim()) {
     //   Toast.show({ type: 'error', text1: 'Enter full name' });
     //   return;
     // }
-
+ if (buttonLoading || loading) return;
 
 if (!fullName.trim()) {
   Toast.show({
@@ -179,7 +188,7 @@ if (!fullName.trim()) {
     //   Toast.show({ type: 'error', text1: 'Missing prefilled identifier' });
     //   return;
     // }
-
+startButtonLoader();
     setLoading(true);
     try {
     const res=  await axios.post(SIGNUP_SEND_OTP, { identifier: prefilledIdentifier });
@@ -230,6 +239,9 @@ setCanResend(false);
 };
 
 const handleSubmitProfile = async () => {
+
+ if (buttonLoading || loading) return;
+
     if (!otp.trim()) {
       Toast.show({ type: 'error', text1: 'Enter OTP' });
       return;
@@ -280,7 +292,7 @@ const handleSubmitProfile = async () => {
     if (profileImage) {
       formData.append('profileImage', profileImage as any);
     }
-
+startButtonLoader();
     setLoading(true);
     try {
       const res = await axios.post(SIGNUP_REGISTER, formData, {
@@ -557,7 +569,7 @@ const onDOBChange = (_: any, date?: Date) => {
   </>
 )}
 
-        <TouchableOpacity
+        {/* <TouchableOpacity
           style={styles.button}
           onPress={otpSent ? handleSubmitProfile : handleSendOTP}
           disabled={loading}
@@ -569,8 +581,31 @@ const onDOBChange = (_: any, date?: Date) => {
               {otpSent ? 'Complete Registration' : 'Send OTP'}
             </Text>
           )}
-        </TouchableOpacity>
+        </TouchableOpacity> */}
+<TouchableOpacity
+  style={[
+    styles.button,
+    (loading || buttonLoading) && { opacity: 0.7 },
+  ]}
+  onPress={() => {
+    if (buttonLoading || loading) return;
 
+    if (otpSent) {
+      handleSubmitProfile();
+    } else {
+      handleSendOTP();
+    }
+  }}
+  disabled={loading || buttonLoading}
+>
+  {loading || buttonLoading ? (
+    <ActivityIndicator size="small" color="#fff" />
+  ) : (
+    <Text style={styles.buttonText}>
+      {otpSent ? 'Complete Registration' : 'Send OTP'}
+    </Text>
+  )}
+</TouchableOpacity>
         <View style={{ height: 80 }} />
 
         {showDOBPicker && (

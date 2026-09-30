@@ -37,9 +37,31 @@ const ProfileScreen = () => {
 const [activeRoomId, setActiveRoomId] = useState<number | null>(null);
 const [activeBooking, setActiveBooking] = useState<any>(null);
 
-  const userName = user?.fullName || "User";
-  const userType = user?.userType || "Professional";
-  const firstLetter = userName.charAt(0).toUpperCase();
+
+const [parentName, setParentName] = useState("");
+
+
+  // const userName = user?.fullName || "User";
+  // const userType = user?.userType || "Professional";
+  // const firstLetter = userName.charAt(0).toUpperCase();
+
+
+
+
+const isParent = user?.loginAs === "parent";
+
+const displayName = isParent
+  ? parentName?.trim() || "Parent"
+  : user?.fullName?.trim() || "User";
+
+const userName = displayName;
+
+const userType = isParent
+  ? "Parent"
+  : user?.userType || "Professional";
+
+const firstLetter = displayName.charAt(0).toUpperCase();
+
 
   // Check active booking (same logic as App.tsx)
   const checkBookingStatus = async () => {
@@ -83,11 +105,54 @@ if (active?.roomId) {
     }
   };
 
-  useFocusEffect(
-    useCallback(() => {
-      checkBookingStatus();
-    }, [token])
-  );
+
+
+const loadUser = async () => {
+  if (!token || !user?.id) return;
+
+  try {
+    const res = await axios.get(
+      `${BASE_URL}/api/user/getUser/${user.id}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    const u = res.data.user;
+
+    console.log("Profile user:", u);
+    console.log("Profile parent name:", u?.parentName);
+
+    setParentName(u?.parentName || "");
+  } catch (error: any) {
+    console.log(
+      "Profile user fetch failed:",
+      error?.response?.data || error?.message || error
+    );
+  }
+};
+
+
+
+  // useFocusEffect(
+  //   useCallback(() => {
+  //     checkBookingStatus();
+  //   }, [token])
+  // );
+
+
+useFocusEffect(
+  useCallback(() => {
+    checkBookingStatus();
+
+    if (user?.loginAs === "parent") {
+      loadUser();
+    }
+  }, [token, user?.id, user?.loginAs])
+);
+
 
   useEffect(() => {
     checkBookingStatus();

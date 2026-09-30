@@ -406,7 +406,7 @@ setNotificationCount(unread.length);
   showsHorizontalScrollIndicator={false}
   contentContainerStyle={styles.foodRow}
 >
-       <FoodCard
+       {/* <FoodCard
   title="Breakfast"
   subtitle={
     todayFood?.breakfast?.length
@@ -458,6 +458,61 @@ setNotificationCount(unread.length);
   image={
     todayFood?.dinnerImg
       ? { uri: `${API_BASE_URL}${todayFood.dinnerImg}?t=${Date.now()}` }
+      : require("../../assets/images/dinner.png")
+  }
+/> */}
+
+
+<FoodCard
+  title="Breakfast"
+  subtitle={
+    todayFood?.breakfast?.length
+      ? todayFood.breakfast.join(", ")
+      : "Not available"
+  }
+  image={
+    todayFood?.breakfastImg
+      ? { uri: `${API_BASE_URL}${todayFood.breakfastImg}` }
+      : require("../../assets/images/breakfastt.png")
+  }
+/>
+
+<FoodCard
+  title="Lunch"
+  subtitle={
+    todayFood?.lunch?.length
+      ? todayFood.lunch.join(", ")
+      : "Not available"
+  }
+  image={
+    todayFood?.lunchImg
+      ? { uri: `${API_BASE_URL}${todayFood.lunchImg}` }
+      : require("../../assets/images/lunch.png")
+  }
+/>
+
+<FoodCard
+  title="Evening Snacks"
+  subtitle={
+    todayFood?.eveningSnack?.length
+      ? todayFood.eveningSnack.join(", ")
+      : "Not available"
+  }
+  image={{
+    uri: `${API_BASE_URL}/uploads/foodMenus/1786087864970-902321067.webp`,
+  }}
+/>
+
+<FoodCard
+  title="Dinner"
+  subtitle={
+    todayFood?.dinner?.length
+      ? todayFood.dinner.join(", ")
+      : "Not available"
+  }
+  image={
+    todayFood?.dinnerImg
+      ? { uri: `${API_BASE_URL}${todayFood.dinnerImg}` }
       : require("../../assets/images/dinner.png")
   }
 />

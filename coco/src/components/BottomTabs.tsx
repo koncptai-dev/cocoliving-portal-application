@@ -1,8 +1,10 @@
 import React from "react";
 import axios from "axios";
+import { View, Image, StyleSheet, Platform, Linking } from "react-native";
+import Toast from "react-native-toast-message";
 import { useAuth } from "../context/AuthContext";
 import { useState, useEffect } from "react";
-import { View, Image, StyleSheet, Platform } from "react-native";
+
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { useSafeAreaInsets } from "react-native-safe-area-context"; // add this import
@@ -12,10 +14,9 @@ import BrowsePropertiesScreen from "../user/BrowsePropertiesScreen";
 import EventsScreen from "../user/Events";
 import DashboardScreen from "../user/dashboard";
 import FindStayScreen from "./Dashboard/FindStayScreen";
-import AccessHistory from "../user/AccessHistory";
 import SupportScreen from "../user/Support";
 
-// Hidden Screens (Jo har screen par bar dikhayengi)
+// Hidden Screens 
 import RaiseComplaint from '../components/Support/RaiseComplaint';
 import ComplaintStatus from '../components/Support/ComplaintStatus';
 import ComplaintHistory from '../components/Support/ComplaintHistory';
@@ -84,6 +85,36 @@ useEffect(() => {
 
 }, [token]);
 
+
+
+const openDialer = async () => {
+  const phoneNumber = "+918141676967";
+  const url = `tel:${phoneNumber}`;
+
+  try {
+    const supported = await Linking.canOpenURL(url);
+
+    if (supported) {
+      await Linking.openURL(url);
+    } else {
+      Toast.show({
+        type: "error",
+        text1: "Unable to open dialer",
+        text2: "Phone dialer is not available",
+      });
+    }
+  } catch (error) {
+    console.log("Dialer error:", error);
+
+    Toast.show({
+      type: "error",
+      text1: "Unable to open dialer",
+    });
+  }
+};
+
+
+
   return (
     <Tab.Navigator
       initialRouteName="Center"
@@ -147,17 +178,28 @@ useEffect(() => {
   }}
 />
 
-
-      {hasBookingState && (
-        <Tab.Screen
-          name="Logs"
-          component={AccessHistory}
-          options={{
-            tabBarLabel: "Logs",
-            tabBarIcon: ({ color }) => <Ionicons name="time-outline" size={23} color={color} />,
-          }}
+{hasBookingState && (
+  <Tab.Screen
+    name="Contact"
+    component={View}
+    options={{
+      tabBarLabel: "Contact",
+      tabBarIcon: ({ color }) => (
+        <Ionicons
+          name="call-outline"
+          size={23}
+          color={color}
         />
-      )}
+      ),
+    }}
+    listeners={{
+      tabPress: (e) => {
+        e.preventDefault();
+        openDialer();
+      },
+    }}
+  />
+)}
 
       <Tab.Screen
         name="Support"

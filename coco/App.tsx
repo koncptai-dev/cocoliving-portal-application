@@ -84,32 +84,77 @@ const AppNavigator = () => {
     return;
   }
 
+
   const checkBookingStatus = async () => {
-    try {
+  try {
+    const url = `${API_BASE_URL}/api/book-room/getUserBookings?page=1&limit=100`;
 
-      const response = await axios.get(
-        `${API_BASE_URL}/api/book-room/getUserBookings?page=1&limit=100`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+    console.log("========== BOOKING CHECK ==========");
+    console.log("API BASE URL:", API_BASE_URL);
+    console.log("FULL URL:", url);
+    console.log("TOKEN EXISTS:", !!token);
 
-      const bookings = response?.data?.bookings || [];
+    const response = await axios.get(url, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
 
-      const active = bookings.find((b) => {
-        const status = b.displayStatus?.toLowerCase();
-        return status === "active" || status === "approved";
-      });
+    console.log("BOOKING STATUS:", response.status);
+    console.log("BOOKING RESPONSE:", response.data);
 
-      setHasActiveBooking(!!active);
+    const bookings = response?.data?.bookings || [];
 
-    } catch (error) {
-      console.log("Booking check error:", error);
- console.log("STATUS:", error?.response?.status);
-  console.log("DATA:", error?.response?.data);
-  console.log("HEADERS SENT:", error?.config?.headers);
-    } finally {
-      setLoadingInitial(false);
-    }
-  };
+    const active = bookings.find((b) => {
+      const status = b.displayStatus?.toLowerCase();
+
+      return status === "active" || status === "approved";
+    });
+
+    setHasActiveBooking(!!active);
+
+  } catch (error: any) {
+    console.log("========== BOOKING CHECK ERROR ==========");
+    console.log("MESSAGE:", error?.message);
+    console.log("CODE:", error?.code);
+    console.log("URL:", error?.config?.url);
+    console.log("BASE URL:", error?.config?.baseURL);
+    console.log("STATUS:", error?.response?.status);
+    console.log("DATA:", error?.response?.data);
+    console.log("HEADERS:", error?.config?.headers);
+    console.log("==========================================");
+
+  } finally {
+    setLoadingInitial(false);
+  }
+};
+
+//   const checkBookingStatus = async () => {
+//     try {
+
+//       const response = await axios.get(
+//         `${API_BASE_URL}/api/book-room/getUserBookings?page=1&limit=100`,
+//         { headers: { Authorization: `Bearer ${token}` } }
+//       );
+
+//       const bookings = response?.data?.bookings || [];
+
+//       const active = bookings.find((b) => {
+//         const status = b.displayStatus?.toLowerCase();
+//         return status === "active" || status === "approved";
+//       });
+
+//       setHasActiveBooking(!!active);
+
+//     } catch (error) {
+//       console.log("Booking check error:", error);
+//  console.log("STATUS:", error?.response?.status);
+//   console.log("DATA:", error?.response?.data);
+//   console.log("HEADERS SENT:", error?.config?.headers);
+//     } finally {
+//       setLoadingInitial(false);
+//     }
+//   };
 
   checkBookingStatus();
 
@@ -179,6 +224,7 @@ const AppNavigator = () => {
           <Stack.Screen name="Support" component ={SupportScreen}/>
           <Stack.Screen name="RoomRechargeHistory" component={RoomRechargeHistoryScreen}/>
            <Stack.Screen name="Meals" component={MealsScreen}/>
+           
           <Stack.Screen
     name="PrivacyPolicy"
     component={PrivacyPolicyScreen}

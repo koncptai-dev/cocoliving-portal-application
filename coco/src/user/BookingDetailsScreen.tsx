@@ -202,13 +202,13 @@ const initiateElectricityRecharge = async () => {
     //   return;
     // }
 
-    if (!electricityAmount || Number(electricityAmount) < 100) {
-  Alert.alert(
-    "Invalid Amount",
-    "Minimum recharge amount is ₹100"
-  );
-  return;
-}
+//     if (!electricityAmount || Number(electricityAmount) < 100) {
+//   Alert.alert(
+//     "Invalid Amount",
+//     "Minimum recharge amount is ₹100"
+//   );
+//   return;
+// }
 
     setElectricityLoading(true);
 
@@ -257,20 +257,36 @@ const initiateElectricityRecharge = async () => {
 
     }
 
-  } catch (error) {
+  // } catch (error) {
 
-    console.log(
-      "❌ Electricity recharge error:",
-      error?.response?.data || error
-    );
+  //   console.log(
+  //     "❌ Electricity recharge error:",
+  //     error?.response?.data || error
+  //   );
 
-    Alert.alert(
-      "Error",
-      error?.response?.data?.message ||
-      "Failed to initiate recharge"
-    );
+  //   Alert.alert(
+  //     "Error",
+  //     error?.response?.data?.message ||
+  //     "Failed to initiate recharge"
+  //   );
 
-  } finally {
+  // } 
+  } catch (error: any) {
+  console.log(
+    "❌ Electricity recharge error:",
+    JSON.stringify(error?.response?.data, null, 2)
+  );
+
+  const errorMessage =
+    error?.response?.data?.message ||
+    error?.response?.data?.error ||
+    error?.response?.data?.data?.message ||
+    error?.message ||
+    "Failed to initiate recharge";
+
+  Alert.alert("Error", errorMessage);
+}
+  finally {
 
     setElectricityLoading(false);
 
@@ -1866,18 +1882,14 @@ return (
 
 
 {/* ELECTRICITY METER RECHARGE */}
-{new Date() >= new Date(bookingData?.checkInDate) && (
-  <View style={styles.card}>
+{bookingData?.displayStatus?.toLowerCase() === "approved" && (
+    <View style={styles.card}>
 
     <Text style={styles.section}>
       Electricity Meter Recharge
     </Text>
 
-    <Text style={styles.helper}>
-      *Minimum recharge amount is ₹100
-    </Text>
-
-
+    
 
     <TextInput
       style={styles.input}
@@ -1887,7 +1899,7 @@ return (
       onChangeText={setElectricityAmount}
     />
 
-    {electricityAmount !== "" &&
+    {/* {electricityAmount !== "" &&
       Number(electricityAmount) < 100 && (
         <Text
           style={{
@@ -1899,7 +1911,7 @@ return (
         >
           Recharge amount must be equal to or greater than ₹100
         </Text>
-      )}
+      )} */}
 
     <PrimaryButton
       text={
@@ -1907,11 +1919,12 @@ return (
           ? "Processing..."
           : "Recharge Electricity Meter"
       }
-      disabled={
-        electricityLoading ||
-        !electricityAmount ||
-        Number(electricityAmount) < 100
-      }
+      disabled={electricityLoading || !electricityAmount}
+      // disabled={
+      //   electricityLoading ||
+      //   !electricityAmount ||
+      //   Number(electricityAmount) < 100
+      // }
       onPress={initiateElectricityRecharge}
        isParentLogin={isParentLogin}
     />

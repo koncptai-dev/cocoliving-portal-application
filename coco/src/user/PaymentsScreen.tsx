@@ -566,17 +566,23 @@ const handleInvoicePress = (item: any) => {
 
                 {/* ONLINE */}
 
-               
+  {item.paymentMode === "ONLINE" && (
+  <Text style={styles.subText}>
+    {item.type === "ELECTRICITY_RECHARGE"
+      ? " Via Payu E_RECHARGE"
+      : "Via Razorpay"}
+  </Text>
+)}             
 
 
-
+{/* 
                 {item.paymentMode === "ONLINE" && (
   <Text style={styles.subText}>
     {item.type === "ELECTRICITY_RECHARGE"
       ? "ELECTRICITY_RECHARGE"
       : item.phonepeOrderId || "PhonePe ID not available"}
   </Text>
-)}
+)} */}
 
                 {/* OFFLINE */}
 
@@ -779,12 +785,30 @@ const handleInvoicePress = (item: any) => {
                     </TouchableOpacity>
                   )}
                 </View>
+<Text style={styles.dateText}>
+  {new Date(
+    item.createdAt
+  ).toLocaleString()}
+</Text>
 
-                <Text style={styles.dateText}>
+{/* WAIVE OFF AMOUNT */}
+{item.waiveCurrentMonthRent != null &&
+  Number(item.waiveCurrentMonthRent) !== 0 && (
+    <View style={styles.waiveOffContainer}>
+      <Text style={styles.waiveOffLabel}>
+        Waive Off Amount
+      </Text>
+
+      <Text style={styles.waiveOffValue}>
+        {rupee(Number(item.waiveCurrentMonthRent))}
+      </Text>
+    </View>
+  )}
+                {/* <Text style={styles.dateText}>
                   {new Date(
                     item.createdAt
                   ).toLocaleString()}
-                </Text>
+                </Text> */}
               </View>
             )}
             showsVerticalScrollIndicator={false}
@@ -1008,6 +1032,29 @@ detailsCard: {
   backgroundColor: "#FAF7F2",
   borderWidth: 1,
   borderColor: "#EFE3D5",
+},
+
+
+waiveOffContainer: {
+  marginTop: 10,
+  paddingTop: 8,
+  borderTopWidth: 1,
+  borderTopColor: "#EFE3D5",
+  flexDirection: "row",
+  justifyContent: "space-between",
+  alignItems: "center",
+},
+
+waiveOffLabel: {
+  fontFamily: "Quicksand-SemiBold",
+  fontSize: 13,
+  color: "#6A4A3C",
+},
+
+waiveOffValue: {
+  fontFamily: "Quicksand-Bold",
+  fontSize: 14,
+  color: "#2E7D32",
 },
 
 gridRow: {

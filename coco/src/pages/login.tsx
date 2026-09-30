@@ -72,15 +72,15 @@ const [allowAutoOtp, setAllowAutoOtp] = useState<boolean | null>(null);
   const [isOTPSent, setIsOTPSent] = useState(false);
   const [loading, setLoading] = useState(false);
   const [verifying, setVerifying] = useState(false);
-  
+  const [buttonLoading, setButtonLoading] = useState(false);  
   const [isAutoOtp, setIsAutoOtp] = useState(false);
 
 
   //const isButtonLoading = loading || verifying;
 
 
-  const isButtonLoading = !isOTPSent && loading;
-
+  //const isButtonLoading = !isOTPSent && loading;
+const isButtonLoading = isOTPSent ? verifying : loading;
 //  const isButtonLoading = fakeLoading;
 
   const [errors, setErrors] = useState<{ identifier?: string; otp?: string }>({});
@@ -277,6 +277,17 @@ const startFiveSecLoader = () => {
     ]).start();
   };
 
+
+
+//   const startButtonLoader = () => {
+//   setButtonLoading(true);
+
+//   setTimeout(() => {
+//     setButtonLoading(false);
+//   }, 3000);
+// };
+
+
   // ---------------- CHECK & PROCEED ----------------
   const checkAndProceed = async () => {
 
@@ -354,10 +365,28 @@ const startFiveSecLoader = () => {
         return;
       }
 
-      sendOTP(identifier, mediumType, null);
-    } catch {
-      Toast.show({ type: 'error', text1: 'Something went wrong' });
-    } finally {
+
+      await sendOTP(identifier, mediumType, null);
+      //sendOTP(identifier, mediumType, null);
+    // } catch {
+    //   Toast.show({ type: 'error', text1: '' });
+    // } 
+    } catch (err: any) {
+  console.log('❌ CHECK IDENTIFIER ERROR');
+  console.log('URL:', CHECK_IDENTIFIER_API);
+  console.log('STATUS:', err?.response?.status);
+  console.log('DATA:', JSON.stringify(err?.response?.data, null, 2));
+  console.log('MESSAGE:', err?.message);
+
+  Toast.show({
+    type: 'error',
+    text1:
+      err?.response?.data?.message ||
+      err?.response?.data?.error ||
+      'Something went wrong',
+  });
+}
+    finally {
       loginRequestInProgress.current = false;
       setLoading(false);
     }
@@ -365,14 +394,57 @@ const startFiveSecLoader = () => {
 
 
 
- const sendOTP = async (
+//  const sendOTP = async (
+//   identifier: string,
+//   mediumType: 'email' | 'phone',
+//   selectedChildId: number | null
+// ) => {
+//   setOtp('');
+
+//   // 👇 build payload first
+//   const payload: any = {
+//     identifier,
+//     ...(mediumType === 'phone' && Platform.OS === 'android' && {
+//       appHash,
+//       platform: 'android',
+//     }),
+//     ...(selectedChildId !== null && { childId: selectedChildId }),
+//   };
+
+//   // 🔍 LOG REQUEST PAYLOAD
+//   console.log('📤 SEND OTP REQUEST PAYLOAD:', JSON.stringify(payload, null, 2));
+
+//   try {
+//     console.log("URL LOGIN: ",LOGIN_SEND_OTP);
+//     await axios.post(LOGIN_SEND_OTP, payload);
+
+//     setChildId(selectedChildId);
+//     setIsOTPSent(true);
+//     setShowChildModal(false);
+//     resetTimer();
+
+//     Toast.show({
+//       type: 'success',
+//       text1: `OTP sent to your ${mediumType === 'phone' ? 'mobile' : 'email'}`,
+//     });
+//   } catch (err: any) {
+//     console.log('❌ SEND OTP ERROR:', err?.response?.data || err);
+//     Toast.show({
+//       type: 'error',
+//       text1: err?.response?.data?.message || 'Failed to send OTP',
+//     });
+//   }
+// };
+
+
+const sendOTP = async (
   identifier: string,
   mediumType: 'email' | 'phone',
   selectedChildId: number | null
 ) => {
+  setLoading(true);
   setOtp('');
 
-  // 👇 build payload first
   const payload: any = {
     identifier,
     ...(mediumType === 'phone' && Platform.OS === 'android' && {
@@ -382,11 +454,14 @@ const startFiveSecLoader = () => {
     ...(selectedChildId !== null && { childId: selectedChildId }),
   };
 
-  // 🔍 LOG REQUEST PAYLOAD
-  console.log('📤 SEND OTP REQUEST PAYLOAD:', JSON.stringify(payload, null, 2));
+  console.log(
+    '📤 SEND OTP REQUEST PAYLOAD:',
+    JSON.stringify(payload, null, 2)
+  );
 
   try {
-    console.log("URL LOGIN: ",LOGIN_SEND_OTP);
+    console.log('URL LOGIN: ', LOGIN_SEND_OTP);
+
     await axios.post(LOGIN_SEND_OTP, payload);
 
     setChildId(selectedChildId);
@@ -396,16 +471,29 @@ const startFiveSecLoader = () => {
 
     Toast.show({
       type: 'success',
-      text1: `OTP sent to your ${mediumType === 'phone' ? 'mobile' : 'email'}`,
+      text1: `OTP sent to your ${
+        mediumType === 'phone' ? 'mobile' : 'email'
+      }`,
     });
   } catch (err: any) {
-    console.log('❌ SEND OTP ERROR:', err?.response?.data || err);
+    console.log(
+      '❌ SEND OTP ERROR:',
+      err?.response?.data || err
+    );
+
     Toast.show({
       type: 'error',
-      text1: err?.response?.data?.message || 'Failed to send OTP',
+      text1:
+        err?.response?.data?.message ||
+        'Failed to send OTP',
     });
+  } finally {
+    setLoading(false);
   }
 };
+
+
+
   // ---------------- VERIFY OTP ----------------
   const verifyOTP = async () => {
     if (!otp.trim()) {
@@ -673,9 +761,11 @@ console.log('========== LOGIN SUCCESS ==========');
 <TouchableOpacity
   style={[
     styles.button,
-    isButtonLoading && { opacity: 0.7 }
+    isButtonLoading && { opacity: 0.7 },
   ]}
   onPress={() => {
+    if (isButtonLoading) return;
+
     Keyboard.dismiss();
 
     if (isOTPSent) {
@@ -685,15 +775,48 @@ console.log('========== LOGIN SUCCESS ==========');
     }
   }}
   disabled={isButtonLoading}
+  activeOpacity={0.8}
 >
   {isButtonLoading ? (
-    <ActivityIndicator size="small" color="#fff" />
+    <ActivityIndicator
+      size="small"
+      color="#fff"
+    />
   ) : (
     <Text style={styles.buttonText}>
       {isOTPSent ? 'Verify' : 'Login'}
     </Text>
   )}
 </TouchableOpacity>
+
+{/* 
+<TouchableOpacity
+  style={[
+    styles.button,
+    (buttonLoading || isButtonLoading) && { opacity: 0.7 },
+  ]}
+  onPress={() => {
+    if (buttonLoading || isButtonLoading) return;
+
+    Keyboard.dismiss();
+    startButtonLoader();
+
+    if (isOTPSent) {
+      verifyOTP();
+    } else {
+      checkAndProceed();
+    }
+  }}
+  disabled={buttonLoading || isButtonLoading}
+>
+  {buttonLoading || isButtonLoading ? (
+    <ActivityIndicator size="small" color="#fff" />
+  ) : (
+    <Text style={styles.buttonText}>
+      {isOTPSent ? 'Verify' : 'Login'}
+    </Text>
+  )}
+</TouchableOpacity> */}
 
 
 
