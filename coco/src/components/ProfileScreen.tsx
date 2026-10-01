@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import DeviceInfo from "react-native-device-info";
 import {
   View,
   Text,
@@ -26,6 +27,9 @@ const ProfileScreen = () => {
  const navigation: any = useNavigation();
  const { user, logout } = useAuth();
   const token = user?.token;
+
+const appVersion = DeviceInfo.getVersion();      // versionName
+const buildNumber = DeviceInfo.getBuildNumber(); // versionCode
 
   const [hasActiveBooking, setHasActiveBooking] = useState(false);
   const [loadingBooking, setLoadingBooking] = useState(true);
@@ -99,7 +103,7 @@ if (active?.roomId) {
 
     } catch (error) {
       console.log("Booking check error:", error);
-      setHasActiveBooking(false);
+  //    setHasActiveBooking(false);
     } finally {
       setLoadingBooking(false);
     }
@@ -154,9 +158,9 @@ useFocusEffect(
 );
 
 
-  useEffect(() => {
-    checkBookingStatus();
-  }, []);
+  // useEffect(() => {
+  //   checkBookingStatus();
+  // }, []);
 
   const performLogout = () => {
     setShowLogoutModal(false);
@@ -457,6 +461,16 @@ return (
         />
       </View>
 
+
+
+      {/* APP VERSION */}
+      <Text style={styles.versionText}>
+        Version {appVersion}
+      </Text>
+
+    
+
+
       {/* FOOTER */}
       <View style={styles.footer}>
         <View style={styles.socialContainer}>
@@ -647,7 +661,13 @@ role: {
     fontFamily: "Quicksand-Bold",
     color: "#4F3421",
   },
-
+  versionText: {
+    textAlign: "center",
+    marginTop: 16,
+    fontSize: 13,
+    fontFamily: "Quicksand-Regular",
+    color: "#888",
+  },
   editIcon: {
     position: "absolute",
     bottom: 0,
