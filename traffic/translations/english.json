@@ -1,0 +1,28 @@
+{
+  "translation": {
+    "login-to-your-account": "Login to your account",
+    "username": "Username",
+    "password": "Password",
+    "login": "Login",
+    "slide-to-punch-in": "Slide to punch in",
+    "slide-to-punch-out": "Slide to punch out",
+    "punch-in": "Punch in",
+    "punch-out": "Punch out",
+    "shift-ended": "Shift Ended",
+    "shift-started": "Shift Started",
+    "home": "Home",
+    "dashboard": "Dashboard",
+    "calendar": "Calendar",
+    "current": "Current",
+    "location": "Location",
+    "apply-for-leave": "Apply for Leave",
+    "choose-the-shift-to-apply": "Choose the shift to apply",
+    "select-shift": "Select Shift",
+    "selected-shift": "Selected Shift",
+    "shift": "Shift",
+    "date": "Date",
+    "start-time": "Start Time",
+    "end-time": "End Time",
+    "apply-leave": "Apply Leave"
+  }
+}

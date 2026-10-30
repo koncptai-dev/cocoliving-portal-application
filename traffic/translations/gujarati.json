@@ -1,0 +1,29 @@
+{
+  "translation": {
+    "login-to-your-account": "તમારા એકાઉન્ટમાં લૉગિન કરો",
+    "username": "યુઝરનેમ",
+    "password": "પાસવર્ડ",
+    "login": "લોગીન કરો",
+    "slide-to-punch-in": "પંચ ઈન કરો",
+    "slide-to-punch-out": "પંચ આઉટ કરો",
+    "punch-in": "પંચ ઈન",
+    "punch-out": "પંચ આઉટ",
+    "shift-ended": "સીફ્ટ પૂર્ણ",
+    "shift-started": "આગળની સીફ્ટ",
+    "home": "હોમ",
+    "dashboard": "ડેશબોર્ડ",
+    "calender": "કેલેન્ડર",
+    "calendar": "કેલેન્ડર",
+    "current": "કર્રન્ટ",
+    "location": "લોકેશન",
+    "apply-for-leave": "લીવ માટે એપ્લાય કરો",
+    "choose-the-shift-to-apply": "એપ્લાય કરવા માટે સીફ્ટ પસંદ કરો",
+    "select-shift": "સીફ્ટ પસંદ કરો",
+    "selected-shift": "પસંદ કરેલી સીફ્ટ",
+    "shift": "સીફ્ટ",
+    "date": "તારીખ",
+    "start-time": "સ્ટાર્ટ ટાઇમ",
+    "end-time": "એંડ ટાઇમ",
+    "apply-leave": "લીવ માટે એપ્લાય કરો"
+  }
+}
